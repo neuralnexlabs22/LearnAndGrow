@@ -1,5 +1,12 @@
-import fs from "fs";
-import path from "path";
+/**
+ * data-store.ts — In-Memory Data Store (Vercel-Compatible)
+ *
+ * This module uses a global in-memory store seeded with initial data.
+ * Data persists across hot-reloads in development but resets on serverless
+ * cold-starts in production (Vercel). For persistent production data,
+ * migrate to Supabase using the schema in /supabase/schema.sql.
+ */
+
 import {
   CourseWeek,
   StudentWithSubscription,
@@ -23,15 +30,15 @@ interface StoreData {
   subscriptions: Subscription[];
   weeks: CourseWeek[];
   reviews: StudentReview[];
+  photoBuffers: Record<string, { buffer: string; contentType: string }>; // base64 encoded
+  pdfBuffers: Record<string, string>; // base64 encoded, keyed by weekNumber
 }
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const STORE_FILE = path.join(DATA_DIR, "course_store.json");
-const PRIVATE_UPLOADS_DIR = path.join(process.cwd(), "private_uploads", "course-materials");
-const STUDENT_PHOTOS_DIR = path.join(process.cwd(), "private_uploads", "student-photos");
+// =========================================================================
+// SEED DATA: 8-Week English Learning Course
+// =========================================================================
 
-// 8-Week English Learning Course Modules
-const INITIAL_ENGLISH_WEEKS: CourseWeek[] = [
+const SEED_WEEKS: CourseWeek[] = [
   {
     id: "week-1",
     weekNumber: 1,
@@ -48,8 +55,8 @@ const INITIAL_ENGLISH_WEEKS: CourseWeek[] = [
     pdfStoragePath: "week-1/Week-01-English-Foundations.pdf",
     pdfFilesizeBytes: 24800,
     isPublished: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
   },
   {
     id: "week-2",
@@ -67,8 +74,8 @@ const INITIAL_ENGLISH_WEEKS: CourseWeek[] = [
     pdfStoragePath: "week-2/Week-02-Grammar-and-Tenses.pdf",
     pdfFilesizeBytes: 26100,
     isPublished: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
   },
   {
     id: "week-3",
@@ -86,8 +93,8 @@ const INITIAL_ENGLISH_WEEKS: CourseWeek[] = [
     pdfStoragePath: null,
     pdfFilesizeBytes: null,
     isPublished: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
   },
   {
     id: "week-4",
@@ -105,8 +112,8 @@ const INITIAL_ENGLISH_WEEKS: CourseWeek[] = [
     pdfStoragePath: null,
     pdfFilesizeBytes: null,
     isPublished: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
   },
   {
     id: "week-5",
@@ -124,8 +131,8 @@ const INITIAL_ENGLISH_WEEKS: CourseWeek[] = [
     pdfStoragePath: null,
     pdfFilesizeBytes: null,
     isPublished: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
   },
   {
     id: "week-6",
@@ -143,8 +150,8 @@ const INITIAL_ENGLISH_WEEKS: CourseWeek[] = [
     pdfStoragePath: null,
     pdfFilesizeBytes: null,
     isPublished: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
   },
   {
     id: "week-7",
@@ -162,8 +169,8 @@ const INITIAL_ENGLISH_WEEKS: CourseWeek[] = [
     pdfStoragePath: null,
     pdfFilesizeBytes: null,
     isPublished: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
   },
   {
     id: "week-8",
@@ -181,18 +188,21 @@ const INITIAL_ENGLISH_WEEKS: CourseWeek[] = [
     pdfStoragePath: null,
     pdfFilesizeBytes: null,
     isPublished: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
   },
 ];
 
-// Initial Seed Users with English Course Profiles & Completion Status
-const INITIAL_USERS: StoredUser[] = [
+const SEED_USERS: StoredUser[] = [
   {
     id: "admin-001",
     name: "Course Administrator",
-    email: "admin@course.edu",
+    email: "admin@learnandgrow.edu",
     role: "admin",
+    photoUrl: null,
+    completionStatus: undefined,
+    completedAt: undefined,
+    publicConsent: false,
     passwordHash: "AdminPass123!",
     createdAt: "2026-08-01T10:00:00.000Z",
   },
@@ -246,7 +256,7 @@ const INITIAL_USERS: StoredUser[] = [
   },
 ];
 
-const INITIAL_SUBSCRIPTIONS: Subscription[] = [
+const SEED_SUBSCRIPTIONS: Subscription[] = [
   {
     id: "sub-001",
     studentId: "student-001",
@@ -288,8 +298,7 @@ const INITIAL_SUBSCRIPTIONS: Subscription[] = [
   },
 ];
 
-// Initial Genuine Reviews for the English Course
-const INITIAL_REVIEWS: StudentReview[] = [
+const SEED_REVIEWS: StudentReview[] = [
   {
     id: "rev-001",
     studentId: "student-001",
@@ -337,128 +346,53 @@ const INITIAL_REVIEWS: StudentReview[] = [
   },
 ];
 
-function ensureStorageInitialized(): StoreData {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-  if (!fs.existsSync(PRIVATE_UPLOADS_DIR)) {
-    fs.mkdirSync(PRIVATE_UPLOADS_DIR, { recursive: true });
-  }
-  if (!fs.existsSync(STUDENT_PHOTOS_DIR)) {
-    fs.mkdirSync(STUDENT_PHOTOS_DIR, { recursive: true });
-  }
+// =========================================================================
+// GLOBAL IN-MEMORY STORE (Survives hot-reloads via globalThis)
+// =========================================================================
 
-  // Seed sample English PDFs for Week 1 & Week 2
-  const week1Dir = path.join(PRIVATE_UPLOADS_DIR, "week-1");
-  const week2Dir = path.join(PRIVATE_UPLOADS_DIR, "week-2");
-  if (!fs.existsSync(week1Dir)) fs.mkdirSync(week1Dir, { recursive: true });
-  if (!fs.existsSync(week2Dir)) fs.mkdirSync(week2Dir, { recursive: true });
-
-  const week1PdfPath = path.join(week1Dir, "Week-01-English-Foundations.pdf");
-  if (!fs.existsSync(week1PdfPath)) {
-    const pdfBuf = generateCourseModulePdfBuffer(
-      1,
-      INITIAL_ENGLISH_WEEKS[0].title,
-      INITIAL_ENGLISH_WEEKS[0].description,
-      INITIAL_ENGLISH_WEEKS[0].learningObjectives
-    );
-    fs.writeFileSync(week1PdfPath, pdfBuf);
-  }
-
-  const week2PdfPath = path.join(week2Dir, "Week-02-Grammar-and-Tenses.pdf");
-  if (!fs.existsSync(week2PdfPath)) {
-    const pdfBuf = generateCourseModulePdfBuffer(
-      2,
-      INITIAL_ENGLISH_WEEKS[1].title,
-      INITIAL_ENGLISH_WEEKS[1].description,
-      INITIAL_ENGLISH_WEEKS[1].learningObjectives
-    );
-    fs.writeFileSync(week2PdfPath, pdfBuf);
-  }
-
-  if (!fs.existsSync(STORE_FILE)) {
-    const initialData: StoreData = {
-      users: INITIAL_USERS,
-      subscriptions: INITIAL_SUBSCRIPTIONS,
-      weeks: INITIAL_ENGLISH_WEEKS,
-      reviews: INITIAL_REVIEWS,
-    };
-    fs.writeFileSync(STORE_FILE, JSON.stringify(initialData, null, 2), "utf-8");
-    return initialData;
-  }
-
-  try {
-    const content = fs.readFileSync(STORE_FILE, "utf-8");
-    const parsed = JSON.parse(content) as StoreData;
-
-    // Check if store needs migration to English course or reviews array
-    let needsUpdate = false;
-
-    // If weeks title is still tech, update to English curriculum
-    if (parsed.weeks && parsed.weeks[0]?.title?.includes("Execution Context")) {
-      parsed.weeks = INITIAL_ENGLISH_WEEKS;
-      needsUpdate = true;
-    }
-
-    if (!parsed.reviews) {
-      parsed.reviews = INITIAL_REVIEWS;
-      needsUpdate = true;
-    }
-
-    // Ensure users have completionStatus field
-    parsed.users.forEach((u) => {
-      if (u.role === "student" && !u.completionStatus) {
-        u.completionStatus = u.id === "student-001" ? "completed" : "enrolled";
-        u.publicConsent = true;
-        needsUpdate = true;
-      }
-    });
-
-    if (needsUpdate) {
-      fs.writeFileSync(STORE_FILE, JSON.stringify(parsed, null, 2), "utf-8");
-    }
-
-    return parsed;
-  } catch (err) {
-    console.error("Failed to parse store file, reinitializing", err);
-    const initialData: StoreData = {
-      users: INITIAL_USERS,
-      subscriptions: INITIAL_SUBSCRIPTIONS,
-      weeks: INITIAL_ENGLISH_WEEKS,
-      reviews: INITIAL_REVIEWS,
-    };
-    fs.writeFileSync(STORE_FILE, JSON.stringify(initialData, null, 2), "utf-8");
-    return initialData;
-  }
+function createInitialStore(): StoreData {
+  return {
+    users: JSON.parse(JSON.stringify(SEED_USERS)),
+    subscriptions: JSON.parse(JSON.stringify(SEED_SUBSCRIPTIONS)),
+    weeks: JSON.parse(JSON.stringify(SEED_WEEKS)),
+    reviews: JSON.parse(JSON.stringify(SEED_REVIEWS)),
+    photoBuffers: {},
+    pdfBuffers: {},
+  };
 }
 
-function writeStoreData(data: StoreData): void {
-  ensureStorageInitialized();
-  fs.writeFileSync(STORE_FILE, JSON.stringify(data, null, 2), "utf-8");
+// Use globalThis to persist the store across Next.js hot-reloads in dev
+const g = globalThis as typeof globalThis & { __courseStore?: StoreData };
+if (!g.__courseStore) {
+  g.__courseStore = createInitialStore();
+}
+
+function getStore(): StoreData {
+  if (!g.__courseStore) {
+    g.__courseStore = createInitialStore();
+  }
+  return g.__courseStore;
 }
 
 /* ------------------- COURSE WEEKS ------------------- */
 
 export async function getCourseWeeks(): Promise<CourseWeek[]> {
-  const store = ensureStorageInitialized();
-  return store.weeks.sort((a, b) => a.weekNumber - b.weekNumber);
+  const store = getStore();
+  return [...store.weeks].sort((a, b) => a.weekNumber - b.weekNumber);
 }
 
 export async function getCourseWeek(weekNumber: number): Promise<CourseWeek | null> {
-  const store = ensureStorageInitialized();
-  const week = store.weeks.find((w) => w.weekNumber === weekNumber);
-  return week || null;
+  const store = getStore();
+  return store.weeks.find((w) => w.weekNumber === weekNumber) ?? null;
 }
 
 export async function updateCourseWeek(
   weekNumber: number,
   updates: Partial<CourseWeek>
 ): Promise<CourseWeek> {
-  const store = ensureStorageInitialized();
+  const store = getStore();
   const idx = store.weeks.findIndex((w) => w.weekNumber === weekNumber);
-  if (idx === -1) {
-    throw new Error(`Week ${weekNumber} not found.`);
-  }
+  if (idx === -1) throw new Error(`Week ${weekNumber} not found.`);
 
   const updated: CourseWeek = {
     ...store.weeks[idx],
@@ -466,9 +400,7 @@ export async function updateCourseWeek(
     weekNumber,
     updatedAt: new Date().toISOString(),
   };
-
   store.weeks[idx] = updated;
-  writeStoreData(store);
   return updated;
 }
 
@@ -477,34 +409,15 @@ export async function saveCourseWeekPdf(
   filename: string,
   buffer: Buffer
 ): Promise<CourseWeek> {
-  const store = ensureStorageInitialized();
+  const store = getStore();
   const idx = store.weeks.findIndex((w) => w.weekNumber === weekNumber);
-  if (idx === -1) {
-    throw new Error(`Week ${weekNumber} not found.`);
-  }
-
-  const weekDir = path.join(PRIVATE_UPLOADS_DIR, `week-${weekNumber}`);
-  if (!fs.existsSync(weekDir)) {
-    fs.mkdirSync(weekDir, { recursive: true });
-  }
-
-  const existingPath = store.weeks[idx].pdfStoragePath;
-  if (existingPath) {
-    const oldFullPath = path.join(PRIVATE_UPLOADS_DIR, existingPath);
-    if (fs.existsSync(oldFullPath)) {
-      try {
-        fs.unlinkSync(oldFullPath);
-      } catch (e) {
-        console.warn("Failed to delete previous PDF file:", e);
-      }
-    }
-  }
+  if (idx === -1) throw new Error(`Week ${weekNumber} not found.`);
 
   const safeFilename = filename.replace(/[^a-zA-Z0-9.-]/g, "_");
-  const relativePath = path.join(`week-${weekNumber}`, safeFilename).replace(/\\/g, "/");
-  const fullPath = path.join(PRIVATE_UPLOADS_DIR, relativePath);
+  const relativePath = `week-${weekNumber}/${safeFilename}`;
 
-  fs.writeFileSync(fullPath, buffer);
+  // Store PDF in-memory as base64
+  store.pdfBuffers[`week-${weekNumber}`] = buffer.toString("base64");
 
   const updated: CourseWeek = {
     ...store.weeks[idx],
@@ -513,30 +426,17 @@ export async function saveCourseWeekPdf(
     pdfFilesizeBytes: buffer.length,
     updatedAt: new Date().toISOString(),
   };
-
   store.weeks[idx] = updated;
-  writeStoreData(store);
   return updated;
 }
 
 export async function deleteCourseWeekPdf(weekNumber: number): Promise<CourseWeek> {
-  const store = ensureStorageInitialized();
+  const store = getStore();
   const idx = store.weeks.findIndex((w) => w.weekNumber === weekNumber);
-  if (idx === -1) {
-    throw new Error(`Week ${weekNumber} not found.`);
-  }
+  if (idx === -1) throw new Error(`Week ${weekNumber} not found.`);
 
-  const relativePath = store.weeks[idx].pdfStoragePath;
-  if (relativePath) {
-    const fullPath = path.join(PRIVATE_UPLOADS_DIR, relativePath);
-    if (fs.existsSync(fullPath)) {
-      try {
-        fs.unlinkSync(fullPath);
-      } catch (e) {
-        console.warn("Failed to delete PDF file:", e);
-      }
-    }
-  }
+  // Remove from in-memory PDF store
+  delete store.pdfBuffers[`week-${weekNumber}`];
 
   const updated: CourseWeek = {
     ...store.weeks[idx],
@@ -545,43 +445,44 @@ export async function deleteCourseWeekPdf(weekNumber: number): Promise<CourseWee
     pdfFilesizeBytes: null,
     updatedAt: new Date().toISOString(),
   };
-
   store.weeks[idx] = updated;
-  writeStoreData(store);
   return updated;
 }
 
 export async function getCourseWeekPdfBuffer(
   weekNumber: number
 ): Promise<{ buffer: Buffer; filename: string } | null> {
-  const store = ensureStorageInitialized();
+  const store = getStore();
   const week = store.weeks.find((w) => w.weekNumber === weekNumber);
-  if (!week || !week.pdfStoragePath || !week.pdfFilename) {
-    return null;
+  if (!week || !week.pdfFilename) return null;
+
+  // Check in-memory uploaded PDF first
+  const pdfKey = `week-${weekNumber}`;
+  if (store.pdfBuffers[pdfKey]) {
+    return {
+      buffer: Buffer.from(store.pdfBuffers[pdfKey], "base64"),
+      filename: week.pdfFilename,
+    };
   }
 
-  const fullPath = path.join(PRIVATE_UPLOADS_DIR, week.pdfStoragePath);
-  if (!fs.existsSync(fullPath)) {
+  // For weeks 1 & 2 that have default PDFs, generate on-the-fly
+  if (week.pdfStoragePath) {
     const generated = generateCourseModulePdfBuffer(
       week.weekNumber,
       week.title,
       week.description,
       week.learningObjectives
     );
-    const dir = path.dirname(fullPath);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(fullPath, generated);
     return { buffer: generated, filename: week.pdfFilename };
   }
 
-  const buffer = fs.readFileSync(fullPath);
-  return { buffer, filename: week.pdfFilename };
+  return null;
 }
 
 /* ------------------- USERS & SUBSCRIPTIONS ------------------- */
 
 export async function getStudentsWithSubscriptions(): Promise<StudentWithSubscription[]> {
-  const store = ensureStorageInitialized();
+  const store = getStore();
   const students = store.users.filter((u) => u.role === "student");
 
   return students.map((s) => {
@@ -609,7 +510,7 @@ export async function updateStudentSubscription(
   status: SubscriptionStatus,
   approvedBy?: string
 ): Promise<Subscription> {
-  const store = ensureStorageInitialized();
+  const store = getStore();
   let sub = store.subscriptions.find((s) => s.studentId === studentId);
 
   const now = new Date().toISOString();
@@ -636,20 +537,20 @@ export async function updateStudentSubscription(
     }
   }
 
-  writeStoreData(store);
   return sub;
 }
 
 export async function getUserByEmail(email: string): Promise<StoredUser | null> {
-  const store = ensureStorageInitialized();
-  const user = store.users.find(
-    (u) => u.email.toLowerCase() === email.toLowerCase().trim()
+  const store = getStore();
+  return (
+    store.users.find(
+      (u) => u.email.toLowerCase() === email.toLowerCase().trim()
+    ) ?? null
   );
-  return user || null;
 }
 
 export async function getUserById(id: string): Promise<UserProfile | null> {
-  const store = ensureStorageInitialized();
+  const store = getStore();
   const user = store.users.find((u) => u.id === id);
   if (!user) return null;
   const { passwordHash: _, ...profile } = user;
@@ -662,7 +563,7 @@ export async function createUser(
   passwordHash: string,
   role: UserRole = "student"
 ): Promise<UserProfile> {
-  const store = ensureStorageInitialized();
+  const store = getStore();
   const existing = store.users.find(
     (u) => u.email.toLowerCase() === email.toLowerCase().trim()
   );
@@ -696,16 +597,13 @@ export async function createUser(
     });
   }
 
-  writeStoreData(store);
-
   const { passwordHash: _, ...profile } = newUser;
   return profile;
 }
 
 export async function getStudentSubscription(studentId: string): Promise<Subscription | null> {
-  const store = ensureStorageInitialized();
-  const sub = store.subscriptions.find((s) => s.studentId === studentId);
-  return sub || null;
+  const store = getStore();
+  return store.subscriptions.find((s) => s.studentId === studentId) ?? null;
 }
 
 /* ------------------- STUDENT PHOTOS & COMPLETION STATUS ------------------- */
@@ -714,7 +612,7 @@ export async function updateStudentCompletionStatus(
   studentId: string,
   status: CompletionStatus
 ): Promise<UserProfile> {
-  const store = ensureStorageInitialized();
+  const store = getStore();
   const user = store.users.find((u) => u.id === studentId);
   if (!user) throw new Error("Student not found.");
 
@@ -725,7 +623,6 @@ export async function updateStudentCompletionStatus(
     user.completedAt = null;
   }
 
-  // Also update review's isCompletedStudent tag if a review exists
   store.reviews.forEach((r) => {
     if (r.studentId === studentId) {
       r.isCompletedStudent = status === "completed";
@@ -733,7 +630,6 @@ export async function updateStudentCompletionStatus(
     }
   });
 
-  writeStoreData(store);
   const { passwordHash: _, ...profile } = user;
   return profile;
 }
@@ -742,7 +638,7 @@ export async function updateStudentProfile(
   studentId: string,
   updates: Partial<UserProfile>
 ): Promise<UserProfile> {
-  const store = ensureStorageInitialized();
+  const store = getStore();
   const user = store.users.find((u) => u.id === studentId);
   if (!user) throw new Error("Student not found.");
 
@@ -762,7 +658,6 @@ export async function updateStudentProfile(
     }
   }
 
-  writeStoreData(store);
   const { passwordHash: _, ...profile } = user;
   return profile;
 }
@@ -772,24 +667,23 @@ export async function saveStudentPhoto(
   filename: string,
   buffer: Buffer
 ): Promise<string> {
-  const store = ensureStorageInitialized();
+  const store = getStore();
   const user = store.users.find((u) => u.id === studentId);
   if (!user) throw new Error("Student not found.");
 
-  if (!fs.existsSync(STUDENT_PHOTOS_DIR)) {
-    fs.mkdirSync(STUDENT_PHOTOS_DIR, { recursive: true });
-  }
+  const ext = filename.split(".").pop()?.toLowerCase() || "jpg";
+  const contentType =
+    ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
 
-  const ext = path.extname(filename) || ".jpg";
-  const safeFilename = `${studentId}-${Date.now()}${ext}`;
-  const fullPath = path.join(STUDENT_PHOTOS_DIR, safeFilename);
-
-  fs.writeFileSync(fullPath, buffer);
+  // Store photo in-memory as base64
+  store.photoBuffers[studentId] = {
+    buffer: buffer.toString("base64"),
+    contentType,
+  };
 
   const photoUrl = `/api/students/${studentId}/photo`;
   user.photoUrl = photoUrl;
 
-  // Also update student's review photoUrl if they have an existing review
   store.reviews.forEach((r) => {
     if (r.studentId === studentId) {
       r.studentPhotoUrl = photoUrl;
@@ -797,83 +691,60 @@ export async function saveStudentPhoto(
     }
   });
 
-  writeStoreData(store);
   return photoUrl;
 }
 
 export async function removeStudentPhoto(studentId: string): Promise<void> {
-  const store = ensureStorageInitialized();
+  const store = getStore();
   const user = store.users.find((u) => u.id === studentId);
   if (!user) throw new Error("Student not found.");
 
+  delete store.photoBuffers[studentId];
   user.photoUrl = null;
+
   store.reviews.forEach((r) => {
     if (r.studentId === studentId) {
       r.studentPhotoUrl = null;
       r.updatedAt = new Date().toISOString();
     }
   });
-
-  writeStoreData(store);
 }
 
 export async function getStudentPhotoBuffer(
   studentId: string
 ): Promise<{ buffer: Buffer; contentType: string } | null> {
-  ensureStorageInitialized();
-  if (!fs.existsSync(STUDENT_PHOTOS_DIR)) return null;
-
-  const files = fs.readdirSync(STUDENT_PHOTOS_DIR);
-  const matching = files
-    .filter((f) => f.startsWith(`${studentId}-`))
-    .sort()
-    .reverse();
-
-  if (matching.length === 0) return null;
-
-  const fullPath = path.join(STUDENT_PHOTOS_DIR, matching[0]);
-  if (!fs.existsSync(fullPath)) return null;
-
-  const ext = path.extname(fullPath).toLowerCase();
-  const contentType =
-    ext === ".png"
-      ? "image/png"
-      : ext === ".webp"
-      ? "image/webp"
-      : ext === ".gif"
-      ? "image/gif"
-      : "image/jpeg";
-
-  const buffer = fs.readFileSync(fullPath);
-  return { buffer, contentType };
+  const store = getStore();
+  const entry = store.photoBuffers[studentId];
+  if (!entry) return null;
+  return {
+    buffer: Buffer.from(entry.buffer, "base64"),
+    contentType: entry.contentType,
+  };
 }
 
 /* ------------------- STUDENT REVIEWS & RATINGS ------------------- */
 
 export async function getApprovedReviews(featuredOnly = false): Promise<StudentReview[]> {
-  const store = ensureStorageInitialized();
+  const store = getStore();
   let reviews = store.reviews.filter((r) => r.status === "approved");
-
   if (featuredOnly) {
     reviews = reviews.filter((r) => r.isFeatured);
   }
-
   return reviews.sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 }
 
 export async function getAllReviews(): Promise<StudentReview[]> {
-  const store = ensureStorageInitialized();
-  return store.reviews.sort(
+  const store = getStore();
+  return [...store.reviews].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 }
 
 export async function getStudentReview(studentId: string): Promise<StudentReview | null> {
-  const store = ensureStorageInitialized();
-  const rev = store.reviews.find((r) => r.studentId === studentId);
-  return rev || null;
+  const store = getStore();
+  return store.reviews.find((r) => r.studentId === studentId) ?? null;
 }
 
 export async function createOrUpdateStudentReview(
@@ -884,7 +755,7 @@ export async function createOrUpdateStudentReview(
   feedback: string,
   photoUrl?: string | null
 ): Promise<StudentReview> {
-  const store = ensureStorageInitialized();
+  const store = getStore();
   const user = store.users.find((u) => u.id === studentId);
   const isCompleted = user?.completionStatus === "completed";
 
@@ -901,9 +772,8 @@ export async function createOrUpdateStudentReview(
     existing.studentEmail = studentEmail;
     existing.studentPhotoUrl = photoUrl ?? user?.photoUrl ?? null;
     existing.isCompletedStudent = isCompleted;
-    existing.status = "pending"; // Re-mark as pending upon update for admin moderation
+    existing.status = "pending";
     existing.updatedAt = now;
-    writeStoreData(store);
     return existing;
   }
 
@@ -923,7 +793,6 @@ export async function createOrUpdateStudentReview(
   };
 
   store.reviews.push(newReview);
-  writeStoreData(store);
   return newReview;
 }
 
@@ -932,7 +801,7 @@ export async function updateReviewModeration(
   status: ReviewStatus,
   isFeatured?: boolean
 ): Promise<StudentReview> {
-  const store = ensureStorageInitialized();
+  const store = getStore();
   const review = store.reviews.find((r) => r.id === reviewId);
   if (!review) throw new Error("Review not found.");
 
@@ -941,32 +810,27 @@ export async function updateReviewModeration(
     review.isFeatured = isFeatured;
   }
   review.updatedAt = new Date().toISOString();
-
-  writeStoreData(store);
   return review;
 }
 
 export async function deleteStudentReview(reviewId: string): Promise<void> {
-  const store = ensureStorageInitialized();
+  const store = getStore();
   const idx = store.reviews.findIndex((r) => r.id === reviewId);
   if (idx === -1) throw new Error("Review not found.");
-
   store.reviews.splice(idx, 1);
-  writeStoreData(store);
 }
 
 /* ------------------- DASHBOARD & LIVE COMPLETION METRICS ------------------- */
 
 export async function getCompletedStudentsCount(): Promise<number> {
-  const store = ensureStorageInitialized();
-  const completed = store.users.filter(
+  const store = getStore();
+  return store.users.filter(
     (u) => u.role === "student" && u.completionStatus === "completed"
-  );
-  return completed.length;
+  ).length;
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-  const store = ensureStorageInitialized();
+  const store = getStore();
   const students = store.users.filter((u) => u.role === "student");
   const activeSubs = store.subscriptions.filter((s) => s.status === "active").length;
   const inProgress = students.filter((s) => s.completionStatus === "in_progress").length;

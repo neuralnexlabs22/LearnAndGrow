@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  // Ensure images from all sources are allowed
+  images: {
+    remotePatterns: [],
+  },
 };
 
 export default nextConfig;
