@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, MessageCircle, ShieldCheck, Mail, ArrowUpRight } from "lucide-react";
+import { MessageCircle, ShieldCheck, ArrowUpRight } from "lucide-react";
 import { COURSE_CONFIG, getEnrollmentWhatsAppUrl } from "@/lib/config";
 
 export function Footer() {
@@ -12,15 +12,29 @@ export function Footer() {
           {/* Brand & Overview */}
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#292524] text-[#FAF8F5] flex items-center justify-center font-bold">
-                <BookOpen className="w-5 h-5 text-[#FAF8F5]" />
+              <div className="w-12 h-12 rounded-xl bg-white border border-[#D4CDBC] p-1 flex items-center justify-center shrink-0 shadow-xs">
+                <img
+                  src="/logo.png"
+                  alt="Learn and Grow Logo"
+                  className="w-full h-full object-contain"
+                />
               </div>
-              <span className="font-semibold text-lg text-[#1C1917] tracking-tight">
-                {COURSE_CONFIG.courseTitle}
-              </span>
+              <div>
+                <span className="font-extrabold text-xl tracking-tight text-[#0F2D59]">
+                  Learn <span className="text-[#2E7D32]">and</span> Grow
+                </span>
+                <p className="text-[10px] font-bold tracking-widest text-[#78716C] uppercase">
+                  LEARN | IMPROVE | ACHIEVE
+                </p>
+              </div>
             </div>
+
+            <p className="text-xs text-[#78716C] font-semibold">
+              {COURSE_CONFIG.courseTitle}
+            </p>
+
             <p className="text-sm text-[#78716C] max-w-md leading-relaxed">
-              A comprehensive 8-week structured English learning curriculum. Weekly
+              An 8-week structured English learning curriculum. Weekly
               PDF workbooks, conversational drills, and dedicated instructor
               guidance via WhatsApp.
             </p>
@@ -108,10 +122,10 @@ export function Footer() {
 
         <div className="mt-12 pt-8 border-t border-[#E7E2D6] flex flex-col sm:flex-row items-center justify-between text-xs text-[#78716C] gap-4">
           <p>
-            © {new Date().getFullYear()} 8-Week English Learning Course Platform. All rights reserved.
+            © {new Date().getFullYear()} Learn and Grow. All rights reserved.
           </p>
           <p className="flex items-center gap-2">
-            <span>Protected Learning Materials</span>
+            <span>LEARN | IMPROVE | ACHIEVE</span>
             <span>•</span>
             <span>WhatsApp Verified Enrollment</span>
           </p>

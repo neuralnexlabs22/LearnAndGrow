@@ -53,14 +53,23 @@ export default function LoginPage() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <Link
           href="/"
-          className="inline-flex items-center gap-2.5 group focus:outline-none mb-3"
+          className="inline-flex items-center gap-3 group focus:outline-none mb-3"
         >
-          <div className="w-10 h-10 rounded-xl bg-[#292524] text-[#FAF8F5] flex items-center justify-center font-bold">
-            <BookOpen className="w-5 h-5 text-[#FAF8F5]" />
+          <div className="w-11 h-11 rounded-xl bg-white border border-[#D4CDBC] p-1 flex items-center justify-center shadow-xs group-hover:border-[#2E7D32] transition-colors shrink-0">
+            <img
+              src="/logo.png"
+              alt="Learn and Grow Logo"
+              className="w-full h-full object-contain"
+            />
           </div>
-          <span className="font-bold text-xl text-[#1C1917] tracking-tight">
-            {COURSE_CONFIG.shortTitle}
-          </span>
+          <div className="text-left">
+            <div className="font-extrabold text-xl tracking-tight text-[#0F2D59]">
+              Learn <span className="text-[#2E7D32]">and</span> Grow
+            </div>
+            <p className="text-[10px] font-bold tracking-widest text-[#78716C] uppercase">
+              LEARN | IMPROVE | ACHIEVE
+            </p>
+          </div>
         </Link>
         <h2 className="text-2xl font-bold text-[#1C1917] tracking-tight">
           Sign In to Your Student Account

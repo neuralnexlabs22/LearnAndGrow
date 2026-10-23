@@ -4,17 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  BookOpen,
   MessageCircle,
   Menu,
   X,
   Shield,
-  User,
   LogOut,
   CheckCircle2,
   Clock,
   Sparkles,
-  Award,
 } from "lucide-react";
 import { UserProfile, SubscriptionStatus } from "@/types";
 import { COURSE_CONFIG, getEnrollmentWhatsAppUrl } from "@/lib/config";
@@ -45,28 +42,32 @@ export function Navbar({ currentUser, subscriptionStatus }: NavbarProps) {
   const whatsAppUrl = getEnrollmentWhatsAppUrl(currentUser?.email);
 
   return (
-    <header className="sticky top-0 z-40 bg-[#FAF8F5]/90 backdrop-blur-md border-b border-[#E7E2D6] transition-all">
+    <header className="sticky top-0 z-40 bg-[#FAF8F5]/95 backdrop-blur-md border-b border-[#E7E2D6] transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          {/* Brand Logo */}
+          {/* Brand Logo & Company Name */}
           <Link
             href="/"
-            className="flex items-center gap-3.5 group text-decoration-none focus:outline-none"
+            className="flex items-center gap-3 group text-decoration-none focus:outline-none"
           >
-            <div className="w-11 h-11 rounded-xl bg-[#292524] text-[#FAF8F5] flex items-center justify-center font-bold text-lg shadow-sm border border-[#1C1917]/20 group-hover:bg-[#C25E38] transition-colors">
-              <BookOpen className="w-5 h-5 text-[#FAF8F5]" />
+            <div className="w-12 h-12 rounded-xl bg-white border border-[#D4CDBC] p-1 flex items-center justify-center shadow-xs group-hover:border-[#2E7D32] transition-colors shrink-0">
+              <img
+                src="/logo.png"
+                alt="Learn and Grow Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-lg text-[#1C1917] tracking-tight">
-                  {COURSE_CONFIG.shortTitle}
+                <span className="font-extrabold text-xl tracking-tight text-[#0F2D59]">
+                  Learn <span className="text-[#2E7D32]">and</span> Grow
                 </span>
-                <span className="text-[11px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-[#EFECE4] text-[#57534E] border border-[#DCD4C4]">
+                <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-[#EFECE4] text-[#57534E] border border-[#DCD4C4]">
                   8 Weeks
                 </span>
               </div>
-              <p className="text-xs text-[#78716C] hidden sm:block">
-                Structured English Learning Platform
+              <p className="text-[10px] font-bold tracking-widest text-[#78716C] uppercase hidden sm:block">
+                LEARN | IMPROVE | ACHIEVE
               </p>
             </div>
           </Link>
@@ -117,7 +118,7 @@ export function Navbar({ currentUser, subscriptionStatus }: NavbarProps) {
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#15803D] hover:bg-[#166534] text-white shadow-sm transition-all hover:shadow active:scale-[0.98]"
-              title="Chat with English instructor on WhatsApp"
+              title="Chat with instructor on WhatsApp"
             >
               <MessageCircle className="w-4 h-4 fill-white text-white" />
               <span>WhatsApp Enroll</span>

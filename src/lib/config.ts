@@ -1,15 +1,19 @@
 /**
  * Global Configuration and WhatsApp Click-to-Chat Helpers
- * Tailored for the 8-Week English Learning Course: "Speak English with Confidence"
+ * Tailored for Learn and Grow - "LEARN | IMPROVE | ACHIEVE"
+ * 8-Week English Learning Course: "Speak English with Confidence"
  */
 
 export const COURSE_CONFIG = {
+  companyName: "Learn and Grow",
+  companyMotto: "LEARN | IMPROVE | ACHIEVE",
+  logoUrl: "/logo.png",
   courseTitle: "8-Week English Learning Course: Speak English with Confidence",
-  shortTitle: "Speak English with Confidence",
+  shortTitle: "Learn and Grow",
   courseCode: "ENG-801",
   duration: "8 Weeks",
   totalModules: 8,
-  studyMaterials: "Weekly Comprehensive PDF Grammar & Spoken English Guides",
+  studyMaterials: "Weekly Comprehensive PDF Grammar & Spoken English Workbooks",
   supportChannel: "Direct WhatsApp Instructor Advisory",
   tagline: "Build your English skills step by step through an 8-week learning journey covering grammar, vocabulary, speaking, listening, and everyday communication.",
   description:
@@ -58,11 +62,11 @@ export function buildWhatsAppUrl(message: string, overrideNumber?: string): stri
 }
 
 /**
- * Pre-filled message for 8-week English course enrollment inquiries
+ * Pre-filled message for Learn and Grow English course enrollment inquiries
  */
 export function getEnrollmentWhatsAppUrl(email?: string): string {
   let message =
-    "Hello, I am interested in joining your 8-week English learning course. Please share the syllabus, course fee, payment instructions, and enrollment procedure.";
+    "Hello! I am interested in joining Learn and Grow's 8-Week English Learning Course (Speak English with Confidence). Please share the syllabus, course fee, payment instructions, and enrollment procedure.";
 
   if (email) {
     message += ` (Registered Email: ${email})`;
@@ -78,6 +82,6 @@ export function getWeekInquiryWhatsAppUrl(
   weekNumber: number,
   weekTitle: string
 ): string {
-  const message = `Hello! I have a question regarding Week ${weekNumber} (${weekTitle}) of the 8-Week English Learning Course. Could you please share more details on the lesson plan and enrollment?`;
+  const message = `Hello Learn and Grow team! I have a question regarding Week ${weekNumber} (${weekTitle}) of the 8-Week English Learning Course. Could you please share more details on the lesson plan and enrollment?`;
   return buildWhatsAppUrl(message);
 }
