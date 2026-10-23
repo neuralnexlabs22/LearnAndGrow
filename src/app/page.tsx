@@ -83,72 +83,110 @@ export default async function HomePage() {
       <Navbar currentUser={user} subscriptionStatus={subscriptionStatus} />
 
       <main className="flex-1">
-        {/* HERO SECTION — Speak English with Confidence */}
-        <section className="relative overflow-hidden pt-12 pb-20 md:pt-20 md:pb-28 border-b border-[#E7E2D6] bg-gradient-to-b from-[#F5F2EB]/60 via-[#FBF9F5] to-[#FBF9F5]">
+        {/* HERO SECTION — Help Your Child Speak English with Confidence */}
+        <section className="relative overflow-hidden pt-10 pb-16 md:pt-16 md:pb-24 border-b border-[#E7E2D6] bg-gradient-to-b from-[#F5F2EB]/60 via-[#FBF9F5] to-[#FBF9F5]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="max-w-3xl mx-auto text-center space-y-6">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EFECE4] text-[#44403C] border border-[#DCD4C4] text-xs font-semibold tracking-wide shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-[#15803D] animate-pulse" />
-                <span className="text-[#0F2D59] font-bold">Learn and Grow</span>
-                <span className="text-[#A8A29E]">•</span>
-                <span className="tracking-wider text-[11px] font-semibold text-[#57534E]">LEARN | IMPROVE | ACHIEVE</span>
-                <span className="text-[#A8A29E] hidden sm:inline">•</span>
-                <span className="hidden sm:inline text-[#15803D] font-medium">8-Week Course</span>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+              {/* Left Column: Headline, Description, CTAs, Trust Signals */}
+              <div className="lg:col-span-7 space-y-6 text-left">
+                {/* Brand & Course Badge */}
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EFECE4] text-[#44403C] border border-[#DCD4C4] text-xs font-semibold tracking-wide shadow-xs">
+                  <span className="w-2 h-2 rounded-full bg-[#15803D] animate-pulse" />
+                  <span className="text-[#0F2D59] font-bold">Learn and Grow</span>
+                  <span className="text-[#A8A29E]">•</span>
+                  <span className="tracking-wider text-[11px] font-semibold text-[#57534E]">LEARN | IMPROVE | ACHIEVE</span>
+                  <span className="text-[#A8A29E] hidden sm:inline">•</span>
+                  <span className="hidden sm:inline text-[#15803D] font-medium">8-Week Course</span>
+                </div>
+
+                {/* Main Heading */}
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.2rem] font-extrabold text-[#1C1917] tracking-tight leading-[1.15]">
+                  Help Your Child Speak English with{" "}
+                  <span className="text-[#C25E38] underline decoration-[#C25E38]/30 decoration-wavy decoration-2">
+                    Confidence
+                  </span>
+                </h1>
+
+                {/* Description */}
+                <p className="text-base sm:text-lg text-[#57534E] leading-relaxed max-w-xl">
+                  Build strong English foundations through an engaging 8-week learning journey designed to develop grammar, vocabulary, speaking, and communication skills.
+                </p>
+
+                {/* CTA Buttons */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2">
+                  <Link
+                    href="/course"
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-base font-semibold bg-[#C25E38] hover:bg-[#A94E2C] text-white shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
+                  >
+                    <BookOpen className="w-5 h-5" />
+                    <span>Explore the Course</span>
+                    <ArrowRight className="w-4 h-4 ml-1" />
+                  </Link>
+
+                  <a
+                    href={whatsAppUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-base font-semibold bg-[#15803D] hover:bg-[#166534] text-white shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
+                  >
+                    <MessageCircle className="w-5 h-5 fill-white" />
+                    <span>Enroll via WhatsApp</span>
+                  </a>
+                </div>
+
+                {/* Key Trust Signals */}
+                <div className="pt-3 flex flex-wrap items-center gap-y-2.5 gap-x-5 text-xs text-[#78716C]">
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
+                    <span>8 Weekly PDF Workbooks</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
+                    <span>Spoken English Drills</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
+                    <span>Direct WhatsApp Instructor Support</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
+                    <span>Verified Course Completion</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Main Heading */}
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-[#1C1917] tracking-tight leading-[1.15]">
-                Speak English with{" "}
-                <span className="text-[#C25E38] underline decoration-[#C25E38]/30 decoration-wavy decoration-2">
-                  Confidence
-                </span>
-              </h1>
+              {/* Right Column: High Quality Photograph of Children Learning */}
+              <div className="lg:col-span-5 relative mt-4 lg:mt-0">
+                <div className="relative mx-auto max-w-lg lg:max-w-none">
+                  {/* Subtle warm decorative glow */}
+                  <div className="absolute -inset-2 bg-gradient-to-tr from-[#C25E38]/15 via-[#2E7D32]/10 to-[#0F2D59]/10 rounded-3xl blur-xl opacity-70 -z-10" />
 
-              {/* Compelling Description */}
-              <p className="text-lg sm:text-xl text-[#57534E] leading-relaxed max-w-2xl mx-auto">
-                {COURSE_CONFIG.tagline}
-              </p>
+                  {/* Image Card Container */}
+                  <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-[#D4CDBC] bg-white p-2 shadow-xl beige-card-shadow">
+                    <picture>
+                      <source srcSet="/images/children-learning-english.webp" type="image/webp" />
+                      <img
+                        src="/images/children-learning-english.jpg"
+                        alt="Young school children happily learning and reading English books together in a classroom"
+                        width={1200}
+                        height={900}
+                        loading="eager"
+                        fetchPriority="high"
+                        className="w-full h-auto aspect-[4/3] object-cover rounded-xl sm:rounded-2xl"
+                      />
+                    </picture>
 
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-4">
-                <Link
-                  href="/course"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-base font-semibold bg-[#C25E38] hover:bg-[#A94E2C] text-white shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
-                >
-                  <BookOpen className="w-5 h-5" />
-                  <span>Explore Course Syllabus</span>
-                  <ArrowRight className="w-4 h-4 ml-1" />
-                </Link>
-
-                <a
-                  href={whatsAppUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-base font-semibold bg-[#15803D] hover:bg-[#166534] text-white shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
-                >
-                  <MessageCircle className="w-5 h-5 fill-white" />
-                  <span>Enroll via WhatsApp</span>
-                </a>
-              </div>
-
-              {/* Key Trust Signals */}
-              <div className="pt-8 flex flex-wrap items-center justify-center gap-y-2 gap-x-6 text-xs text-[#78716C]">
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
-                  <span>8 Weekly PDF Workbooks</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
-                  <span>Spoken English Drills</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
-                  <span>Direct WhatsApp Instructor Support</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
-                  <span>Verified Course Completion</span>
+                    {/* Subtle floating badge */}
+                    <div className="absolute bottom-4 left-4 right-4 sm:right-auto sm:max-w-[280px] bg-white/95 backdrop-blur-md border border-[#D4CDBC] rounded-xl p-3 shadow-md flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-[#ECFDF5] text-[#15803D] flex items-center justify-center shrink-0 border border-[#A7F3D0]">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-[#1C1917]">Interactive & Engaging</p>
+                        <p className="text-[10px] text-[#78716C] leading-tight">Structured for young learners & everyday speaking confidence</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
