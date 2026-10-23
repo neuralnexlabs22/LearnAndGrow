@@ -1,0 +1,213 @@
+{
+  "users": [
+    {
+      "id": "admin-001",
+      "name": "Course Administrator",
+      "email": "admin@course.edu",
+      "role": "admin",
+      "passwordHash": "AdminPass123!",
+      "createdAt": "2026-09-01T10:00:00.000Z"
+    },
+    {
+      "id": "student-001",
+      "name": "Alex Rivera",
+      "email": "active.student@example.com",
+      "role": "student",
+      "passwordHash": "StudentPass123!",
+      "createdAt": "2026-09-05T14:30:00.000Z"
+    },
+    {
+      "id": "student-002",
+      "name": "Samantha Chen",
+      "email": "pending.student@example.com",
+      "role": "student",
+      "passwordHash": "StudentPass123!",
+      "createdAt": "2026-09-12T09:15:00.000Z"
+    },
+    {
+      "id": "student-003",
+      "name": "Marcus Vance",
+      "email": "revoked.student@example.com",
+      "role": "student",
+      "passwordHash": "StudentPass123!",
+      "createdAt": "2026-09-02T11:20:00.000Z"
+    }
+  ],
+  "subscriptions": [
+    {
+      "id": "sub-001",
+      "studentId": "student-001",
+      "status": "active",
+      "approvedBy": "admin-001",
+      "approvedAt": "2026-09-06T10:00:00.000Z",
+      "notes": "Payment verified via WhatsApp and approved.",
+      "createdAt": "2026-09-05T14:30:00.000Z",
+      "updatedAt": "2026-09-06T10:00:00.000Z"
+    },
+    {
+      "id": "sub-002",
+      "studentId": "student-002",
+      "status": "active",
+      "notes": "Enquiry received. Waiting for WhatsApp bank transfer confirmation.",
+      "createdAt": "2026-09-12T09:15:00.000Z",
+      "updatedAt": "2026-10-23T12:52:44.352Z",
+      "approvedBy": "admin-001",
+      "approvedAt": "2026-10-23T12:52:44.352Z"
+    },
+    {
+      "id": "sub-003",
+      "studentId": "student-003",
+      "status": "revoked",
+      "approvedBy": "admin-001",
+      "notes": "Access revoked due to policy violation.",
+      "createdAt": "2026-09-02T11:20:00.000Z",
+      "updatedAt": "2026-09-10T16:00:00.000Z"
+    }
+  ],
+  "weeks": [
+    {
+      "id": "week-1",
+      "weekNumber": 1,
+      "title": "Core Architecture, Execution Context & Modern ES6+ Systems",
+      "description": "Understand JavaScript runtime engines, call stacks, event loops, memory lifecycle, and clean code patterns for scalable engineering.",
+      "learningObjectives": [
+        "JavaScript Engine Internals (V8 & SpiderMonkey)",
+        "Execution Context, Call Stack & Microtask Queue",
+        "Memory Allocation, Garbage Collection & Leak Prevention",
+        "Modern ES6+ Modules, Iterators & Immutable Data Patterns"
+      ],
+      "pdfFilename": "Week-01-Architecture-Context.pdf",
+      "pdfStoragePath": "week-1/Week-01-Architecture-Context.pdf",
+      "pdfFilesizeBytes": 24800,
+      "isPublished": true,
+      "createdAt": "2026-10-23T12:46:17.246Z",
+      "updatedAt": "2026-10-23T12:46:17.248Z"
+    },
+    {
+      "id": "week-2",
+      "weekNumber": 2,
+      "title": "Component Architecture, Reactive State & High-Performance UI",
+      "description": "Design composable component hierarchies, understand virtual DOM diffing, master custom state hooks, and optimize rendering pipelines.",
+      "learningObjectives": [
+        "Atomic Design & Modular Component Hierarchies",
+        "Reactivity Models & Virtual DOM Reconciliation",
+        "Custom Hook Factories & Fine-Grained State Primitives",
+        "Render Tree Profiling, Memoization & Layout Shifts"
+      ],
+      "pdfFilename": "Week-02-Reactive-State.pdf",
+      "pdfStoragePath": "week-2/Week-02-Reactive-State.pdf",
+      "pdfFilesizeBytes": 26100,
+      "isPublished": true,
+      "createdAt": "2026-10-23T12:46:17.248Z",
+      "updatedAt": "2026-10-23T12:46:17.248Z"
+    },
+    {
+      "id": "week-3",
+      "weekNumber": 3,
+      "title": "Backend Services, REST Protocols & Edge Middleware Architecture",
+      "description": "Build production-grade server endpoints, handle streaming requests, design robust API contracts, and leverage edge middleware.",
+      "learningObjectives": [
+        "HTTP/2 & HTTP/3 Transport Mechanics",
+        "RESTful API Design Standards & Idempotency",
+        "Edge Middleware, Routing & Request Pipelines",
+        "Error Handling Standards & Structured Logging"
+      ],
+      "pdfFilename": null,
+      "pdfStoragePath": null,
+      "pdfFilesizeBytes": null,
+      "isPublished": true,
+      "createdAt": "2026-10-23T12:46:17.248Z",
+      "updatedAt": "2026-10-23T12:46:17.248Z"
+    },
+    {
+      "id": "week-4",
+      "weekNumber": 4,
+      "title": "Relational Databases, PostgreSQL Modeling & ACID Transactions",
+      "description": "Master relational schema modeling, foreign key constraints, indexes, connection pooling, and multi-step ACID transactions.",
+      "learningObjectives": [
+        "Normalized Relational Schema Design (3NF)",
+        "Indexes: B-Tree, Hash, GIN & Query Planners",
+        "ACID Guarantees, Isolation Levels & Concurrency",
+        "Connection Pooling & Migration Workflows"
+      ],
+      "pdfFilename": null,
+      "pdfStoragePath": null,
+      "pdfFilesizeBytes": null,
+      "isPublished": true,
+      "createdAt": "2026-10-23T12:46:17.248Z",
+      "updatedAt": "2026-10-23T12:46:17.248Z"
+    },
+    {
+      "id": "week-5",
+      "weekNumber": 5,
+      "title": "Authentication, Role-Based Access Control & Web Security Hardening",
+      "description": "Implement defense-in-depth security: JWTs, secure HTTP-only cookie sessions, CSRF/XSS defenses, rate limiting, and RLS.",
+      "learningObjectives": [
+        "Token Mechanics: Refresh & Access Token Lifecycles",
+        "Secure Cookie Flags (HttpOnly, SameSite, Secure)",
+        "Threat Mitigation: CSRF, XSS, SSRF & Injection",
+        "Row Level Security (RLS) & Granular RBAC Gates"
+      ],
+      "pdfFilename": null,
+      "pdfStoragePath": null,
+      "pdfFilesizeBytes": null,
+      "isPublished": true,
+      "createdAt": "2026-10-23T12:46:17.248Z",
+      "updatedAt": "2026-10-23T12:46:17.248Z"
+    },
+    {
+      "id": "week-6",
+      "weekNumber": 6,
+      "title": "Real-Time Synchronization, WebSockets & Distributed Caching",
+      "description": "Implement duplex communication channels, handle optimistic UI updates, and design multi-tiered Redis caching strategies.",
+      "learningObjectives": [
+        "WebSocket Protocol Handshakes & Heartbeats",
+        "Pub/Sub Architectures & Presence Tracking",
+        "Cache Invalidation Patterns (Stale-While-Revalidate)",
+        "Optimistic UI State & Event Reconciliation"
+      ],
+      "pdfFilename": null,
+      "pdfStoragePath": null,
+      "pdfFilesizeBytes": null,
+      "isPublished": true,
+      "createdAt": "2026-10-23T12:46:17.248Z",
+      "updatedAt": "2026-10-23T12:46:17.248Z"
+    },
+    {
+      "id": "week-7",
+      "weekNumber": 7,
+      "title": "Automated Testing, CI/CD Pipelines & Containerized Environments",
+      "description": "Write unit, integration, and end-to-end tests; configure GitHub Actions CI/CD workflows, Docker containers, and artifact validation.",
+      "learningObjectives": [
+        "Test-Driven Design: Unit, Integration & Contract Testing",
+        "End-to-End Browser Automation with Playwright",
+        "Containerization with Multi-Stage Dockerfiles",
+        "Automated CI/CD Validation & Staging Deployments"
+      ],
+      "pdfFilename": null,
+      "pdfStoragePath": null,
+      "pdfFilesizeBytes": null,
+      "isPublished": true,
+      "createdAt": "2026-10-23T12:46:17.248Z",
+      "updatedAt": "2026-10-23T12:46:17.248Z"
+    },
+    {
+      "id": "week-8",
+      "weekNumber": 8,
+      "title": "Capstone Architecture, Production Observability & Performance Audits",
+      "description": "Bring everything together into a scalable capstone project. Perform Core Web Vitals audits, configure OpenTelemetry, and deploy.",
+      "learningObjectives": [
+        "Full-Stack Production System Architecture",
+        "Core Web Vitals (LCP, INP, CLS) Optimization",
+        "APM Observability, Metrics & Telemetry Tracing",
+        "Final Production Audit, Security Checklist & Launch"
+      ],
+      "pdfFilename": null,
+      "pdfStoragePath": null,
+      "pdfFilesizeBytes": null,
+      "isPublished": true,
+      "createdAt": "2026-10-23T12:46:17.248Z",
+      "updatedAt": "2026-10-23T12:46:17.248Z"
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+:root {
+  --background: #FBF9F5;
+  --foreground: #1C1917;
+  --surface: #FFFFFF;
+  --surface-alt: #F5F2EB;
+  --surface-subtle: #EFECE4;
+  --border-subtle: #E7E2D6;
+  --border-strong: #D4CDBC;
+  --primary: #C25E38;
+  --primary-hover: #A94E2C;
+  --primary-light: #FBF0EB;
+  --primary-foreground: #FFFFFF;
+  --accent-gold: #B45309;
+  --accent-gold-bg: #FEF3C7;
+  --success: #15803D;
+  --success-bg: #ECFDF5;
+  --success-border: #A7F3D0;
+  --whatsapp: #1B8A46;
+  --whatsapp-hover: #166F37;
+  --muted: #78716C;
+  --muted-dark: #57534E;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-alt: var(--surface-alt);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent-gold: var(--accent-gold);
+  --color-accent-gold-bg: var(--accent-gold-bg);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-whatsapp: var(--whatsapp);
+  --color-whatsapp-hover: var(--whatsapp-hover);
+  --color-muted: var(--muted);
+  --color-muted-dark: var(--muted-dark);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar matching beige aesthetic */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F5F2EB;
+}
+::-webkit-scrollbar-thumb {
+  background: #D4CDBC;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #B8B09F;
+}
+
+/* Subtle card shadow */
+.beige-card-shadow {
+  box-shadow: 0 4px 20px -2px rgba(44, 38, 30, 0.05), 0 2px 6px -1px rgba(44, 38, 30, 0.03);
+}
+
+.beige-card-hover {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.beige-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -4px rgba(44, 38, 30, 0.09), 0 4px 10px -2px rgba(44, 38, 30, 0.04);
+}

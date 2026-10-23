@@ -1,0 +1,106 @@
+%PDF-1.4
+1 0 obj
+<<
+  /Type /Catalog
+  /Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+  /Type /Pages
+  /Kids [3 0 R]
+  /Count 1
+>>
+endobj
+3 0 obj
+<<
+  /Type /Page
+  /Parent 2 0 R
+  /MediaBox [0 0 595 842]
+  /Contents 4 0 R
+  /Resources <<
+    /Font <<
+      /F1 <<
+        /Type /Font
+        /Subtype /Type1
+        /BaseFont /Helvetica-Bold
+      >>
+      /F2 <<
+        /Type /Font
+        /Subtype /Type1
+        /BaseFont /Helvetica
+      >>
+    >>
+  >>
+>>
+endobj
+4 0 obj
+<<
+  /Length 1435
+>>
+stream
+BT
+/F1 20 Tf
+50 750 Td
+(MODERN WEB ENGINEERING: 8-WEEK INTENSIVE COURSE) Tj
+/F1 14 Tf
+0 -35 Td
+(WEEK 2: COMPONENT ARCHITECTURE, REACTIVE STATE & HIGH-PERFORMANCE UI) Tj
+/F2 11 Tf
+0 -30 Td
+(Official Student Study Guide & Reference Materials) Tj
+0 -20 Td
+(Confidential - Authorized Enrolled Student Access Only) Tj
+0 -30 Td
+/F1 12 Tf
+(MODULE OVERVIEW:) Tj
+/F2 10 Tf
+0 -20 Td
+(Design composable component hierarchies, understand virtual DOM diffing, master custo) Tj
+0 -15 Td
+(m state hooks, and optimize rendering pipelines.) Tj
+0 -30 Td
+/F1 12 Tf
+(KEY LEARNING OBJECTIVES & CORE SYLLABUS:) Tj
+/F2 10 Tf
+0 -18 Td
+([01]  Atomic Design & Modular Component Hierarchies) Tj
+0 -18 Td
+([02]  Reactivity Models & Virtual DOM Reconciliation) Tj
+0 -18 Td
+([03]  Custom Hook Factories & Fine-Grained State Primitives) Tj
+0 -18 Td
+([04]  Render Tree Profiling, Memoization & Layout Shifts) Tj
+0 -35 Td
+/F1 11 Tf
+(PRACTICAL EXERCISES & LAB MILESTONES:) Tj
+/F2 10 Tf
+0 -18 Td
+(- Complete the hands-on code exercises described in repository module 2.) Tj
+0 -15 Td
+(- Submit your architecture review via the designated student portal or WhatsApp advisory.) Tj
+0 -15 Td
+(- Verify test coverage and pass all CI assertions before progressing to the next module.) Tj
+0 -40 Td
+/F2 9 Tf
+(Instructor Support: Contact Course Administrator via WhatsApp for 1-on-1 feedback.) Tj
+0 -15 Td
+(Copyright 2026 Modern Web Engineering Course. All Rights Reserved.) Tj
+ET
+endstream
+endobj
+xref
+0 5
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000305 00000 n 
+trailer
+<<
+  /Size 5
+  /Root 1 0 R
+>>
+startxref
+1835
+%%EOF
