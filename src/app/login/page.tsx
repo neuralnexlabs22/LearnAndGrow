@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookOpen, Lock, Mail, ArrowRight, Loader2, ShieldCheck, UserCheck, Clock } from "lucide-react";
+import { COURSE_CONFIG } from "@/lib/config";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -30,7 +31,6 @@ export default function LoginPage() {
         throw new Error(data.error || "Login failed.");
       }
 
-      // If user is admin, go to /admin; else go to /course
       if (data.user?.role === "admin") {
         window.location.href = "/admin";
       } else {
@@ -59,14 +59,14 @@ export default function LoginPage() {
             <BookOpen className="w-5 h-5 text-[#FAF8F5]" />
           </div>
           <span className="font-bold text-xl text-[#1C1917] tracking-tight">
-            Modern Web Engineering
+            {COURSE_CONFIG.shortTitle}
           </span>
         </Link>
         <h2 className="text-2xl font-bold text-[#1C1917] tracking-tight">
           Sign In to Your Student Account
         </h2>
         <p className="mt-1 text-xs text-[#78716C]">
-          Access protected 8-week course modules and study guides
+          Access protected 8-week English workbooks and practice materials
         </p>
       </div>
 
@@ -160,7 +160,7 @@ export default function LoginPage() {
                   </div>
                 </div>
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#FEF3C7] text-[#92400E]">
-                  Full Access
+                  Full Admin Access
                 </span>
               </button>
 
@@ -186,7 +186,7 @@ export default function LoginPage() {
                   </div>
                 </div>
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#ECFDF5] text-[#065F46]">
-                  Active Sub
+                  Active Sub & Graduate
                 </span>
               </button>
 
@@ -204,7 +204,7 @@ export default function LoginPage() {
                   <Clock className="w-4 h-4 text-[#B45309]" />
                   <div>
                     <p className="text-xs font-bold text-[#1C1917]">
-                      Pending Student (Samantha)
+                      Student (Samantha)
                     </p>
                     <p className="text-[11px] text-[#78716C]">
                       pending.student@example.com
@@ -212,7 +212,7 @@ export default function LoginPage() {
                   </div>
                 </div>
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#FFFBEB] text-[#92400E]">
-                  Pending
+                  In Progress
                 </span>
               </button>
             </div>

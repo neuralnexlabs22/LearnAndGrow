@@ -14,9 +14,10 @@ import {
   CheckCircle2,
   Clock,
   Sparkles,
+  Award,
 } from "lucide-react";
 import { UserProfile, SubscriptionStatus } from "@/types";
-import { getEnrollmentWhatsAppUrl } from "@/lib/config";
+import { COURSE_CONFIG, getEnrollmentWhatsAppUrl } from "@/lib/config";
 
 interface NavbarProps {
   currentUser: UserProfile | null;
@@ -58,14 +59,14 @@ export function Navbar({ currentUser, subscriptionStatus }: NavbarProps) {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-lg text-[#1C1917] tracking-tight">
-                  Modern Web Engineering
+                  {COURSE_CONFIG.shortTitle}
                 </span>
                 <span className="text-[11px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-[#EFECE4] text-[#57534E] border border-[#DCD4C4]">
                   8 Weeks
                 </span>
               </div>
               <p className="text-xs text-[#78716C] hidden sm:block">
-                Structured Student Learning Platform
+                Structured English Learning Platform
               </p>
             </div>
           </Link>
@@ -111,23 +112,26 @@ export function Navbar({ currentUser, subscriptionStatus }: NavbarProps) {
 
           {/* Desktop Right Side CTA & Auth */}
           <div className="hidden md:flex items-center gap-3">
-            {/* WhatsApp Enroll Button */}
             <a
               href={whatsAppUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#15803D] hover:bg-[#166534] text-white shadow-sm transition-all hover:shadow active:scale-[0.98]"
-              title="Chat with course instructor on WhatsApp"
+              title="Chat with English instructor on WhatsApp"
             >
               <MessageCircle className="w-4 h-4 fill-white text-white" />
               <span>WhatsApp Enroll</span>
             </a>
 
-            {/* Auth Buttons / Profile Indicator */}
             {currentUser ? (
               <div className="flex items-center gap-2 pl-2 border-l border-[#E7E2D6]">
-                <div className="flex flex-col items-end">
-                  <span className="text-xs font-semibold text-[#1C1917] max-w-[130px] truncate">
+                <img
+                  src={`/api/students/${currentUser.id}/photo`}
+                  alt={currentUser.name}
+                  className="w-8 h-8 rounded-full object-cover border border-[#DCD4C4] bg-[#FAF8F5]"
+                />
+                <div className="flex flex-col items-start">
+                  <span className="text-xs font-semibold text-[#1C1917] max-w-[120px] truncate">
                     {currentUser.name}
                   </span>
                   {currentUser.role === "admin" ? (
@@ -250,14 +254,21 @@ export function Navbar({ currentUser, subscriptionStatus }: NavbarProps) {
 
             {currentUser ? (
               <div className="bg-[#F5F2EB] p-3 rounded-lg flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-[#1C1917]">
-                    {currentUser.name}
-                  </p>
-                  <p className="text-xs text-[#78716C]">{currentUser.email}</p>
-                  <p className="text-xs font-medium text-[#C25E38] mt-0.5 capitalize">
-                    Status: {subscriptionStatus || "pending"}
-                  </p>
+                <div className="flex items-center gap-2.5">
+                  <img
+                    src={`/api/students/${currentUser.id}/photo`}
+                    alt={currentUser.name}
+                    className="w-9 h-9 rounded-full object-cover border border-[#D4CDBC]"
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-[#1C1917]">
+                      {currentUser.name}
+                    </p>
+                    <p className="text-xs text-[#78716C]">{currentUser.email}</p>
+                    <p className="text-xs font-medium text-[#C25E38] capitalize">
+                      Status: {subscriptionStatus || "pending"}
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={handleLogout}

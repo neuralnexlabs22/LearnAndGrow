@@ -1,78 +1,98 @@
-# 8-Week Student Course Platform (Modern Web Engineering)
+# 8-Week English Learning Course Platform: "Speak English with Confidence"
 
-A modern, responsive, and secure online learning platform designed exclusively for an intensive 8-week student course. Built with a refined **warm beige editorial aesthetic**, private PDF storage, WhatsApp click-to-chat enrollment workflow, and an administrator dashboard for course material and student subscription management.
+A modern, responsive, and secure online learning platform designed exclusively for an intensive 8-week English learning course. Built with a refined **warm beige editorial aesthetic**, private PDF study workbooks, verified course completion tracking, a 5-star student review & success stories system, WhatsApp click-to-chat enrollment workflow, and an administrator dashboard for complete course management.
 
 ---
 
-## 🌟 Key Features
+## 🌟 Key Features & Capabilities
 
-1. **Beige-Based Editorial UI**
-   - Curated warm ivory, linen cream, sand, and espresso charcoal color palette (`#FBF9F5`, `#F5F2EB`, `#E7E2D6`, `#1C1917`).
-   - Clean visual hierarchy, crisp card shadows, and subtle micro-transitions.
-   - Built with Next.js App Router, TypeScript, and Tailwind CSS.
+### 1. English Learning Course Curriculum & Landing Experience
+- **Home Page (`/`)**:
+  - Hero headline: *"Speak English with Confidence"*.
+  - Compelling subtitle: *"Build your English skills step by step through an 8-week learning journey covering grammar, vocabulary, speaking, listening, and everyday communication."*
+  - **Live Course Completion Counter**: Displays real verified database count of unique graduates (*"X Students Who Completed the Course"*).
+  - **Six Core English Mastery Areas**: English Grammar, Vocabulary Building, Spoken English, Pronunciation & Accent Clarity, Listening Comprehension, Writing Precision.
+  - **8-Week Progression Cards**: Week 1 through Week 8 visual syllabus roadmap.
+  - **Student Success Stories & Verified Reviews**: Real feedback with student photos/avatars, 5-star ratings, and "Course Graduate" badges.
+  - **5-Step WhatsApp Enrollment Guide**: Clear steps explaining direct WhatsApp inquiry, fee payment outside platform, manual verification, and account unlock.
+- **Course Page (`/course`)**:
+  - Full 8-Week English syllabus with editable lesson plans:
+    1. *Week 1: English Foundations and Basic Sentence Formation*
+    2. *Week 2: Grammar and Tenses Mastery*
+    3. *Week 3: Vocabulary and Everyday Expressions*
+    4. *Week 4: Spoken English and Conversation Practice*
+    5. *Week 5: Pronunciation, Accent Clarity and Listening Skills*
+    6. *Week 6: Reading Comprehension and Writing Precision*
+    7. *Week 7: Communication Skills and Real-Life Situations*
+    8. *Week 8: Revision, Practical Exercises, and Final Assessment*
+  - Real-time student access status banner (*Visitor Preview*, *Pending Approval*, *Active Enrolled*, or *Revoked*).
+  - In-app PDF Viewer Modal (`PdfViewerModal`) for private workbook previewing.
 
-2. **Dedicated Two Main Public Pages**
-   - **Home Page (`/`)**:
-     - Hero section with 8-week badge, course summary, and primary/secondary CTAs.
-     - Course introduction (who the course is for, learning objectives).
-     - 8-Week curriculum progression grid.
-     - What students receive (PDF compendiums, WhatsApp advisory, private storage).
-     - 5-Step WhatsApp enrollment workflow breakdown.
-     - Frequently Asked Questions accordion.
-     - Responsive navigation and footer with WhatsApp contact details.
-   - **Course Page (`/course`)**:
-     - Complete 8-week syllabus and learning milestones.
-     - Real-time student access status banner (Visitor Preview, Pending Approval, Active Access, or Revoked).
-     - Exactly 8 weekly modules with locked/unlocked state enforcement.
-     - In-app PDF Viewer Modal (`PdfViewerModal`) for seamless reading.
-     - WhatsApp instructor advisory banner.
+### 2. Student Photo UI & Profile System
+- Display student profile photos or clean default SVG avatars in reviews, success stories, navbar, and admin tables.
+- Students and administrators can upload, replace, or remove profile photos (JPG, PNG, WEBP, max 5MB).
+- Strict student consent controls (`publicConsent`) to safeguard student privacy.
 
-3. **WhatsApp Click-to-Chat Integration**
-   - Configurable admin WhatsApp number via `NEXT_PUBLIC_ADMIN_WHATSAPP_NUMBER`.
-   - Strict `https://wa.me/COUNTRYCODEPHONENUMBER?text=ENCODED_MESSAGE` formatting.
-   - Pre-filled messages tailored to course inquiries, fees, and specific weekly modules.
-   - Clear on-site explanation: enrollment and tuition are verified manually outside the platform before course materials are unlocked.
+### 3. Student Review & Five-Star Rating System
+- 5-star rating system with written feedback for authenticated students.
+- New submissions default to `pending` status until approved by the administrator.
+- Students can edit or withdraw their own review at any time.
+- Visitors can view all approved reviews without logging in.
+- **Admin Reviews Management**:
+  - Filter reviews by *All*, *Pending*, *Approved*, and *Rejected*.
+  - Approve or reject reviews with a single click.
+  - Feature selected approved reviews on the Home page.
+  - Permanently remove inappropriate reviews with confirmation dialogs.
+  - Real-time average approved rating and total review counts calculated from the database.
 
-4. **Robust Authentication & Subscription Control**
-   - Student registration, sign-in, and sign-out.
-   - Distinct subscription statuses: `pending`, `active`, `rejected`, `revoked`.
-   - Newly registered students automatically start with `pending` status.
-   - Separation of authentication and subscription authorization: only `active` students and administrators can access materials.
+### 4. Verified Course Completion Counter
+- Prominent live counter on the Home page reflecting unique students whose course completion has been verified by the instructor.
+- Completion statuses supported: `enrolled`, `in_progress`, `completed`, `revoked`.
+- Only authorized administrators can mark a student as `completed` after evaluating their progress and assignments.
+- Records exact completion timestamp (`completedAt`).
+- Zero hardcoded or fabricated statistics.
 
-5. **Private PDF Storage & Secure Delivery**
-   - Course files are stored in a private directory (`private_uploads/course-materials/` or private Supabase Storage bucket).
-   - Never placed in public asset folders.
-   - Protected API routes:
-     - `/api/materials/[weekNumber]/download`
-     - `/api/materials/[weekNumber]/view`
-   - Strict server-side verification: unauthorized requests return HTTP `401 Unauthorized` or `403 Forbidden`.
-   - Headers enforce non-caching (`Cache-Control: private, no-store, max-age=0`).
+### 5. WhatsApp Click-to-Chat Integration
+- Formats links strictly as `https://wa.me/COUNTRYCODEPHONENUMBER?text=ENCODED_MESSAGE`.
+- Configurable administrator number via `NEXT_PUBLIC_ADMIN_WHATSAPP_NUMBER`.
+- Pre-filled message:
+  `"Hello, I am interested in joining your 8-week English learning course. Please share the syllabus, course fee, payment instructions, and enrollment procedure."`
+- Clear explanation that clicking WhatsApp does not unlock the course automatically; manual verification is required.
 
-6. **Admin Dashboard (`/admin`)**
-   - Server-side role protection: only accounts with `role: 'admin'` can access. Non-admins are redirected or blocked.
-   - **Overview Metrics**: Total registered students, Active subscriptions, Pending verification count, Total uploaded PDFs.
-   - **Course Content Management**:
-     - Upload, replace, or delete PDF for each of the 8 weeks.
-     - PDF-only validation and 25MB file size limit.
-     - Edit week title, description, and learning objectives.
-     - Publish/unpublish weekly materials toggle.
-     - Instant in-app PDF preview.
-     - Confirmation modal before deleting materials.
-   - **Student Management**:
-     - Search students by name or email.
-     - Filter tabs: All, Pending, Active, Revoked, Rejected.
-     - Actions: Approve subscription, Reject pending, Revoke active access (with confirmation), and Re-activate.
+### 6. Protected Admin Dashboard (`/admin`)
+- Accessible only by verified administrators (`role: 'admin'`).
+- **Live Statistics Overview**:
+  - Total registered students
+  - Active subscriptions
+  - Students currently in progress
+  - Course graduates (completed students)
+  - Pending reviews (with pulsing alert indicator)
+  - Approved reviews count
+  - Average approved rating
+  - Uploaded weekly learning workbooks
+- **Tab 1: Course Modules & PDF Materials (8 Weeks)**:
+  - Upload/replace/delete PDF workbooks (PDF only, 25MB max).
+  - Edit week titles, descriptions, and learning objectives.
+  - Toggle published/draft visibility.
+  - Preview workbooks in-app.
+- **Tab 2: Students & Completion Tracking**:
+  - Search students by name or email.
+  - Manage student profile photos.
+  - Approve or reject subscription upon payment confirmation.
+  - Update completion status (`enrolled`, `in_progress`, `completed`, `revoked`).
+- **Tab 3: Reviews Management**:
+  - Moderate student reviews, approve public display, feature on Home page, or delete.
 
 ---
 
 ## 🛠️ Technology Stack
 
 - **Framework**: Next.js 16 (App Router) with TypeScript
-- **Styling**: Tailwind CSS with custom warm beige theme tokens
+- **Styling**: Tailwind CSS with bespoke warm beige theme tokens
 - **Icons**: Lucide React
-- **Database & Storage**:
+- **Storage & Database**:
   - Resilient Local Persistent Storage (`data/course_store.json` & `private_uploads/`) for zero-friction local development and testing.
-  - Production-ready PostgreSQL & Private Storage with Supabase (`supabase/schema.sql` included with full RLS policies).
+  - Production-ready PostgreSQL & Storage with Supabase (`supabase/schema.sql` included with full RLS policies).
 
 ---
 
@@ -82,69 +102,27 @@ A modern, responsive, and secure online learning platform designed exclusively f
 - Node.js 18+ (tested on Node v24)
 - npm 9+
 
-### 2. Installation
-```bash
-git clone <repo-url>
-cd course
-npm install
-```
-
-### 3. Environment Variables
-Copy `.env.example` to `.env.local`:
-```bash
-cp .env.example .env.local
-```
-
-Configure your administrator WhatsApp number (digits only, country code + number):
+### 2. Environment Variables
+Create or verify `.env.local`:
 ```env
 NEXT_PUBLIC_ADMIN_WHATSAPP_NUMBER=15550192834
 ```
 
-### 4. Running the Development Server
+### 3. Run Development Server
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 
 ---
 
 ## 🔑 Pre-Configured Test Accounts
 
-The platform includes pre-seeded demo accounts with one-click switcher buttons on the `/login` page:
-
-| Role | Email | Password | Status / Access |
+| Account | Email | Password | Role & Status |
 |---|---|---|---|
-| **Course Administrator** | `admin@course.edu` | `AdminPass123!` | Full Admin Dashboard & All PDFs |
-| **Active Student (Alex)** | `active.student@example.com` | `StudentPass123!` | Active (Unlocked 8-week PDFs) |
-| **Pending Student (Samantha)** | `pending.student@example.com` | `StudentPass123!` | Pending (Locked, WhatsApp prompt) |
-| **Revoked Student (Marcus)** | `revoked.student@example.com` | `StudentPass123!` | Revoked (Access suspended) |
+| **Course Administrator** | `admin@course.edu` | `AdminPass123!` | Administrator (Admin Dashboard & Review Moderation) |
+| **Active Graduate Student (Alex)** | `active.student@example.com` | `StudentPass123!` | Active Enrolled, Verified Graduate |
+| **Active Student (Samantha)** | `pending.student@example.com` | `StudentPass123!` | Active Enrolled, In Progress |
+| **Revoked Student (Marcus)** | `revoked.student@example.com` | `StudentPass123!` | Revoked Access (403 Forbidden on protected files) |
 
-Visitors can also register any new student account on `/register`. New accounts immediately begin with `pending` status until approved by the admin.
-
----
-
-## 🗄️ Supabase Database & Private Storage Setup
-
-If connecting to an external Supabase project:
-1. Open your Supabase SQL Editor.
-2. Execute the provided SQL migration in `supabase/schema.sql`.
-3. This creates:
-   - `profiles` table with RLS
-   - `subscriptions` table with RLS
-   - `course_weeks` table (seeded with all 8 weeks)
-   - Private `course-materials` storage bucket with restricted read/write policies.
-4. Add your Supabase credentials to `.env.local`:
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=https://<your-project-id>.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
-   SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
-   ```
-
----
-
-## 🔒 Security Architecture
-
-1. **Authentication Separation**: Authenticated students are NOT assumed to have paid. Their subscription is checked separately via `requireActiveAccess()`.
-2. **Private Storage**: PDFs are streamed directly from private storage through authenticated route handlers. No static public URLs exist.
-3. **Admin Verification**: All admin actions (PDF upload, delete, subscription approve/revoke) require server-side verification using `requireAdmin()`.
-4. **Input Sanitization**: Uploaded files must match `.pdf` extension and MIME type, strictly under 25MB. Filenames are sanitized against path traversal.
+*You can also register any new account on `/register` to test the complete student lifecycle!*

@@ -1,5 +1,5 @@
 /**
- * Generates a standard, valid PDF-1.4 byte buffer with course notes
+ * Generates a standard, valid PDF-1.4 byte buffer with English course study notes
  */
 export function generateCourseModulePdfBuffer(
   weekNumber: number,
@@ -9,28 +9,28 @@ export function generateCourseModulePdfBuffer(
 ): Buffer {
   const contentStream = `
 BT
-/F1 20 Tf
-50 750 Td
-(MODERN WEB ENGINEERING: 8-WEEK INTENSIVE COURSE) Tj
-/F1 14 Tf
-0 -35 Td
+/F1 18 Tf
+50 760 Td
+(8-WEEK ENGLISH LEARNING COURSE: SPEAK WITH CONFIDENCE) Tj
+/F1 13 Tf
+0 -32 Td
 (WEEK ${weekNumber}: ${title.toUpperCase().replace(/[()]/g, "")}) Tj
 /F2 11 Tf
-0 -30 Td
-(Official Student Study Guide & Reference Materials) Tj
-0 -20 Td
+0 -26 Td
+(Official Student Workbook, Practice Exercises & Spoken English Guide) Tj
+0 -18 Td
 (Confidential - Authorized Enrolled Student Access Only) Tj
 0 -30 Td
 /F1 12 Tf
 (MODULE OVERVIEW:) Tj
 /F2 10 Tf
-0 -20 Td
+0 -18 Td
 (${description.replace(/[()]/g, "").slice(0, 85)}) Tj
-0 -15 Td
+0 -14 Td
 (${description.replace(/[()]/g, "").slice(85, 170)}) Tj
-0 -30 Td
+0 -28 Td
 /F1 12 Tf
-(KEY LEARNING OBJECTIVES & CORE SYLLABUS:) Tj
+(CORE SYLLABUS, VOCABULARY & GRAMMAR DRILLS:) Tj
 /F2 10 Tf
 ${topics
   .map(
@@ -38,21 +38,21 @@ ${topics
 ([0${i + 1}]  ${t.replace(/[()]/g, "")}) Tj`
   )
   .join("\n")}
-0 -35 Td
+0 -32 Td
 /F1 11 Tf
-(PRACTICAL EXERCISES & LAB MILESTONES:) Tj
+(SPEAKING PRACTICE & HOMEWORK ASSIGNMENTS:) Tj
 /F2 10 Tf
 0 -18 Td
-(- Complete the hands-on code exercises described in repository module ${weekNumber}.) Tj
+(- Practice reading the conversational dialogues out loud twice daily for pronunciation.) Tj
 0 -15 Td
-(- Submit your architecture review via the designated student portal or WhatsApp advisory.) Tj
+(- Complete the vocabulary drills and sentence construction exercises in this workbook.) Tj
 0 -15 Td
-(- Verify test coverage and pass all CI assertions before progressing to the next module.) Tj
+(- Record a 2-minute audio reflection and submit it via WhatsApp for instructor feedback.) Tj
 0 -40 Td
 /F2 9 Tf
 (Instructor Support: Contact Course Administrator via WhatsApp for 1-on-1 feedback.) Tj
-0 -15 Td
-(Copyright 2026 Modern Web Engineering Course. All Rights Reserved.) Tj
+0 -14 Td
+(Copyright 2026 8-Week English Learning Course. All Rights Reserved.) Tj
 ET
 `.trim();
 

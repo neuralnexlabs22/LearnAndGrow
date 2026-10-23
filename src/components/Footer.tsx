@@ -20,8 +20,8 @@ export function Footer() {
               </span>
             </div>
             <p className="text-sm text-[#78716C] max-w-md leading-relaxed">
-              A comprehensive 8-week structured curriculum. Weekly PDF learning
-              compendiums, architecture deep-dives, and dedicated instructor
+              A comprehensive 8-week structured English learning curriculum. Weekly
+              PDF workbooks, conversational drills, and dedicated instructor
               guidance via WhatsApp.
             </p>
             <div className="flex items-center gap-2 pt-2">
@@ -30,7 +30,7 @@ export function Footer() {
                 Private Verified Student Access
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[#EFECE4] text-[#44403C] border border-[#DCD4C4]">
-                8 Weekly Modules
+                8 Weekly English Modules
               </span>
             </div>
           </div>
@@ -54,7 +54,7 @@ export function Footer() {
                   href="/course"
                   className="hover:text-[#1C1917] transition-colors flex items-center gap-1"
                 >
-                  8-Week Syllabus & Modules
+                  8-Week English Syllabus
                 </Link>
               </li>
               <li>
@@ -108,7 +108,7 @@ export function Footer() {
 
         <div className="mt-12 pt-8 border-t border-[#E7E2D6] flex flex-col sm:flex-row items-center justify-between text-xs text-[#78716C] gap-4">
           <p>
-            © {new Date().getFullYear()} Modern Web Engineering Course Platform. All rights reserved.
+            © {new Date().getFullYear()} 8-Week English Learning Course Platform. All rights reserved.
           </p>
           <p className="flex items-center gap-2">
             <span>Protected Learning Materials</span>

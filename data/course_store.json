@@ -14,7 +14,9 @@
       "email": "active.student@example.com",
       "role": "student",
       "passwordHash": "StudentPass123!",
-      "createdAt": "2026-09-05T14:30:00.000Z"
+      "createdAt": "2026-09-05T14:30:00.000Z",
+      "completionStatus": "completed",
+      "publicConsent": true
     },
     {
       "id": "student-002",
@@ -22,7 +24,10 @@
       "email": "pending.student@example.com",
       "role": "student",
       "passwordHash": "StudentPass123!",
-      "createdAt": "2026-09-12T09:15:00.000Z"
+      "createdAt": "2026-09-12T09:15:00.000Z",
+      "completionStatus": "completed",
+      "publicConsent": true,
+      "completedAt": "2026-10-23T17:05:26.959Z"
     },
     {
       "id": "student-003",
@@ -30,7 +35,9 @@
       "email": "revoked.student@example.com",
       "role": "student",
       "passwordHash": "StudentPass123!",
-      "createdAt": "2026-09-02T11:20:00.000Z"
+      "createdAt": "2026-09-02T11:20:00.000Z",
+      "completionStatus": "enrolled",
+      "publicConsent": true
     },
     {
       "id": "user-1792760225696",
@@ -38,7 +45,9 @@
       "email": "david.miller@college.edu",
       "role": "student",
       "passwordHash": "Password123!",
-      "createdAt": "2026-10-23T12:57:05.696Z"
+      "createdAt": "2026-10-23T12:57:05.696Z",
+      "completionStatus": "enrolled",
+      "publicConsent": true
     }
   ],
   "subscriptions": [
@@ -69,7 +78,7 @@
       "approvedBy": "admin-001",
       "notes": "Access revoked due to policy violation.",
       "createdAt": "2026-09-02T11:20:00.000Z",
-      "updatedAt": "2026-09-10T16:00:00.000Z"
+      "updatedAt": "2026-10-23T13:15:23.122Z"
     },
     {
       "id": "sub-1792760225696",
@@ -86,146 +95,190 @@
     {
       "id": "week-1",
       "weekNumber": 1,
-      "title": "Core Architecture, Execution Context & Modern ES6+ Systems",
-      "description": "Understand JavaScript runtime engines, call stacks, event loops, memory lifecycle, and clean code patterns for scalable engineering.",
+      "title": "English Foundations and Basic Sentence Formation",
+      "description": "Master essential sentence structures (SVO), subject-verb agreement, common auxiliary verbs, and foundational conversational patterns with zero confusion.",
       "learningObjectives": [
-        "JavaScript Engine Internals (V8 & SpiderMonkey)",
-        "Execution Context, Call Stack & Microtask Queue",
-        "Memory Allocation, Garbage Collection & Leak Prevention",
-        "Modern ES6+ Modules, Iterators & Immutable Data Patterns"
+        "Subject-Verb-Object (SVO) Core Architecture",
+        "Articles (A, An, The) & Demonstrative Pronouns",
+        "Auxiliary Verbs (Be, Do, Have) in Present Simple",
+        "Essential Everyday Greetings & Self-Introductions"
       ],
-      "pdfFilename": "Week-01-Architecture-Context.pdf",
-      "pdfStoragePath": "week-1/Week-01-Architecture-Context.pdf",
+      "pdfFilename": "Week-01-English-Foundations.pdf",
+      "pdfStoragePath": "week-1/Week-01-English-Foundations.pdf",
       "pdfFilesizeBytes": 24800,
       "isPublished": true,
-      "createdAt": "2026-10-23T12:46:17.246Z",
-      "updatedAt": "2026-10-23T12:46:17.248Z"
+      "createdAt": "2026-10-23T13:16:30.069Z",
+      "updatedAt": "2026-10-23T13:16:30.069Z"
     },
     {
       "id": "week-2",
       "weekNumber": 2,
-      "title": "Component Architecture, Reactive State & High-Performance UI",
-      "description": "Design composable component hierarchies, understand virtual DOM diffing, master custom state hooks, and optimize rendering pipelines.",
+      "title": "Grammar and Tenses Mastery",
+      "description": "Gain complete control over past, present, and future tenses. Learn how native speakers convey timelines, continuous actions, and completed experiences naturally.",
       "learningObjectives": [
-        "Atomic Design & Modular Component Hierarchies",
-        "Reactivity Models & Virtual DOM Reconciliation",
-        "Custom Hook Factories & Fine-Grained State Primitives",
-        "Render Tree Profiling, Memoization & Layout Shifts"
+        "Present Simple vs. Present Continuous in Real Contexts",
+        "Past Simple vs. Present Perfect: Eliminating Common Errors",
+        "Future Projections (Will vs. Going to vs. Present Continuous)",
+        "Time Markers, Prepositions of Time (In, On, At) & Practice Drills"
       ],
-      "pdfFilename": "Week-02-Reactive-State.pdf",
-      "pdfStoragePath": "week-2/Week-02-Reactive-State.pdf",
+      "pdfFilename": "Week-02-Grammar-and-Tenses.pdf",
+      "pdfStoragePath": "week-2/Week-02-Grammar-and-Tenses.pdf",
       "pdfFilesizeBytes": 26100,
       "isPublished": true,
-      "createdAt": "2026-10-23T12:46:17.248Z",
-      "updatedAt": "2026-10-23T12:46:17.248Z"
+      "createdAt": "2026-10-23T13:16:30.069Z",
+      "updatedAt": "2026-10-23T13:16:30.069Z"
     },
     {
       "id": "week-3",
       "weekNumber": 3,
-      "title": "Backend Architecture, Edge Services & High-Performance REST",
-      "description": "Build production-grade server endpoints, handle streaming requests, design robust API contracts, and leverage edge middleware.",
+      "title": "Vocabulary and Everyday Expressions",
+      "description": "Expand beyond basic vocabulary with 250+ high-frequency collocations, phrasal verbs, idioms, and natural transitions used in daily interactions.",
       "learningObjectives": [
-        "HTTP/2 & HTTP/3 Transport Mechanics",
-        "RESTful API Design Standards & Idempotency",
-        "Edge Middleware, Routing & Request Pipelines",
-        "Error Handling Standards & Structured Logging"
+        "High-Frequency Phrasal Verbs for Everyday Life",
+        "Collocations & Natural Word Pairings",
+        "Expressing Opinions, Agreement, and Polite Disagreement",
+        "Idiomatic Expressions for Modern Social Conversation"
       ],
       "pdfFilename": null,
       "pdfStoragePath": null,
       "pdfFilesizeBytes": null,
       "isPublished": true,
-      "createdAt": "2026-10-23T12:46:17.248Z",
-      "updatedAt": "2026-10-23T13:01:16.664Z"
+      "createdAt": "2026-10-23T13:16:30.069Z",
+      "updatedAt": "2026-10-23T13:16:30.069Z"
     },
     {
       "id": "week-4",
       "weekNumber": 4,
-      "title": "Relational Databases, PostgreSQL Modeling & ACID Transactions",
-      "description": "Master relational schema modeling, foreign key constraints, indexes, connection pooling, and multi-step ACID transactions.",
+      "title": "Spoken English and Conversation Practice",
+      "description": "Develop spoken fluency, overcome hesitation, and practice real-time conversational turn-taking, active listening cues, and storytelling techniques.",
       "learningObjectives": [
-        "Normalized Relational Schema Design (3NF)",
-        "Indexes: B-Tree, Hash, GIN & Query Planners",
-        "ACID Guarantees, Isolation Levels & Concurrency",
-        "Connection Pooling & Migration Workflows"
+        "Overcoming Hesitation & Fear of Making Mistakes",
+        "Conversational Connectors & Fillers Used Naturally",
+        "Asking Engaging Open-Ended Questions in Dialogue",
+        "Mini-Storytelling: Structuring Short Personal Anecdotes"
       ],
       "pdfFilename": null,
       "pdfStoragePath": null,
       "pdfFilesizeBytes": null,
       "isPublished": true,
-      "createdAt": "2026-10-23T12:46:17.248Z",
-      "updatedAt": "2026-10-23T12:46:17.248Z"
+      "createdAt": "2026-10-23T13:16:30.069Z",
+      "updatedAt": "2026-10-23T13:16:30.069Z"
     },
     {
       "id": "week-5",
       "weekNumber": 5,
-      "title": "Authentication, Role-Based Access Control & Web Security Hardening",
-      "description": "Implement defense-in-depth security: JWTs, secure HTTP-only cookie sessions, CSRF/XSS defenses, rate limiting, and RLS.",
+      "title": "Pronunciation, Accent Clarity and Listening Skills",
+      "description": "Sharpen your acoustic comprehension and speech clarity. Master vowel distinctions, syllable stress, connected speech, and native intonation rhythms.",
       "learningObjectives": [
-        "Token Mechanics: Refresh & Access Token Lifecycles",
-        "Secure Cookie Flags (HttpOnly, SameSite, Secure)",
-        "Threat Mitigation: CSRF, XSS, SSRF & Injection",
-        "Row Level Security (RLS) & Granular RBAC Gates"
+        "Vowel & Consonant Minimal Pairs Training",
+        "Word Stress, Syllable Timing & Sentence Intonation",
+        "Connected Speech (Linking, Elision & Weak Forms)",
+        "Listening Strategies for Fast-Paced Native Audio"
       ],
       "pdfFilename": null,
       "pdfStoragePath": null,
       "pdfFilesizeBytes": null,
       "isPublished": true,
-      "createdAt": "2026-10-23T12:46:17.248Z",
-      "updatedAt": "2026-10-23T12:46:17.248Z"
+      "createdAt": "2026-10-23T13:16:30.069Z",
+      "updatedAt": "2026-10-23T13:16:30.069Z"
     },
     {
       "id": "week-6",
       "weekNumber": 6,
-      "title": "Real-Time Synchronization, WebSockets & Distributed Caching",
-      "description": "Implement duplex communication channels, handle optimistic UI updates, and design multi-tiered Redis caching strategies.",
+      "title": "Reading Comprehension and Writing Precision",
+      "description": "Analyze diverse texts, build analytical comprehension, and draft clear, cohesive emails, professional letters, and personal essays.",
       "learningObjectives": [
-        "WebSocket Protocol Handshakes & Heartbeats",
-        "Pub/Sub Architectures & Presence Tracking",
-        "Cache Invalidation Patterns (Stale-While-Revalidate)",
-        "Optimistic UI State & Event Reconciliation"
+        "Skimming & Scanning Techniques for Articles & Books",
+        "Professional Email Etiquette & Structural Formats",
+        "Paragraph Cohesion, Transitions & Punctuation Precision",
+        "Writing Descriptive & Persuasive Short Texts"
       ],
       "pdfFilename": null,
       "pdfStoragePath": null,
       "pdfFilesizeBytes": null,
       "isPublished": true,
-      "createdAt": "2026-10-23T12:46:17.248Z",
-      "updatedAt": "2026-10-23T12:46:17.248Z"
+      "createdAt": "2026-10-23T13:16:30.069Z",
+      "updatedAt": "2026-10-23T13:16:30.069Z"
     },
     {
       "id": "week-7",
       "weekNumber": 7,
-      "title": "Automated Testing, CI/CD Pipelines & Containerized Environments",
-      "description": "Write unit, integration, and end-to-end tests; configure GitHub Actions CI/CD workflows, Docker containers, and artifact validation.",
+      "title": "Communication Skills and Real-Life Situations",
+      "description": "Apply your English in workplace environments, job interviews, customer service, telephone calls, travel scenarios, and negotiations.",
       "learningObjectives": [
-        "Test-Driven Design: Unit, Integration & Contract Testing",
-        "End-to-End Browser Automation with Playwright",
-        "Containerization with Multi-Stage Dockerfiles",
-        "Automated CI/CD Validation & Staging Deployments"
+        "Interview Preparation & Self-Introduction Mastery",
+        "Workplace Meetings, Summaries & Action Items",
+        "Telephone & Video Call Communication Etiquette",
+        "Travel, Dining, Emergencies & Social Etiquette"
       ],
       "pdfFilename": null,
       "pdfStoragePath": null,
       "pdfFilesizeBytes": null,
       "isPublished": true,
-      "createdAt": "2026-10-23T12:46:17.248Z",
-      "updatedAt": "2026-10-23T12:46:17.248Z"
+      "createdAt": "2026-10-23T13:16:30.069Z",
+      "updatedAt": "2026-10-23T13:16:30.069Z"
     },
     {
       "id": "week-8",
       "weekNumber": 8,
-      "title": "Capstone Architecture, Production Observability & Performance Audits",
-      "description": "Bring everything together into a scalable capstone project. Perform Core Web Vitals audits, configure OpenTelemetry, and deploy.",
+      "title": "Revision, Practical Exercises, and Final Assessment",
+      "description": "Consolidate your 8-week knowledge with practical roleplays, comprehensive grammar & vocabulary review, and your final spoken English evaluation.",
       "learningObjectives": [
-        "Full-Stack Production System Architecture",
-        "Core Web Vitals (LCP, INP, CLS) Optimization",
-        "APM Observability, Metrics & Telemetry Tracing",
-        "Final Production Audit, Security Checklist & Launch"
+        "Comprehensive Grammar & Phrasal Verb Synthesis",
+        "Live Roleplay Simulation & Spoken Review",
+        "Self-Assessment Portfolio & Ongoing Study Plan",
+        "Final Spoken Evaluation & Course Completion Award"
       ],
       "pdfFilename": null,
       "pdfStoragePath": null,
       "pdfFilesizeBytes": null,
       "isPublished": true,
-      "createdAt": "2026-10-23T12:46:17.248Z",
-      "updatedAt": "2026-10-23T12:46:17.248Z"
+      "createdAt": "2026-10-23T13:16:30.069Z",
+      "updatedAt": "2026-10-23T13:16:30.069Z"
+    }
+  ],
+  "reviews": [
+    {
+      "id": "rev-001",
+      "studentId": "student-001",
+      "studentName": "Alex Rivera",
+      "studentEmail": "active.student@example.com",
+      "studentPhotoUrl": null,
+      "rating": 5,
+      "feedback": "The 8-week structured English lessons gave me the confidence I was missing. Breaking down grammar tenses helped me speak fluently in my meetings.",
+      "status": "approved",
+      "isFeatured": true,
+      "isCompletedStudent": true,
+      "createdAt": "2026-10-16T14:00:00.000Z",
+      "updatedAt": "2026-10-23T17:05:25.214Z"
+    },
+    {
+      "id": "rev-002",
+      "studentId": "student-004",
+      "studentName": "David Miller",
+      "studentEmail": "david.miller@college.edu",
+      "studentPhotoUrl": null,
+      "rating": 5,
+      "feedback": "I used to hesitate and translate every word in my head. The pronunciation drills in Week 5 and the real-life communication scenarios completely transformed my speaking rhythm. Highly recommended!",
+      "status": "approved",
+      "isFeatured": true,
+      "isCompletedStudent": true,
+      "createdAt": "2026-10-21T10:30:00.000Z",
+      "updatedAt": "2026-10-21T10:30:00.000Z"
+    },
+    {
+      "id": "rev-003",
+      "studentId": "student-002",
+      "studentName": "Samantha Chen",
+      "studentEmail": "pending.student@example.com",
+      "studentPhotoUrl": null,
+      "rating": 5,
+      "feedback": "The weekly PDF workbooks are clear, practical, and filled with exercises that you can actually use every day. Having direct WhatsApp feedback from the instructor kept me motivated throughout.",
+      "status": "approved",
+      "isFeatured": true,
+      "isCompletedStudent": true,
+      "createdAt": "2026-10-18T09:00:00.000Z",
+      "updatedAt": "2026-10-23T17:05:26.959Z"
     }
   ]
 }

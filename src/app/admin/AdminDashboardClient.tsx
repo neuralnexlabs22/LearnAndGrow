@@ -18,36 +18,48 @@ import {
   Loader2,
   Sparkles,
   ArrowRight,
-  ExternalLink,
+  Star,
+  Award,
+  MessageSquare,
+  Camera,
+  Image as ImageIcon,
+  CheckCheck,
 } from "lucide-react";
-import { CourseWeek, StudentWithSubscription, SubscriptionStatus } from "@/types";
+import {
+  CourseWeek,
+  StudentWithSubscription,
+  SubscriptionStatus,
+  StudentReview,
+  CompletionStatus,
+  ReviewStatus,
+  DashboardStats,
+} from "@/types";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { PdfViewerModal } from "@/components/PdfViewerModal";
 
 interface AdminDashboardClientProps {
   initialWeeks: CourseWeek[];
   initialStudents: StudentWithSubscription[];
-  initialStats: {
-    totalStudents: number;
-    activeSubscriptions: number;
-    pendingSubscriptions: number;
-    totalPdfs: number;
-  };
+  initialReviews: StudentReview[];
+  initialStats: DashboardStats;
 }
 
 export function AdminDashboardClient({
   initialWeeks,
   initialStudents,
+  initialReviews,
   initialStats,
 }: AdminDashboardClientProps) {
-  const [activeTab, setActiveTab] = useState<"weeks" | "students">("weeks");
+  const [activeTab, setActiveTab] = useState<"weeks" | "students" | "reviews">("weeks");
   const [weeks, setWeeks] = useState<CourseWeek[]>(initialWeeks);
   const [students, setStudents] = useState<StudentWithSubscription[]>(initialStudents);
-  const [stats, setStats] = useState(initialStats);
+  const [reviews, setReviews] = useState<StudentReview[]>(initialReviews);
+  const [stats, setStats] = useState<DashboardStats>(initialStats);
 
-  // Search & Filter for Students
+  // Search & Filters
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [studentFilter, setStudentFilter] = useState<string>("all");
+  const [reviewFilter, setReviewFilter] = useState<string>("all");
 
   // Notifications
   const [toastMessage, setToastMessage] = useState<{
@@ -60,6 +72,7 @@ export function AdminDashboardClient({
   const [isUpdatingWeek, setIsUpdatingWeek] = useState(false);
   const [uploadingWeekNum, setUploadingWeekNum] = useState<number | null>(null);
   const [previewWeek, setPreviewWeek] = useState<CourseWeek | null>(null);
+  const [uploadingPhotoStudentId, setUploadingPhotoStudentId] = useState<string | null>(null);
 
   // Confirmation modal state
   const [confirmModalConfig, setConfirmModalConfig] = useState<{
@@ -85,16 +98,39 @@ export function AdminDashboardClient({
     }, 4000);
   };
 
-  const refreshStats = (currentWeeks: CourseWeek[], currentStudents: StudentWithSubscription[]) => {
+  const recomputeStats = (
+    currentWeeks: CourseWeek[],
+    currentStudents: StudentWithSubscription[],
+    currentReviews: StudentReview[]
+  ) => {
+    const activeSubs = currentStudents.filter((s) => s.subscriptionStatus === "active").length;
+    const inProg = currentStudents.filter((s) => s.completionStatus === "in_progress").length;
+    const completed = currentStudents.filter((s) => s.completionStatus === "completed").length;
+    const totalPdfs = currentWeeks.filter((w) => !!w.pdfStoragePath).length;
+
+    const pendingRevs = currentReviews.filter((r) => r.status === "pending").length;
+    const approvedRevs = currentReviews.filter((r) => r.status === "approved");
+
+    let avgRating = 0;
+    if (approvedRevs.length > 0) {
+      const sum = approvedRevs.reduce((acc, r) => acc + r.rating, 0);
+      avgRating = Math.round((sum / approvedRevs.length) * 10) / 10;
+    }
+
     setStats({
       totalStudents: currentStudents.length,
-      activeSubscriptions: currentStudents.filter((s) => s.subscriptionStatus === "active").length,
-      pendingSubscriptions: currentStudents.filter((s) => s.subscriptionStatus === "pending").length,
-      totalPdfs: currentWeeks.filter((w) => !!w.pdfStoragePath).length,
+      activeSubscriptions: activeSubs,
+      studentsInProgress: inProg,
+      completedStudents: completed,
+      pendingReviews: pendingRevs,
+      approvedReviews: approvedRevs.length,
+      averageRating: avgRating,
+      totalPdfs,
     });
   };
 
-  // 1. PDF UPLOAD / REPLACE
+  /* ---------------- 1. PDF & WEEK MANAGEMENT ---------------- */
+
   const handlePdfUpload = async (weekNumber: number, file: File) => {
     if (!file.name.toLowerCase().endsWith(".pdf")) {
       showToast("Invalid file format. Only PDF (.pdf) documents are accepted.", "error");
@@ -118,29 +154,26 @@ export function AdminDashboardClient({
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to upload PDF.");
-      }
+      if (!res.ok) throw new Error(data.error);
 
-      const updatedWeeks = weeks.map((w) =>
+      const updated = weeks.map((w) =>
         w.weekNumber === weekNumber ? data.week : w
       );
-      setWeeks(updatedWeeks);
-      refreshStats(updatedWeeks, students);
+      setWeeks(updated);
+      recomputeStats(updated, students, reviews);
       showToast(`PDF for Week ${weekNumber} successfully uploaded and secured!`);
     } catch (err: any) {
-      showToast(err.message || "Failed to upload file.", "error");
+      showToast(err.message || "Failed to upload PDF.", "error");
     } finally {
       setUploadingWeekNum(null);
     }
   };
 
-  // 2. DELETE PDF WITH CONFIRMATION
   const promptDeletePdf = (week: CourseWeek) => {
     setConfirmModalConfig({
       isOpen: true,
       title: `Delete Week ${week.weekNumber} PDF?`,
-      description: `Are you sure you want to permanently delete the study guide for "${week.title}"? Students will no longer be able to download it until a new PDF is uploaded.`,
+      description: `Are you sure you want to delete the study workbook for "${week.title}"?`,
       confirmLabel: "Delete PDF",
       isDestructive: true,
       onConfirm: async () => {
@@ -151,11 +184,11 @@ export function AdminDashboardClient({
           const data = await res.json();
           if (!res.ok) throw new Error(data.error);
 
-          const updatedWeeks = weeks.map((w) =>
+          const updated = weeks.map((w) =>
             w.weekNumber === week.weekNumber ? data.week : w
           );
-          setWeeks(updatedWeeks);
-          refreshStats(updatedWeeks, students);
+          setWeeks(updated);
+          recomputeStats(updated, students, reviews);
           showToast(`PDF for Week ${week.weekNumber} was deleted.`);
         } catch (err: any) {
           showToast(err.message || "Failed to delete PDF.", "error");
@@ -166,7 +199,6 @@ export function AdminDashboardClient({
     });
   };
 
-  // 3. TOGGLE PUBLISH / UNPUBLISH
   const handleTogglePublish = async (week: CourseWeek) => {
     try {
       const res = await fetch(`/api/admin/weeks/${week.weekNumber}`, {
@@ -177,10 +209,10 @@ export function AdminDashboardClient({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      const updatedWeeks = weeks.map((w) =>
+      const updated = weeks.map((w) =>
         w.weekNumber === week.weekNumber ? data.week : w
       );
-      setWeeks(updatedWeeks);
+      setWeeks(updated);
       showToast(
         `Week ${week.weekNumber} is now ${
           !week.isPublished ? "Published" : "Draft (Hidden)"
@@ -191,7 +223,6 @@ export function AdminDashboardClient({
     }
   };
 
-  // 4. UPDATE WEEK TITLE & DESCRIPTION
   const handleSaveWeekDetails = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editWeekModal) return;
@@ -211,10 +242,10 @@ export function AdminDashboardClient({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      const updatedWeeks = weeks.map((w) =>
+      const updated = weeks.map((w) =>
         w.weekNumber === editWeekModal.weekNumber ? data.week : w
       );
-      setWeeks(updatedWeeks);
+      setWeeks(updated);
       setEditWeekModal(null);
       showToast(`Week ${editWeekModal.weekNumber} details updated successfully.`);
     } catch (err: any) {
@@ -224,31 +255,31 @@ export function AdminDashboardClient({
     }
   };
 
-  // 5. UPDATE STUDENT SUBSCRIPTION STATUS
-  const handleUpdateSubscriptionStatus = async (
+  /* ---------------- 2. STUDENT SUBSCRIPTIONS & COMPLETION ---------------- */
+
+  const handleSubscriptionStatus = async (
     student: StudentWithSubscription,
     newStatus: SubscriptionStatus
   ) => {
-    // If revoking, ask for confirmation!
     if (newStatus === "revoked") {
       setConfirmModalConfig({
         isOpen: true,
         title: `Revoke Course Access for ${student.name}?`,
-        description: `This will immediately block ${student.name} (${student.email}) from downloading or viewing protected weekly course materials.`,
+        description: `This will immediately block ${student.name} from downloading or viewing protected weekly course workbooks.`,
         confirmLabel: "Revoke Access",
         isDestructive: true,
         onConfirm: async () => {
-          await executeSubscriptionStatusChange(student.id, newStatus);
+          await executeSubscriptionChange(student.id, newStatus);
           setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
         },
       });
       return;
     }
 
-    await executeSubscriptionStatusChange(student.id, newStatus);
+    await executeSubscriptionChange(student.id, newStatus);
   };
 
-  const executeSubscriptionStatusChange = async (
+  const executeSubscriptionChange = async (
     studentId: string,
     newStatus: SubscriptionStatus
   ) => {
@@ -258,39 +289,221 @@ export function AdminDashboardClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      const updatedStudents = students.map((s) =>
+      const updated = students.map((s) =>
         s.id === studentId
           ? {
               ...s,
               subscriptionStatus: newStatus,
-              approvedAt:
-                newStatus === "active" ? new Date().toISOString() : undefined,
+              approvedAt: newStatus === "active" ? new Date().toISOString() : undefined,
             }
           : s
       );
-
-      setStudents(updatedStudents);
-      refreshStats(weeks, updatedStudents);
+      setStudents(updated);
+      recomputeStats(weeks, updated, reviews);
       showToast(data.message || `Subscription updated to ${newStatus}.`);
     } catch (err: any) {
       showToast(err.message || "Failed to update subscription.", "error");
     }
   };
 
+  const handleCompletionStatus = async (
+    studentId: string,
+    newStatus: CompletionStatus
+  ) => {
+    try {
+      const res = await fetch(`/api/admin/students/${studentId}/completion`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completionStatus: newStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      const updated = students.map((s) =>
+        s.id === studentId
+          ? {
+              ...s,
+              completionStatus: newStatus,
+              completedAt: newStatus === "completed" ? new Date().toISOString() : null,
+            }
+          : s
+      );
+      setStudents(updated);
+
+      // Also update any reviews by this student
+      const updatedReviews = reviews.map((r) =>
+        r.studentId === studentId
+          ? { ...r, isCompletedStudent: newStatus === "completed" }
+          : r
+      );
+      setReviews(updatedReviews);
+
+      recomputeStats(weeks, updated, updatedReviews);
+      showToast(data.message || `Course completion status updated to ${newStatus}.`);
+    } catch (err: any) {
+      showToast(err.message || "Failed to update completion status.", "error");
+    }
+  };
+
+  const handleStudentPhotoUpload = async (studentId: string, file: File) => {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      showToast("Please select a JPG, PNG, or WEBP image.", "error");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("Image file exceeds 5MB.", "error");
+      return;
+    }
+
+    setUploadingPhotoStudentId(studentId);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch(`/api/students/${studentId}/photo`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      const updated = students.map((s) =>
+        s.id === studentId ? { ...s, photoUrl: data.photoUrl } : s
+      );
+      setStudents(updated);
+
+      // Update reviews
+      const updatedReviews = reviews.map((r) =>
+        r.studentId === studentId ? { ...r, studentPhotoUrl: data.photoUrl } : r
+      );
+      setReviews(updatedReviews);
+
+      showToast("Student photo updated successfully!");
+    } catch (err: any) {
+      showToast(err.message || "Failed to upload photo.", "error");
+    } finally {
+      setUploadingPhotoStudentId(null);
+    }
+  };
+
+  const handleRemoveStudentPhoto = async (studentId: string) => {
+    try {
+      const res = await fetch(`/api/students/${studentId}/photo`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      const updated = students.map((s) =>
+        s.id === studentId ? { ...s, photoUrl: null } : s
+      );
+      setStudents(updated);
+
+      const updatedReviews = reviews.map((r) =>
+        r.studentId === studentId ? { ...r, studentPhotoUrl: null } : r
+      );
+      setReviews(updatedReviews);
+
+      showToast("Student photo removed.");
+    } catch (err: any) {
+      showToast(err.message || "Failed to remove photo.", "error");
+    }
+  };
+
+  /* ---------------- 3. REVIEWS MODERATION ---------------- */
+
+  const handleReviewStatus = async (reviewId: string, newStatus: ReviewStatus) => {
+    try {
+      const res = await fetch(`/api/admin/reviews/${reviewId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      const updated = reviews.map((r) => (r.id === reviewId ? data.review : r));
+      setReviews(updated);
+      recomputeStats(weeks, students, updated);
+      showToast(`Review marked as ${newStatus}.`);
+    } catch (err: any) {
+      showToast(err.message || "Failed to update review status.", "error");
+    }
+  };
+
+  const handleToggleFeatureReview = async (review: StudentReview) => {
+    try {
+      const res = await fetch(`/api/admin/reviews/${review.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isFeatured: !review.isFeatured }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      const updated = reviews.map((r) => (r.id === review.id ? data.review : r));
+      setReviews(updated);
+      showToast(
+        !review.isFeatured
+          ? "Review is now featured on the Home page."
+          : "Review removed from featured list."
+      );
+    } catch (err: any) {
+      showToast(err.message || "Failed to update featured state.", "error");
+    }
+  };
+
+  const promptDeleteReview = (review: StudentReview) => {
+    setConfirmModalConfig({
+      isOpen: true,
+      title: "Delete Student Review?",
+      description: `Are you sure you want to delete the review by ${review.studentName}? This cannot be undone.`,
+      confirmLabel: "Delete Review",
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/reviews/${review.id}`, {
+            method: "DELETE",
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error);
+
+          const updated = reviews.filter((r) => r.id !== review.id);
+          setReviews(updated);
+          recomputeStats(weeks, students, updated);
+          showToast("Review deleted.");
+        } catch (err: any) {
+          showToast(err.message || "Failed to delete review.", "error");
+        } finally {
+          setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
+        }
+      },
+    });
+  };
+
   // Filter students
   const filteredStudents = students.filter((s) => {
-    const matchesSearch =
+    const matchesQuery =
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.email.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus =
-      statusFilter === "all" || s.subscriptionStatus === statusFilter;
+    let matchesFilter = true;
+    if (studentFilter === "pending") matchesFilter = s.subscriptionStatus === "pending";
+    else if (studentFilter === "active") matchesFilter = s.subscriptionStatus === "active";
+    else if (studentFilter === "completed") matchesFilter = s.completionStatus === "completed";
+    else if (studentFilter === "in_progress") matchesFilter = s.completionStatus === "in_progress";
+    else if (studentFilter === "revoked") matchesFilter = s.subscriptionStatus === "revoked";
 
-    return matchesSearch && matchesStatus;
+    return matchesQuery && matchesFilter;
+  });
+
+  // Filter reviews
+  const filteredReviews = reviews.filter((r) => {
+    if (reviewFilter === "all") return true;
+    return r.status === reviewFilter;
   });
 
   return (
@@ -313,7 +526,7 @@ export function AdminDashboardClient({
         </div>
       )}
 
-      {/* DASHBOARD OVERVIEW STATS */}
+      {/* DASHBOARD OVERVIEW STATS (Real Database-Backed) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Students */}
         <div className="bg-white border border-[#D4CDBC] p-5 rounded-2xl beige-card-shadow flex items-center justify-between">
@@ -345,47 +558,47 @@ export function AdminDashboardClient({
           </div>
         </div>
 
-        {/* Pending Subscriptions */}
+        {/* Completed Students (Live Counter Source) */}
+        <div className="bg-white border border-[#D4CDBC] p-5 rounded-2xl beige-card-shadow flex items-center justify-between">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-[#C25E38]">
+              Course Graduates
+            </span>
+            <span className="text-2xl font-extrabold text-[#C25E38] block mt-1">
+              {stats.completedStudents}
+            </span>
+          </div>
+          <div className="w-11 h-11 rounded-xl bg-[#FBF0EB] text-[#C25E38] flex items-center justify-center">
+            <Award className="w-5 h-5" />
+          </div>
+        </div>
+
+        {/* Pending Reviews */}
         <div className="bg-white border border-[#D4CDBC] p-5 rounded-2xl beige-card-shadow flex items-center justify-between">
           <div>
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-bold uppercase tracking-wider text-[#B45309]">
-                Pending Approval
+                Pending Reviews
               </span>
-              {stats.pendingSubscriptions > 0 && (
+              {stats.pendingReviews > 0 && (
                 <span className="w-2 h-2 rounded-full bg-[#B45309] animate-ping" />
               )}
             </div>
             <span className="text-2xl font-extrabold text-[#B45309] block mt-1">
-              {stats.pendingSubscriptions}
+              {stats.pendingReviews}
             </span>
           </div>
           <div className="w-11 h-11 rounded-xl bg-[#FEF3C7] text-[#B45309] flex items-center justify-center">
-            <Clock className="w-5 h-5" />
-          </div>
-        </div>
-
-        {/* Uploaded PDFs */}
-        <div className="bg-white border border-[#D4CDBC] p-5 rounded-2xl beige-card-shadow flex items-center justify-between">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-[#C25E38]">
-              Uploaded Course PDFs
-            </span>
-            <span className="text-2xl font-extrabold text-[#C25E38] block mt-1">
-              {stats.totalPdfs} / 8
-            </span>
-          </div>
-          <div className="w-11 h-11 rounded-xl bg-[#FBF0EB] text-[#C25E38] flex items-center justify-center">
-            <FileText className="w-5 h-5" />
+            <Star className="w-5 h-5" />
           </div>
         </div>
       </div>
 
       {/* DASHBOARD TABS NAVIGATION */}
-      <div className="border-b border-[#D4CDBC] flex items-center gap-6">
+      <div className="border-b border-[#D4CDBC] flex items-center gap-6 overflow-x-auto">
         <button
           onClick={() => setActiveTab("weeks")}
-          className={`pb-3 text-sm font-bold tracking-tight transition-all relative ${
+          className={`pb-3 text-sm font-bold tracking-tight transition-all relative shrink-0 ${
             activeTab === "weeks"
               ? "text-[#C25E38] border-b-2 border-[#C25E38]"
               : "text-[#78716C] hover:text-[#1C1917]"
@@ -396,16 +609,32 @@ export function AdminDashboardClient({
 
         <button
           onClick={() => setActiveTab("students")}
-          className={`pb-3 text-sm font-bold tracking-tight transition-all relative flex items-center gap-2 ${
+          className={`pb-3 text-sm font-bold tracking-tight transition-all relative shrink-0 flex items-center gap-2 ${
             activeTab === "students"
               ? "text-[#C25E38] border-b-2 border-[#C25E38]"
               : "text-[#78716C] hover:text-[#1C1917]"
           }`}
         >
-          <span>Student Subscriptions</span>
-          {stats.pendingSubscriptions > 0 && (
+          <span>Students & Completion Tracking</span>
+          {stats.pendingReviews > 0 && (
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] font-bold border border-[#FDE68A]">
-              {stats.pendingSubscriptions} Pending
+              {stats.totalStudents}
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab("reviews")}
+          className={`pb-3 text-sm font-bold tracking-tight transition-all relative shrink-0 flex items-center gap-2 ${
+            activeTab === "reviews"
+              ? "text-[#C25E38] border-b-2 border-[#C25E38]"
+              : "text-[#78716C] hover:text-[#1C1917]"
+          }`}
+        >
+          <span>Reviews Management</span>
+          {stats.pendingReviews > 0 && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] font-bold border border-[#FDE68A]">
+              {stats.pendingReviews} New
             </span>
           )}
         </button>
@@ -417,7 +646,7 @@ export function AdminDashboardClient({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2">
             <div>
               <h3 className="text-lg font-bold text-[#1C1917]">
-                Manage 8 Weekly Modules & PDFs
+                Manage 8 Weekly English Modules & Workbooks
               </h3>
               <p className="text-xs text-[#78716C]">
                 Upload, replace, and delete PDF study guides. Protected PDFs are
@@ -435,7 +664,6 @@ export function AdminDashboardClient({
                 key={week.id}
                 className="p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 hover:bg-[#FAF8F5] transition-colors"
               >
-                {/* Week Information */}
                 <div className="space-y-1.5 flex-1 max-w-2xl">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-bold px-2 py-0.5 rounded bg-[#292524] text-white">
@@ -478,9 +706,7 @@ export function AdminDashboardClient({
                   )}
                 </div>
 
-                {/* Actions */}
                 <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-                  {/* Preview Button */}
                   {week.pdfStoragePath && (
                     <button
                       onClick={() => setPreviewWeek(week)}
@@ -492,7 +718,6 @@ export function AdminDashboardClient({
                     </button>
                   )}
 
-                  {/* Edit Week Details */}
                   <button
                     onClick={() => setEditWeekModal(week)}
                     className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#FAF8F5] hover:bg-[#EFECE4] text-[#1C1917] border border-[#D4CDBC] transition-colors"
@@ -502,7 +727,6 @@ export function AdminDashboardClient({
                     <span>Edit Info</span>
                   </button>
 
-                  {/* Toggle Publish */}
                   <button
                     onClick={() => handleTogglePublish(week)}
                     className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#FAF8F5] hover:bg-[#EFECE4] text-[#57534E] border border-[#D4CDBC] transition-colors"
@@ -510,7 +734,6 @@ export function AdminDashboardClient({
                     <span>{week.isPublished ? "Unpublish" : "Publish"}</span>
                   </button>
 
-                  {/* Upload / Replace PDF */}
                   <label className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#292524] hover:bg-[#1C1917] text-[#FAF8F5] transition-colors cursor-pointer shadow-xs">
                     {uploadingWeekNum === week.weekNumber ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -533,7 +756,6 @@ export function AdminDashboardClient({
                     />
                   </label>
 
-                  {/* Delete PDF */}
                   {week.pdfStoragePath && (
                     <button
                       onClick={() => promptDeletePdf(week)}
@@ -550,21 +772,19 @@ export function AdminDashboardClient({
         </div>
       )}
 
-      {/* TAB 2: STUDENT MANAGEMENT */}
+      {/* TAB 2: STUDENT MANAGEMENT & COMPLETION TRACKING */}
       {activeTab === "students" && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
             <div>
               <h3 className="text-lg font-bold text-[#1C1917]">
-                Student Enrollment & Subscription Verification
+                Students, Photos & Course Completion Verification
               </h3>
               <p className="text-xs text-[#78716C]">
-                Approve verified WhatsApp payments, reject fraudulent requests,
-                or revoke access.
+                Manage student profile photos, subscriptions, and verify course completion milestones.
               </p>
             </div>
 
-            {/* Search Input */}
             <div className="relative w-full sm:w-64">
               <Search className="w-4 h-4 absolute left-3 top-2.5 text-[#78716C]" />
               <input
@@ -577,14 +797,19 @@ export function AdminDashboardClient({
             </div>
           </div>
 
-          {/* Filter Tabs */}
+          {/* Filter Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-semibold">
             {[
               { id: "all", label: "All Students", count: students.length },
               {
-                id: "pending",
-                label: "Pending Verification",
-                count: students.filter((s) => s.subscriptionStatus === "pending").length,
+                id: "completed",
+                label: "Course Completed",
+                count: students.filter((s) => s.completionStatus === "completed").length,
+              },
+              {
+                id: "in_progress",
+                label: "In Progress",
+                count: students.filter((s) => s.completionStatus === "in_progress").length,
               },
               {
                 id: "active",
@@ -592,21 +817,16 @@ export function AdminDashboardClient({
                 count: students.filter((s) => s.subscriptionStatus === "active").length,
               },
               {
-                id: "revoked",
-                label: "Revoked",
-                count: students.filter((s) => s.subscriptionStatus === "revoked").length,
-              },
-              {
-                id: "rejected",
-                label: "Rejected",
-                count: students.filter((s) => s.subscriptionStatus === "rejected").length,
+                id: "pending",
+                label: "Pending Verification",
+                count: students.filter((s) => s.subscriptionStatus === "pending").length,
               },
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setStatusFilter(tab.id)}
+                onClick={() => setStudentFilter(tab.id)}
                 className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shrink-0 ${
-                  statusFilter === tab.id
+                  studentFilter === tab.id
                     ? "bg-[#292524] text-white"
                     : "bg-white text-[#57534E] border border-[#D4CDBC] hover:bg-[#F5F2EB]"
                 }`}
@@ -619,54 +839,86 @@ export function AdminDashboardClient({
             ))}
           </div>
 
-          {/* Students Table */}
+          {/* Student Table */}
           <div className="bg-white border border-[#D4CDBC] rounded-2xl overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-[#F5F2EB] border-b border-[#E7E2D6] text-[#78716C] uppercase tracking-wider font-bold">
-                    <th className="py-3.5 px-6">Student</th>
-                    <th className="py-3.5 px-6">Email Address</th>
-                    <th className="py-3.5 px-6">Registered On</th>
+                    <th className="py-3.5 px-6">Student & Photo</th>
                     <th className="py-3.5 px-6">Subscription Status</th>
+                    <th className="py-3.5 px-6">Course Completion Status</th>
                     <th className="py-3.5 px-6 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E7E2D6]">
                   {filteredStudents.length === 0 ? (
                     <tr>
-                      <td
-                        colSpan={5}
-                        className="py-12 text-center text-[#78716C] font-medium"
-                      >
-                        No students found matching your search criteria.
+                      <td colSpan={4} className="py-12 text-center text-[#78716C] font-medium">
+                        No students found matching your criteria.
                       </td>
                     </tr>
                   ) : (
                     filteredStudents.map((student) => (
-                      <tr
-                        key={student.id}
-                        className="hover:bg-[#FAF8F5] transition-colors"
-                      >
+                      <tr key={student.id} className="hover:bg-[#FAF8F5] transition-colors">
+                        {/* Student Name & Photo */}
                         <td className="py-4 px-6">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-[#EFECE4] text-[#1C1917] font-bold flex items-center justify-center border border-[#DCD4C4]">
-                              {student.name.charAt(0).toUpperCase()}
+                            <div className="relative group shrink-0">
+                              <img
+                                src={`/api/students/${student.id}/photo`}
+                                alt={student.name}
+                                className="w-10 h-10 rounded-full object-cover border border-[#DCD4C4] bg-[#FAF8F5]"
+                              />
+                              <label
+                                className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity"
+                                title="Change Student Photo"
+                              >
+                                {uploadingPhotoStudentId === student.id ? (
+                                  <Loader2 className="w-4 h-4 text-white animate-spin" />
+                                ) : (
+                                  <Camera className="w-4 h-4 text-white" />
+                                )}
+                                <input
+                                  type="file"
+                                  accept="image/jpeg,image/png,image/webp"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleStudentPhotoUpload(student.id, file);
+                                    e.target.value = "";
+                                  }}
+                                />
+                              </label>
                             </div>
-                            <span className="font-bold text-[#1C1917]">
-                              {student.name}
-                            </span>
+
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-[#1C1917]">
+                                  {student.name}
+                                </span>
+                                {student.completionStatus === "completed" && (
+                                  <span title="Verified Graduate">
+                                    <Award className="w-3.5 h-3.5 text-[#059669]" />
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[#78716C] font-mono block text-[11px]">
+                                {student.email}
+                              </span>
+                              {student.photoUrl && (
+                                <button
+                                  onClick={() => handleRemoveStudentPhoto(student.id)}
+                                  className="text-[10px] text-[#DC2626] hover:underline mt-0.5 block"
+                                >
+                                  Remove photo
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </td>
 
-                        <td className="py-4 px-6 text-[#57534E] font-mono">
-                          {student.email}
-                        </td>
-
-                        <td className="py-4 px-6 text-[#78716C]">
-                          {new Date(student.createdAt).toLocaleDateString()}
-                        </td>
-
+                        {/* Subscription Status */}
                         <td className="py-4 px-6">
                           {student.subscriptionStatus === "active" && (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#ECFDF5] text-[#065F46] font-semibold border border-[#A7F3D0]">
@@ -678,7 +930,7 @@ export function AdminDashboardClient({
                           {student.subscriptionStatus === "pending" && (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FFFBEB] text-[#92400E] font-semibold border border-[#FDE68A]">
                               <Clock className="w-3 h-3 text-[#D97706]" />
-                              Pending Verification
+                              Pending Approval
                             </span>
                           )}
 
@@ -688,73 +940,61 @@ export function AdminDashboardClient({
                               Revoked
                             </span>
                           )}
-
-                          {student.subscriptionStatus === "rejected" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FEF2F2] text-[#991B1B] font-semibold border border-[#FECACA]">
-                              <X className="w-3 h-3 text-[#DC2626]" />
-                              Rejected
-                            </span>
-                          )}
                         </td>
 
+                        {/* Course Completion Status Dropdown / Indicator */}
+                        <td className="py-4 px-6">
+                          <div className="space-y-1">
+                            <select
+                              value={student.completionStatus || "enrolled"}
+                              onChange={(e) =>
+                                handleCompletionStatus(
+                                  student.id,
+                                  e.target.value as CompletionStatus
+                                )
+                              }
+                              className="px-2.5 py-1 rounded-lg border border-[#D4CDBC] bg-[#FAF8F5] text-xs font-semibold text-[#1C1917] focus:outline-none focus:ring-1 focus:ring-[#C25E38]"
+                            >
+                              <option value="enrolled">Enrolled</option>
+                              <option value="in_progress">In Progress</option>
+                              <option value="completed">Completed (Graduate)</option>
+                              <option value="revoked">Revoked</option>
+                            </select>
+
+                            {student.completionStatus === "completed" && student.completedAt && (
+                              <span className="text-[10px] text-[#059669] font-medium block">
+                                Verified: {new Date(student.completedAt).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Actions */}
                         <td className="py-4 px-6 text-right">
                           <div className="flex items-center justify-end gap-2">
                             {student.subscriptionStatus === "pending" && (
-                              <>
-                                <button
-                                  onClick={() =>
-                                    handleUpdateSubscriptionStatus(
-                                      student,
-                                      "active"
-                                    )
-                                  }
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#15803D] hover:bg-[#166534] text-white shadow-xs transition-colors"
-                                  title="Verify payment and unlock course access"
-                                >
-                                  <Check className="w-3 h-3" />
-                                  <span>Approve</span>
-                                </button>
-
-                                <button
-                                  onClick={() =>
-                                    handleUpdateSubscriptionStatus(
-                                      student,
-                                      "rejected"
-                                    )
-                                  }
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-white hover:bg-[#FEF2F2] text-[#991B1B] border border-[#FECACA] transition-colors"
-                                >
-                                  <X className="w-3 h-3" />
-                                  <span>Reject</span>
-                                </button>
-                              </>
+                              <button
+                                onClick={() => handleSubscriptionStatus(student, "active")}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#15803D] hover:bg-[#166534] text-white shadow-xs transition-colors"
+                              >
+                                <Check className="w-3 h-3" />
+                                <span>Approve</span>
+                              </button>
                             )}
 
                             {student.subscriptionStatus === "active" && (
                               <button
-                                onClick={() =>
-                                  handleUpdateSubscriptionStatus(
-                                    student,
-                                    "revoked"
-                                  )
-                                }
+                                onClick={() => handleSubscriptionStatus(student, "revoked")}
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-[#DC2626] hover:bg-[#FEF2F2] border border-transparent hover:border-[#FECACA] transition-colors"
-                                title="Revoke access immediately"
                               >
                                 <span>Revoke Access</span>
                               </button>
                             )}
 
-                            {(student.subscriptionStatus === "revoked" ||
-                              student.subscriptionStatus === "rejected") && (
+                            {student.subscriptionStatus === "revoked" && (
                               <button
-                                onClick={() =>
-                                  handleUpdateSubscriptionStatus(
-                                    student,
-                                    "active"
-                                  )
-                                }
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#FAF8F5] hover:bg-[#ECFDF5] text-[#065F46] border border-[#D4CDBC] hover:border-[#A7F3D0] transition-colors"
+                                onClick={() => handleSubscriptionStatus(student, "active")}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#FAF8F5] hover:bg-[#ECFDF5] text-[#065F46] border border-[#D4CDBC] transition-colors"
                               >
                                 <span>Re-activate</span>
                               </button>
@@ -767,6 +1007,168 @@ export function AdminDashboardClient({
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: REVIEWS MANAGEMENT */}
+      {activeTab === "reviews" && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
+            <div>
+              <h3 className="text-lg font-bold text-[#1C1917]">
+                Student Reviews & Moderation
+              </h3>
+              <p className="text-xs text-[#78716C]">
+                Approve submitted ratings, feature testimonials on the Home page, or remove inappropriate feedback.
+              </p>
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="flex items-center gap-2">
+              {[
+                { id: "all", label: "All Reviews" },
+                { id: "pending", label: "Pending Moderation" },
+                { id: "approved", label: "Approved Public" },
+                { id: "rejected", label: "Rejected" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setReviewFilter(tab.id)}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
+                    reviewFilter === tab.id
+                      ? "bg-[#292524] text-white"
+                      : "bg-white text-[#57534E] border border-[#D4CDBC]"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Reviews List */}
+          <div className="bg-white border border-[#D4CDBC] rounded-2xl overflow-hidden shadow-xs divide-y divide-[#E7E2D6]">
+            {filteredReviews.length === 0 ? (
+              <div className="py-12 text-center text-[#78716C] text-xs font-medium">
+                No reviews found under the selected filter.
+              </div>
+            ) : (
+              filteredReviews.map((rev) => (
+                <div
+                  key={rev.id}
+                  className="p-5 sm:p-6 flex flex-col md:flex-row md:items-start md:justify-between gap-4 hover:bg-[#FAF8F5] transition-colors"
+                >
+                  <div className="space-y-2.5 max-w-2xl">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={`/api/students/${rev.studentId}/photo`}
+                        alt={rev.studentName}
+                        className="w-10 h-10 rounded-full object-cover border border-[#DCD4C4]"
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-bold text-[#1C1917]">
+                            {rev.studentName}
+                          </h4>
+                          <span className="text-[11px] text-[#78716C]">
+                            ({rev.studentEmail})
+                          </span>
+                          {rev.isCompletedStudent && (
+                            <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
+                              Graduate
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Stars */}
+                        <div className="flex items-center gap-1 text-[#B45309]">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-3 h-3 ${
+                                i < rev.rating
+                                  ? "fill-[#B45309] text-[#B45309]"
+                                  : "text-[#D4CDBC]"
+                              }`}
+                            />
+                          ))}
+                          <span className="text-xs font-bold text-[#1C1917] ml-1">
+                            {rev.rating}/5
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-xs sm:text-sm text-[#44403C] leading-relaxed italic bg-[#FAF8F5] p-3 rounded-xl border border-[#E7E2D6]">
+                      &ldquo;{rev.feedback}&rdquo;
+                    </p>
+
+                    <div className="flex items-center gap-2 text-[11px] text-[#78716C]">
+                      <span>
+                        Submitted: {new Date(rev.createdAt).toLocaleDateString()}
+                      </span>
+                      <span>•</span>
+                      <span
+                        className={`font-semibold capitalize px-2 py-0.5 rounded ${
+                          rev.status === "approved"
+                            ? "bg-[#ECFDF5] text-[#065F46]"
+                            : rev.status === "pending"
+                            ? "bg-[#FFFBEB] text-[#92400E]"
+                            : "bg-[#FEF2F2] text-[#991B1B]"
+                        }`}
+                      >
+                        Status: {rev.status}
+                      </span>
+                      {rev.isFeatured && (
+                        <span className="bg-[#FEF3C7] text-[#92400E] font-semibold px-2 py-0.5 rounded flex items-center gap-0.5">
+                          <Sparkles className="w-2.5 h-2.5" /> Featured on Home
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Review Actions */}
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    {rev.status !== "approved" && (
+                      <button
+                        onClick={() => handleReviewStatus(rev.id, "approved")}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#15803D] hover:bg-[#166534] text-white transition-colors"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Approve</span>
+                      </button>
+                    )}
+
+                    {rev.status !== "rejected" && (
+                      <button
+                        onClick={() => handleReviewStatus(rev.id, "rejected")}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white hover:bg-[#FEF2F2] text-[#991B1B] border border-[#FECACA] transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>Reject</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => handleToggleFeatureReview(rev)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#FAF8F5] hover:bg-[#EFECE4] text-[#57534E] border border-[#D4CDBC] transition-colors"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-[#B45309]" />
+                      <span>{rev.isFeatured ? "Unfeature" : "Feature on Home"}</span>
+                    </button>
+
+                    <button
+                      onClick={() => promptDeleteReview(rev)}
+                      className="p-1.5 rounded-lg text-[#DC2626] hover:bg-[#FEF2F2] border border-transparent hover:border-[#FECACA] transition-colors"
+                      title="Permanently Delete Review"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}

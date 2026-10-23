@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { BookOpen, User, Mail, Lock, ArrowRight, Loader2, MessageCircle, Info } from "lucide-react";
-import { getEnrollmentWhatsAppUrl } from "@/lib/config";
+import { COURSE_CONFIG, getEnrollmentWhatsAppUrl } from "@/lib/config";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -50,14 +50,14 @@ export default function RegisterPage() {
             <BookOpen className="w-5 h-5 text-[#FAF8F5]" />
           </div>
           <span className="font-bold text-xl text-[#1C1917] tracking-tight">
-            Modern Web Engineering
+            {COURSE_CONFIG.shortTitle}
           </span>
         </Link>
         <h2 className="text-2xl font-bold text-[#1C1917] tracking-tight">
           Create Student Account
         </h2>
         <p className="mt-1 text-xs text-[#78716C]">
-          Register for the 8-Week Professional Foundations Course
+          Register for the 8-Week English Learning Journey
         </p>
       </div>
 
@@ -71,7 +71,7 @@ export default function RegisterPage() {
             </div>
             <p className="leading-relaxed">
               New accounts start with a <strong>Pending</strong> subscription.
-              Course materials unlock once the course administrator verifies
+              Course workbooks unlock once the course administrator verifies
               your payment through WhatsApp.
             </p>
           </div>

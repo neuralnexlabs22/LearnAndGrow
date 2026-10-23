@@ -1,9 +1,8 @@
 -- =========================================================================
--- 8-Week Student Course Platform: Database Schema & Row-Level Security
--- Compatible with Supabase PostgreSQL & Supabase Auth
+-- 8-Week English Learning Course Platform: Database Schema & Row-Level Security
+-- "Speak English with Confidence"
 -- =========================================================================
 
--- Enable UUID extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 1. PROFILES TABLE (Linked to auth.users)
@@ -12,12 +11,16 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   name TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
   role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'admin')),
+  photo_url TEXT,
+  completion_status TEXT NOT NULL DEFAULT 'enrolled' CHECK (completion_status IN ('enrolled', 'in_progress', 'completed', 'revoked')),
+  completed_at TIMESTAMPTZ,
+  public_consent BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- Index for fast lookups
 CREATE INDEX IF NOT EXISTS idx_profiles_email ON public.profiles(email);
 CREATE INDEX IF NOT EXISTS idx_profiles_role ON public.profiles(role);
+CREATE INDEX IF NOT EXISTS idx_profiles_completion ON public.profiles(completion_status);
 
 -- 2. SUBSCRIPTIONS TABLE
 CREATE TABLE IF NOT EXISTS public.subscriptions (
@@ -35,7 +38,7 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
 CREATE INDEX IF NOT EXISTS idx_subscriptions_student_id ON public.subscriptions(student_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON public.subscriptions(status);
 
--- 3. COURSE WEEKS TABLE (8 Modules)
+-- 3. COURSE WEEKS TABLE (8 English Modules)
 CREATE TABLE IF NOT EXISTS public.course_weeks (
   id TEXT PRIMARY KEY,
   week_number INT NOT NULL UNIQUE CHECK (week_number >= 1 AND week_number <= 8),
@@ -52,6 +55,26 @@ CREATE TABLE IF NOT EXISTS public.course_weeks (
 
 CREATE INDEX IF NOT EXISTS idx_course_weeks_number ON public.course_weeks(week_number);
 
+-- 4. STUDENT REVIEWS TABLE
+CREATE TABLE IF NOT EXISTS public.reviews (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  student_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  student_name TEXT NOT NULL,
+  student_email TEXT NOT NULL,
+  student_photo_url TEXT,
+  rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  feedback TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  is_featured BOOLEAN NOT NULL DEFAULT false,
+  is_completed_student BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT unique_student_review UNIQUE (student_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_reviews_status ON public.reviews(status);
+CREATE INDEX IF NOT EXISTS idx_reviews_featured ON public.reviews(is_featured);
+
 -- =========================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- =========================================================================
@@ -59,31 +82,24 @@ CREATE INDEX IF NOT EXISTS idx_course_weeks_number ON public.course_weeks(week_n
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.course_weeks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
 
--- Profiles: Students can read their own profile; Admins can read all profiles
+-- Profiles Policies
 CREATE POLICY "Users can view own profile" 
 ON public.profiles FOR SELECT 
 USING (auth.uid() = id);
 
-CREATE POLICY "Admins can view all profiles" 
-ON public.profiles FOR SELECT 
+CREATE POLICY "Public can view graduate consent profiles for reviews"
+ON public.profiles FOR SELECT
+USING (public_consent = true);
+
+CREATE POLICY "Admins have full access to profiles" 
+ON public.profiles FOR ALL 
 USING (
-  EXISTS (
-    SELECT 1 FROM public.profiles 
-    WHERE id = auth.uid() AND role = 'admin'
-  )
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
-CREATE POLICY "Admins can update profiles" 
-ON public.profiles FOR UPDATE 
-USING (
-  EXISTS (
-    SELECT 1 FROM public.profiles 
-    WHERE id = auth.uid() AND role = 'admin'
-  )
-);
-
--- Subscriptions: Students can view their own subscription status
+-- Subscriptions Policies
 CREATE POLICY "Students can view own subscription" 
 ON public.subscriptions FOR SELECT 
 USING (auth.uid() = student_id);
@@ -91,133 +107,115 @@ USING (auth.uid() = student_id);
 CREATE POLICY "Admins have full access to subscriptions" 
 ON public.subscriptions FOR ALL 
 USING (
-  EXISTS (
-    SELECT 1 FROM public.profiles 
-    WHERE id = auth.uid() AND role = 'admin'
-  )
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
--- Course Weeks: Public can read metadata (week number, title, description, published)
-CREATE POLICY "Public can view published course weeks metadata" 
+-- Course Weeks Policies
+CREATE POLICY "Public can view published course weeks" 
 ON public.course_weeks FOR SELECT 
 USING (is_published = true);
 
-CREATE POLICY "Admins can manage course weeks" 
+CREATE POLICY "Admins have full access to course weeks" 
 ON public.course_weeks FOR ALL 
 USING (
-  EXISTS (
-    SELECT 1 FROM public.profiles 
-    WHERE id = auth.uid() AND role = 'admin'
-  )
-);
-
--- =========================================================================
--- PRIVATE STORAGE BUCKET CONFIGURATION
--- =========================================================================
-
--- Create private bucket for course materials if not exists
-INSERT INTO storage.buckets (id, name, public) 
-VALUES ('course-materials', 'course-materials', false)
-ON CONFLICT (id) DO NOTHING;
-
--- Storage RLS: Admins have full access to upload and delete
-CREATE POLICY "Admins full access to course materials"
-ON storage.objects FOR ALL
-TO authenticated
-USING (
-  bucket_id = 'course-materials' AND
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-)
-WITH CHECK (
-  bucket_id = 'course-materials' AND
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
--- Storage RLS: Only students with ACTIVE subscription or Admins can read files
-CREATE POLICY "Active students can read course materials"
-ON storage.objects FOR SELECT
-TO authenticated
+-- Reviews Policies
+CREATE POLICY "Public can view approved reviews" 
+ON public.reviews FOR SELECT 
+USING (status = 'approved');
+
+CREATE POLICY "Students can view own review" 
+ON public.reviews FOR SELECT 
+USING (auth.uid() = student_id);
+
+CREATE POLICY "Students can create own review" 
+ON public.reviews FOR INSERT 
+WITH CHECK (auth.uid() = student_id AND status = 'pending');
+
+CREATE POLICY "Students can update own review" 
+ON public.reviews FOR UPDATE 
+USING (auth.uid() = student_id)
+WITH CHECK (auth.uid() = student_id AND status = 'pending');
+
+CREATE POLICY "Students can delete own review" 
+ON public.reviews FOR DELETE 
+USING (auth.uid() = student_id);
+
+CREATE POLICY "Admins have full access to reviews" 
+ON public.reviews FOR ALL 
 USING (
-  bucket_id = 'course-materials' AND (
-    EXISTS (
-      SELECT 1 FROM public.subscriptions 
-      WHERE student_id = auth.uid() AND status = 'active'
-    )
-    OR
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
-  )
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
 -- =========================================================================
--- INITIAL 8-WEEK SEED DATA
+-- SEED 8-WEEK ENGLISH LEARNING COURSE MODULES
 -- =========================================================================
 INSERT INTO public.course_weeks (id, week_number, title, description, learning_objectives, is_published)
 VALUES
   (
     'week-1', 
     1, 
-    'Core Architecture, Execution Context & Modern ES6+ Systems',
-    'Understand JavaScript runtime engines, call stacks, event loops, memory lifecycle, and clean code patterns for scalable engineering.',
-    '["JavaScript Engine Internals (V8 & SpiderMonkey)", "Execution Context, Call Stack & Microtask Queue", "Memory Allocation, Garbage Collection & Leak Prevention", "Modern ES6+ Modules, Iterators & Immutable Data Patterns"]'::jsonb,
+    'English Foundations and Basic Sentence Formation',
+    'Master essential sentence structures (SVO), subject-verb agreement, common auxiliary verbs, and foundational conversational patterns.',
+    '["Subject-Verb-Object (SVO) Core Architecture", "Articles (A, An, The) & Demonstrative Pronouns", "Auxiliary Verbs (Be, Do, Have) in Present Simple", "Essential Everyday Greetings & Self-Introductions"]'::jsonb,
     true
   ),
   (
     'week-2', 
     2, 
-    'Component Architecture, Reactive State & High-Performance UI',
-    'Design composable component hierarchies, understand virtual DOM diffing, master custom state hooks, and optimize rendering pipelines.',
-    '["Atomic Design & Modular Component Hierarchies", "Reactivity Models & Virtual DOM Reconciliation", "Custom Hook Factories & Fine-Grained State Primitives", "Render Tree Profiling, Memoization & Layout Shifts"]'::jsonb,
+    'Grammar and Tenses Mastery',
+    'Gain complete control over past, present, and future tenses. Learn how native speakers convey timelines and completed experiences naturally.',
+    '["Present Simple vs. Present Continuous in Real Contexts", "Past Simple vs. Present Perfect: Eliminating Common Errors", "Future Projections (Will vs. Going to vs. Present Continuous)", "Time Markers, Prepositions of Time (In, On, At) & Practice Drills"]'::jsonb,
     true
   ),
   (
     'week-3', 
     3, 
-    'Backend Services, REST Protocols & Edge Middleware Architecture',
-    'Build production-grade server endpoints, handle streaming requests, design robust API contracts, and leverage edge middleware.',
-    '["HTTP/2 & HTTP/3 Transport Mechanics", "RESTful API Design Standards & Idempotency", "Edge Middleware, Routing & Request Pipelines", "Error Handling Standards & Structured Logging"]'::jsonb,
+    'Vocabulary and Everyday Expressions',
+    'Expand beyond basic vocabulary with 250+ high-frequency collocations, phrasal verbs, idioms, and natural transitions used in daily interactions.',
+    '["High-Frequency Phrasal Verbs for Everyday Life", "Collocations & Natural Word Pairings", "Expressing Opinions, Agreement, and Polite Disagreement", "Idiomatic Expressions for Modern Social Conversation"]'::jsonb,
     true
   ),
   (
     'week-4', 
     4, 
-    'Relational Databases, PostgreSQL Modeling & ACID Transactions',
-    'Master relational schema modeling, foreign key constraints, indexes, connection pooling, and multi-step ACID transactions.',
-    '["Normalized Relational Schema Design (3NF)", "Indexes: B-Tree, Hash, GIN & Query Planners", "ACID Guarantees, Isolation Levels & Concurrency", "Connection Pooling & Migration Workflows"]'::jsonb,
+    'Spoken English and Conversation Practice',
+    'Develop spoken fluency, overcome hesitation, and practice real-time conversational turn-taking, active listening cues, and storytelling techniques.',
+    '["Overcoming Hesitation & Fear of Making Mistakes", "Conversational Connectors & Fillers Used Naturally", "Asking Engaging Open-Ended Questions in Dialogue", "Mini-Storytelling: Structuring Short Personal Anecdotes"]'::jsonb,
     true
   ),
   (
     'week-5', 
     5, 
-    'Authentication, Role-Based Access Control & Web Security Hardening',
-    'Implement defense-in-depth security: JWTs, secure HTTP-only cookie sessions, CSRF/XSS defenses, rate limiting, and RLS.',
-    '["Token Mechanics: Refresh & Access Token Lifecycles", "Secure Cookie Flags (HttpOnly, SameSite, Secure)", "Threat Mitigation: CSRF, XSS, SSRF & Injection", "Row Level Security (RLS) & Granular RBAC Gates"]'::jsonb,
+    'Pronunciation, Accent Clarity and Listening Skills',
+    'Sharpen your acoustic comprehension and speech clarity. Master vowel distinctions, syllable stress, connected speech, and native intonation rhythms.',
+    '["Vowel & Consonant Minimal Pairs Training", "Word Stress, Syllable Timing & Sentence Intonation", "Connected Speech (Linking, Elision & Weak Forms)", "Listening Strategies for Fast-Paced Native Audio"]'::jsonb,
     true
   ),
   (
     'week-6', 
     6, 
-    'Real-Time Synchronization, WebSockets & Distributed Caching',
-    'Implement duplex communication channels, handle optimistic UI updates, and design multi-tiered Redis caching strategies.',
-    '["WebSocket Protocol Handshakes & Heartbeats", "Pub/Sub Architectures & Presence Tracking", "Cache Invalidation Patterns (Stale-While-Revalidate)", "Optimistic UI State & Event Reconciliation"]'::jsonb,
+    'Reading Comprehension and Writing Precision',
+    'Analyze diverse texts, build analytical comprehension, and draft clear, cohesive emails, professional letters, and personal essays.',
+    '["Skimming & Scanning Techniques for Articles & Books", "Professional Email Etiquette & Structural Formats", "Paragraph Cohesion, Transitions & Punctuation Precision", "Writing Descriptive & Persuasive Short Texts"]'::jsonb,
     true
   ),
   (
     'week-7', 
     7, 
-    'Automated Testing, CI/CD Pipelines & Containerized Environments',
-    'Write unit, integration, and end-to-end tests; configure GitHub Actions CI/CD workflows, Docker containers, and artifact validation.',
-    '["Test-Driven Design: Unit, Integration & Contract Testing", "End-to-End Browser Automation with Playwright", "Containerization with Multi-Stage Dockerfiles", "Automated CI/CD Validation & Staging Deployments"]'::jsonb,
+    'Communication Skills and Real-Life Situations',
+    'Apply your English in workplace environments, job interviews, customer service, telephone calls, travel scenarios, and negotiations.',
+    '["Interview Preparation & Self-Introduction Mastery", "Workplace Meetings, Summaries & Action Items", "Telephone & Video Call Communication Etiquette", "Travel, Dining, Emergencies & Social Etiquette"]'::jsonb,
     true
   ),
   (
     'week-8', 
     8, 
-    'Capstone Architecture, Production Observability & Performance Audits',
-    'Bring everything together into a scalable capstone project. Perform Core Web Vitals audits, configure OpenTelemetry, and deploy.',
-    '["Full-Stack Production System Architecture", "Core Web Vitals (LCP, INP, CLS) Optimization", "APM Observability, Metrics & Telemetry Tracing", "Final Production Audit, Security Checklist & Launch"]'::jsonb,
+    'Revision, Practical Exercises, and Final Assessment',
+    'Consolidate your 8-week knowledge with practical roleplays, comprehensive grammar & vocabulary review, and your final spoken English evaluation.',
+    '["Comprehensive Grammar & Phrasal Verb Synthesis", "Live Roleplay Simulation & Spoken Review", "Self-Assessment Portfolio & Ongoing Study Plan", "Final Spoken Evaluation & Course Completion Award"]'::jsonb,
     true
   )
 ON CONFLICT (week_number) DO NOTHING;

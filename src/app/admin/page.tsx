@@ -4,6 +4,7 @@ import {
   getCourseWeeks,
   getStudentsWithSubscriptions,
   getDashboardStats,
+  getAllReviews,
 } from "@/lib/data-store";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -14,9 +15,9 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Admin Dashboard | Modern Web Engineering Course",
+  title: "Admin Dashboard | 8-Week English Learning Course",
   description:
-    "Secure administration dashboard for managing 8-week course PDF materials, student subscriptions, and access approvals.",
+    "Secure administration dashboard for managing 8-week English course materials, student subscriptions, photos, reviews, and completion tracking.",
 };
 
 export default async function AdminPage() {
@@ -35,8 +36,8 @@ export default async function AdminPage() {
           </h2>
           <p className="text-xs text-[#57534E] leading-relaxed">
             This dashboard is protected. Only verified course administrators
-            have permission to manage curriculum files and student
-            subscriptions.
+            have permission to manage curriculum workbooks, student
+            subscriptions, photos, and review moderation.
           </p>
           <div className="pt-2 flex flex-col gap-2">
             <Link
@@ -58,9 +59,10 @@ export default async function AdminPage() {
     );
   }
 
-  const [weeks, students, stats] = await Promise.all([
+  const [weeks, students, reviews, stats] = await Promise.all([
     getCourseWeeks(),
     getStudentsWithSubscriptions(),
+    getAllReviews(),
     getDashboardStats(),
   ]);
 
@@ -82,7 +84,7 @@ export default async function AdminPage() {
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1C1917] tracking-tight mt-1">
-                Course Management & Student Access
+                English Course Management & Student Operations
               </h1>
             </div>
 
@@ -95,6 +97,7 @@ export default async function AdminPage() {
           <AdminDashboardClient
             initialWeeks={weeks}
             initialStudents={students}
+            initialReviews={reviews}
             initialStats={stats}
           />
         </div>

@@ -13,16 +13,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "8-Week Full-Stack Web Engineering | Student Course Platform",
+  title: "Speak English with Confidence | 8-Week English Learning Course",
   description:
-    "An intensive 8-week online learning platform with structured weekly syllabus, private study materials, and direct WhatsApp instructor enrollment.",
+    "An intensive 8-week structured English learning course covering grammar, vocabulary, pronunciation, listening, and everyday conversational fluency.",
   keywords: [
-    "online course",
-    "8-week course",
-    "web engineering",
-    "student course",
-    "syllabus",
-    "learning modules",
+    "English course",
+    "8-week English",
+    "spoken English",
+    "English grammar",
+    "vocabulary",
+    "pronunciation",
+    "conversation practice",
   ],
 };
 

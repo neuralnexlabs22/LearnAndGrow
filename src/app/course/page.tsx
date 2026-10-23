@@ -14,25 +14,36 @@ import {
   Info,
 } from "lucide-react";
 import { getCurrentSession } from "@/lib/auth";
-import { getCourseWeeks } from "@/lib/data-store";
+import {
+  getCourseWeeks,
+  getApprovedReviews,
+  getStudentReview,
+} from "@/lib/data-store";
 import { COURSE_CONFIG, getEnrollmentWhatsAppUrl } from "@/lib/config";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { CourseModuleList } from "./CourseModuleList";
+import { ReviewsSection } from "@/components/ReviewsSection";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "8-Week Course Curriculum & Modules | Modern Web Engineering",
+  title: "8-Week English Course Curriculum & Modules | Speak English with Confidence",
   description:
-    "Explore the complete 8-week syllabus, weekly learning objectives, and access verified student study materials.",
+    "Explore the complete 8-week English syllabus, grammar foundations, spoken dialogues, and access verified student study materials.",
 };
 
 export default async function CoursePage() {
   const { user, subscriptionStatus } = await getCurrentSession();
   const weeks = await getCourseWeeks();
+  const approvedReviews = await getApprovedReviews();
   const hasAccess = user?.role === "admin" || subscriptionStatus === "active";
   const whatsAppUrl = getEnrollmentWhatsAppUrl(user?.email);
+
+  let userReview = null;
+  if (user && user.role === "student") {
+    userReview = await getStudentReview(user.id);
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FBF9F5] text-[#1C1917]">
@@ -45,7 +56,7 @@ export default async function CoursePage() {
             <div className="max-w-3xl space-y-4">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-[#EFECE4] text-[#44403C] border border-[#DCD4C4]">
-                  Official Curriculum
+                  Official English Syllabus
                 </span>
                 <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#EFECE4] text-[#C25E38] border border-[#DCD4C4] flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5" />
@@ -53,7 +64,7 @@ export default async function CoursePage() {
                 </span>
                 <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#EFECE4] text-[#15803D] border border-[#DCD4C4] flex items-center gap-1">
                   <FileText className="w-3.5 h-3.5" />
-                  8 Weekly PDF Guides
+                  8 Weekly Workbooks
                 </span>
               </div>
 
@@ -103,8 +114,8 @@ export default async function CoursePage() {
                 </h3>
                 <p className="text-xs text-[#047857] mt-0.5 leading-relaxed">
                   You have verified access to all eight weekly modules. You can
-                  view or download the official PDF learning compendiums
-                  directly on this page.
+                  view or download the official PDF English workbooks directly
+                  on this page.
                 </p>
               </div>
             </div>
@@ -155,7 +166,7 @@ export default async function CoursePage() {
                     Visitor Preview Mode
                   </h3>
                   <p className="text-xs text-[#78716C] mt-0.5">
-                    Course materials are protected. Review the syllabus below,
+                    Course workbooks are protected. Review the syllabus below,
                     then contact the administrator on WhatsApp to enroll and
                     unlock access.
                   </p>
@@ -181,7 +192,7 @@ export default async function CoursePage() {
           )}
         </div>
 
-        {/* COURSE INFORMATION & OBJECTIVES */}
+        {/* COURSE INFORMATION & LEARNING OUTCOMES */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
           <div className="bg-white border border-[#E7E2D6] rounded-2xl p-6 sm:p-8 space-y-6 beige-card-shadow">
             <div>
@@ -189,11 +200,11 @@ export default async function CoursePage() {
                 Learning Outcomes
               </span>
               <h2 className="text-xl sm:text-2xl font-bold text-[#1C1917] mt-1">
-                Course Syllabus & Learning Objectives
+                English Course Syllabus & Communication Objectives
               </h2>
               <p className="text-sm text-[#57534E] mt-1">
                 By the conclusion of the 8-week curriculum, every student will
-                have mastered:
+                have achieved:
               </p>
             </div>
 
@@ -202,11 +213,11 @@ export default async function CoursePage() {
                 <CheckCircle2 className="w-5 h-5 text-[#15803D] shrink-0 mt-0.5" />
                 <div className="text-xs">
                   <span className="font-bold text-[#1C1917] block">
-                    V8 Runtime, Execution Context & ES6 Architecture
+                    Effortless Sentence Construction (SVO)
                   </span>
                   <span className="text-[#57534E]">
-                    Master asynchronous concurrency, garbage collection, and
-                    clean modular TypeScript code.
+                    Formulate clear grammatical sentences without hesitating or
+                    translating word-for-word.
                   </span>
                 </div>
               </div>
@@ -215,11 +226,11 @@ export default async function CoursePage() {
                 <CheckCircle2 className="w-5 h-5 text-[#15803D] shrink-0 mt-0.5" />
                 <div className="text-xs">
                   <span className="font-bold text-[#1C1917] block">
-                    Enterprise Reactive Component Architecture
+                    Confident Spoken English & Pronunciation
                   </span>
                   <span className="text-[#57534E]">
-                    Design reusable atomic components, custom hook primitives,
-                    and performant UI pipelines.
+                    Overcome speaking anxiety and articulate ideas with clear
+                    accent rhythm, word stress, and natural intonation.
                   </span>
                 </div>
               </div>
@@ -228,11 +239,11 @@ export default async function CoursePage() {
                 <CheckCircle2 className="w-5 h-5 text-[#15803D] shrink-0 mt-0.5" />
                 <div className="text-xs">
                   <span className="font-bold text-[#1C1917] block">
-                    Relational PostgreSQL Schema Modeling & ACID Safety
+                    Natural Everyday Vocabulary & Phrasal Verbs
                   </span>
                   <span className="text-[#57534E]">
-                    Implement normalized relational databases, indexes,
-                    connection pooling, and transactional integrity.
+                    Utilize 250+ essential collocations and idiomatic expressions
+                    in casual, social, and workplace conversations.
                   </span>
                 </div>
               </div>
@@ -241,11 +252,11 @@ export default async function CoursePage() {
                 <CheckCircle2 className="w-5 h-5 text-[#15803D] shrink-0 mt-0.5" />
                 <div className="text-xs">
                   <span className="font-bold text-[#1C1917] block">
-                    Defense-In-Depth Authentication & Web Hardening
+                    Real-World Professional & Personal Communication
                   </span>
                   <span className="text-[#57534E]">
-                    Deploy secure HTTP-only cookies, Row Level Security (RLS),
-                    CSRF protection, and rate limiting.
+                    Excel in job interviews, workplace emails, phone inquiries,
+                    social gatherings, and presentations.
                   </span>
                 </div>
               </div>
@@ -261,7 +272,7 @@ export default async function CoursePage() {
                 Modules 01 to 08
               </span>
               <h2 className="text-2xl sm:text-3xl font-bold text-[#1C1917] tracking-tight">
-                Weekly Course Modules
+                Weekly English Course Modules
               </h2>
             </div>
 
@@ -284,15 +295,24 @@ export default async function CoursePage() {
           />
         </div>
 
-        {/* WHATSAPP ENROLLMENT ASSISTANCE BANNER */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
+        {/* COURSE REVIEWS ON COURSE PAGE */}
+        <div className="mt-12">
+          <ReviewsSection
+            initialReviews={approvedReviews}
+            currentUser={user}
+            userReview={userReview}
+          />
+        </div>
+
+        {/* WHATSAPP ENROLLMENT ADVISORY BANNER */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
           <div className="bg-[#F5F2EB] border border-[#D4CDBC] rounded-2xl p-8 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-8 beige-card-shadow">
             <div className="space-y-3 max-w-xl text-center md:text-left">
               <span className="text-xs font-bold uppercase tracking-wider text-[#15803D]">
                 Instructor Advisory
               </span>
               <h3 className="text-2xl font-bold text-[#1C1917]">
-                Need help deciding if this course is right for you?
+                Have questions about your current English level?
               </h3>
               <p className="text-sm text-[#57534E] leading-relaxed">
                 Connect directly with the course instructor via WhatsApp to
