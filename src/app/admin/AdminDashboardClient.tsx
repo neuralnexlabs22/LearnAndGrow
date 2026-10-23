@@ -36,6 +36,7 @@ import {
 } from "@/types";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { PdfViewerModal } from "@/components/PdfViewerModal";
+import { formatDisplayDate } from "@/lib/config";
 
 interface AdminDashboardClientProps {
   initialWeeks: CourseWeek[];
@@ -962,8 +963,8 @@ export function AdminDashboardClient({
                             </select>
 
                             {student.completionStatus === "completed" && student.completedAt && (
-                              <span className="text-[10px] text-[#059669] font-medium block">
-                                Verified: {new Date(student.completedAt).toLocaleDateString()}
+                              <span className="text-[10px] text-[#059669] font-medium block" suppressHydrationWarning>
+                                Verified: {formatDisplayDate(student.completedAt)}
                               </span>
                             )}
                           </div>
@@ -1105,8 +1106,8 @@ export function AdminDashboardClient({
                     </p>
 
                     <div className="flex items-center gap-2 text-[11px] text-[#78716C]">
-                      <span>
-                        Submitted: {new Date(rev.createdAt).toLocaleDateString()}
+                      <span suppressHydrationWarning>
+                        Submitted: {formatDisplayDate(rev.createdAt)}
                       </span>
                       <span>•</span>
                       <span

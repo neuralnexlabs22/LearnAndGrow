@@ -55,6 +55,9 @@ export default async function CoursePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl space-y-4">
               <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold tracking-tight px-3 py-1 rounded-full bg-white text-[#0F2D59] border border-[#D4CDBC] shadow-2xs">
+                  Learn <span className="text-[#2E7D32]">and</span> Grow
+                </span>
                 <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-[#EFECE4] text-[#44403C] border border-[#DCD4C4]">
                   Official English Syllabus
                 </span>

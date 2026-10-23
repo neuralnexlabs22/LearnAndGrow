@@ -1,5 +1,6 @@
 import { Star, CheckCircle2, Award, Calendar } from "lucide-react";
 import { StudentReview } from "@/types";
+import { formatDisplayDate } from "@/lib/config";
 
 interface StudentReviewCardProps {
   review: StudentReview;
@@ -70,13 +71,9 @@ export function StudentReviewCard({ review }: StudentReviewCardProps) {
         <span className="flex items-center gap-1">
           <CheckCircle2 className="w-3 h-3 text-[#15803D]" /> Approved Student Review
         </span>
-        <span className="flex items-center gap-1 text-[#A8A29E]">
+        <span className="flex items-center gap-1 text-[#A8A29E]" suppressHydrationWarning>
           <Calendar className="w-3 h-3" />
-          {new Date(review.createdAt).toLocaleDateString(undefined, {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          })}
+          {formatDisplayDate(review.createdAt)}
         </span>
       </div>
     </div>

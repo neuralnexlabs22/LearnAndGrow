@@ -89,10 +89,12 @@ export default async function HomePage() {
             <div className="max-w-3xl mx-auto text-center space-y-6">
               {/* Badge */}
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EFECE4] text-[#44403C] border border-[#DCD4C4] text-xs font-semibold tracking-wide shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-[#C25E38] animate-pulse" />
-                <span>8-Week English Learning Journey</span>
+                <span className="w-2 h-2 rounded-full bg-[#15803D] animate-pulse" />
+                <span className="text-[#0F2D59] font-bold">Learn and Grow</span>
                 <span className="text-[#A8A29E]">•</span>
-                <span>Enrolling Now</span>
+                <span className="tracking-wider text-[11px] font-semibold text-[#57534E]">LEARN | IMPROVE | ACHIEVE</span>
+                <span className="text-[#A8A29E] hidden sm:inline">•</span>
+                <span className="hidden sm:inline text-[#15803D] font-medium">8-Week Course</span>
               </div>
 
               {/* Main Heading */}

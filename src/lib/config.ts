@@ -85,3 +85,23 @@ export function getWeekInquiryWhatsAppUrl(
   const message = `Hello Learn and Grow team! I have a question regarding Week ${weekNumber} (${weekTitle}) of the 8-Week English Learning Course. Could you please share more details on the lesson plan and enrollment?`;
   return buildWhatsAppUrl(message);
 }
+
+/**
+ * Deterministic date formatter to prevent React SSR/Client hydration mismatches.
+ * Formats dates uniformly as "Oct 21, 2026" regardless of server OS or browser locale.
+ */
+export function formatDisplayDate(dateInput?: string | number | Date | null): string {
+  if (!dateInput) return "";
+  try {
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) return "";
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    return `${months[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+  } catch {
+    return "";
+  }
+}
+

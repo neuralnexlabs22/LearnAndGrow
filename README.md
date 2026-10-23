@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 8-Week English Learning Course Platform: "Speak English with Confidence"
 
 A modern, responsive, and secure online learning platform designed exclusively for an intensive 8-week English learning course. Built with a refined **warm beige editorial aesthetic**, private PDF study workbooks, verified course completion tracking, a 5-star student review & success stories system, WhatsApp click-to-chat enrollment workflow, and an administrator dashboard for complete course management.
@@ -126,3 +127,7 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 | **Revoked Student (Marcus)** | `revoked.student@example.com` | `StudentPass123!` | Revoked Access (403 Forbidden on protected files) |
 
 *You can also register any new account on `/register` to test the complete student lifecycle!*
+=======
+# LearnAndGrow
+Build your English skills step by step through an 8-week learning journey covering grammar, vocabulary, speaking, listening, and everyday communication.
+>>>>>>> 18ca8d251348167bd998fbdcec5da5ba2af2c5f2

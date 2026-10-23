@@ -121,7 +121,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-[#E7E2D6] flex flex-col sm:flex-row items-center justify-between text-xs text-[#78716C] gap-4">
-          <p>
+          <p suppressHydrationWarning>
             © {new Date().getFullYear()} Learn and Grow. All rights reserved.
           </p>
           <p className="flex items-center gap-2">
