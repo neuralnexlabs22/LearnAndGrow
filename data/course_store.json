@@ -31,6 +31,14 @@
       "role": "student",
       "passwordHash": "StudentPass123!",
       "createdAt": "2026-09-02T11:20:00.000Z"
+    },
+    {
+      "id": "user-1792760225696",
+      "name": "David Miller",
+      "email": "david.miller@college.edu",
+      "role": "student",
+      "passwordHash": "Password123!",
+      "createdAt": "2026-10-23T12:57:05.696Z"
     }
   ],
   "subscriptions": [
@@ -62,6 +70,16 @@
       "notes": "Access revoked due to policy violation.",
       "createdAt": "2026-09-02T11:20:00.000Z",
       "updatedAt": "2026-09-10T16:00:00.000Z"
+    },
+    {
+      "id": "sub-1792760225696",
+      "studentId": "user-1792760225696",
+      "status": "active",
+      "createdAt": "2026-10-23T12:57:05.696Z",
+      "updatedAt": "2026-10-23T12:58:55.918Z",
+      "notes": "Newly registered student. Pending payment and WhatsApp verification.",
+      "approvedBy": "admin-001",
+      "approvedAt": "2026-10-23T12:58:55.918Z"
     }
   ],
   "weeks": [
@@ -104,7 +122,7 @@
     {
       "id": "week-3",
       "weekNumber": 3,
-      "title": "Backend Services, REST Protocols & Edge Middleware Architecture",
+      "title": "Backend Architecture, Edge Services & High-Performance REST",
       "description": "Build production-grade server endpoints, handle streaming requests, design robust API contracts, and leverage edge middleware.",
       "learningObjectives": [
         "HTTP/2 & HTTP/3 Transport Mechanics",
@@ -117,7 +135,7 @@
       "pdfFilesizeBytes": null,
       "isPublished": true,
       "createdAt": "2026-10-23T12:46:17.248Z",
-      "updatedAt": "2026-10-23T12:46:17.248Z"
+      "updatedAt": "2026-10-23T13:01:16.664Z"
     },
     {
       "id": "week-4",
