@@ -261,35 +261,35 @@ ON CONFLICT (week_number) DO UPDATE SET
 -- 8. SEED DATA: ADMINISTRATOR ONLY
 -- =========================================================================
 
--- Primary Admin User (learnandgrow050518@gmail.com / AdminPass123!)
-INSERT INTO public.profiles (id, name, email, role, password_hash, completion_status, public_consent)
-VALUES (
-  '00000000-0000-0000-0000-000000000001'::uuid,
-  'Course Administrator',
-  'learnandgrow050518@gmail.com',
-  'admin',
-  'AdminPass123!',
-  'completed',
-  false
-)
-ON CONFLICT (email) DO UPDATE SET
-  role = 'admin',
-  password_hash = 'AdminPass123!';
-
--- Fallback Admin User (admin@course.edu / AdminPass123!)
-INSERT INTO public.profiles (id, name, email, role, password_hash, completion_status, public_consent)
-VALUES (
-  '00000000-0000-0000-0000-000000000002'::uuid,
-  'Course Administrator (Fallback)',
-  'admin@course.edu',
-  'admin',
-  'AdminPass123!',
-  'completed',
-  false
-)
-ON CONFLICT (email) DO UPDATE SET
-  role = 'admin',
-  password_hash = 'AdminPass123!';
+-- Safe idempotent administrator creation/update (prevents duplicate key errors on id or email)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM public.profiles WHERE email = 'learnandgrow050518@gmail.com') THEN
+    UPDATE public.profiles
+    SET role = 'admin',
+        password_hash = 'AdminPass123!',
+        name = 'Course Administrator'
+    WHERE email = 'learnandgrow050518@gmail.com';
+  ELSIF EXISTS (SELECT 1 FROM public.profiles WHERE id = '00000000-0000-0000-0000-000000000001'::uuid) THEN
+    UPDATE public.profiles
+    SET email = 'learnandgrow050518@gmail.com',
+        role = 'admin',
+        password_hash = 'AdminPass123!',
+        name = 'Course Administrator'
+    WHERE id = '00000000-0000-0000-0000-000000000001'::uuid;
+  ELSE
+    INSERT INTO public.profiles (id, name, email, role, password_hash, completion_status, public_consent)
+    VALUES (
+      '00000000-0000-0000-0000-000000000001'::uuid,
+      'Course Administrator',
+      'learnandgrow050518@gmail.com',
+      'admin',
+      'AdminPass123!',
+      'completed',
+      false
+    );
+  END IF;
+END $$;
 
 -- =========================================================================
 -- 9. ASSESSMENT TABLES (Free English Grammar Assessment)
