@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, Lock, Mail, ArrowRight, Loader2, ShieldCheck, UserCheck, Clock } from "lucide-react";
+import { BookOpen, Lock, Mail, ArrowRight, Loader2 } from "lucide-react";
 import { COURSE_CONFIG } from "@/lib/config";
 
 export default function LoginPage() {
@@ -40,12 +40,6 @@ export default function LoginPage() {
       setErrorMessage(err.message || "Invalid credentials.");
       setIsLoading(false);
     }
-  };
-
-  const fillDemoAccount = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setErrorMessage("");
   };
 
   return (
@@ -143,89 +137,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          {/* Quick Demo Switcher Section */}
-          <div className="pt-4 border-t border-[#E7E2D6] space-y-3">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#78716C] block text-center">
-              Quick Test Accounts (Click to Fill)
-            </span>
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() =>
-                  fillDemoAccount("admin@course.edu", "AdminPass123!")
-                }
-                className="w-full text-left p-2.5 rounded-xl border border-[#D4CDBC] bg-[#FAF8F5] hover:bg-[#F5F2EB] transition-colors flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-[#B45309]" />
-                  <div>
-                    <p className="text-xs font-bold text-[#1C1917]">
-                      Instructor / Admin
-                    </p>
-                    <p className="text-[11px] text-[#78716C]">
-                      admin@course.edu
-                    </p>
-                  </div>
-                </div>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#FEF3C7] text-[#92400E]">
-                  Full Admin Access
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  fillDemoAccount(
-                    "active.student@example.com",
-                    "StudentPass123!"
-                  )
-                }
-                className="w-full text-left p-2.5 rounded-xl border border-[#D4CDBC] bg-[#FAF8F5] hover:bg-[#F5F2EB] transition-colors flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <UserCheck className="w-4 h-4 text-[#15803D]" />
-                  <div>
-                    <p className="text-xs font-bold text-[#1C1917]">
-                      Active Student (Alex)
-                    </p>
-                    <p className="text-[11px] text-[#78716C]">
-                      active.student@example.com
-                    </p>
-                  </div>
-                </div>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#ECFDF5] text-[#065F46]">
-                  Active Sub & Graduate
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  fillDemoAccount(
-                    "pending.student@example.com",
-                    "StudentPass123!"
-                  )
-                }
-                className="w-full text-left p-2.5 rounded-xl border border-[#D4CDBC] bg-[#FAF8F5] hover:bg-[#F5F2EB] transition-colors flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-[#B45309]" />
-                  <div>
-                    <p className="text-xs font-bold text-[#1C1917]">
-                      Student (Samantha)
-                    </p>
-                    <p className="text-[11px] text-[#78716C]">
-                      pending.student@example.com
-                    </p>
-                  </div>
-                </div>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#FFFBEB] text-[#92400E]">
-                  In Progress
-                </span>
-              </button>
-            </div>
-          </div>
 
           <div className="text-center text-xs text-[#78716C] pt-2">
             Don&apos;t have an account yet?{" "}

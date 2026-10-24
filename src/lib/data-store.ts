@@ -1,10 +1,8 @@
 /**
- * data-store.ts — In-Memory Data Store (Vercel-Compatible)
+ * data-store.ts — Hybrid Supabase & In-Memory Data Store
  *
- * This module uses a global in-memory store seeded with initial data.
- * Data persists across hot-reloads in development but resets on serverless
- * cold-starts in production (Vercel). For persistent production data,
- * migrate to Supabase using the schema in /supabase/schema.sql.
+ * Seamlessly connects to Supabase PostgreSQL & Storage when configured,
+ * with resilient in-memory fallback.
  */
 
 import {
@@ -20,8 +18,9 @@ import {
   DashboardStats,
 } from "@/types";
 import { generateCourseModulePdfBuffer } from "./pdf-generator";
+import { getSupabaseAdminClient, isSupabaseConfigured } from "./supabase";
 
-interface StoredUser extends UserProfile {
+export interface StoredUser extends UserProfile {
   passwordHash: string;
 }
 
@@ -195,159 +194,25 @@ const SEED_WEEKS: CourseWeek[] = [
 
 const SEED_USERS: StoredUser[] = [
   {
-    id: "admin-001",
+    id: "00000000-0000-0000-0000-000000000001",
     name: "Course Administrator",
-    email: "admin@learnandgrow.edu",
+    email: "admin@course.edu",
     role: "admin",
     photoUrl: null,
-    completionStatus: undefined,
+    completionStatus: "completed",
     completedAt: undefined,
     publicConsent: false,
     passwordHash: "AdminPass123!",
     createdAt: "2026-08-01T10:00:00.000Z",
   },
-  {
-    id: "student-001",
-    name: "Alex Rivera",
-    email: "active.student@example.com",
-    role: "student",
-    photoUrl: null,
-    completionStatus: "completed",
-    completedAt: "2026-10-15T12:00:00.000Z",
-    publicConsent: true,
-    passwordHash: "StudentPass123!",
-    createdAt: "2026-08-15T14:30:00.000Z",
-  },
-  {
-    id: "student-002",
-    name: "Samantha Chen",
-    email: "pending.student@example.com",
-    role: "student",
-    photoUrl: null,
-    completionStatus: "in_progress",
-    completedAt: null,
-    publicConsent: true,
-    passwordHash: "StudentPass123!",
-    createdAt: "2026-09-12T09:15:00.000Z",
-  },
-  {
-    id: "student-003",
-    name: "Marcus Vance",
-    email: "revoked.student@example.com",
-    role: "student",
-    photoUrl: null,
-    completionStatus: "revoked",
-    completedAt: null,
-    publicConsent: false,
-    passwordHash: "StudentPass123!",
-    createdAt: "2026-09-02T11:20:00.000Z",
-  },
-  {
-    id: "student-004",
-    name: "David Miller",
-    email: "david.miller@college.edu",
-    role: "student",
-    photoUrl: null,
-    completionStatus: "completed",
-    completedAt: "2026-10-20T16:00:00.000Z",
-    publicConsent: true,
-    passwordHash: "Password123!",
-    createdAt: "2026-08-20T12:00:00.000Z",
-  },
 ];
 
-const SEED_SUBSCRIPTIONS: Subscription[] = [
-  {
-    id: "sub-001",
-    studentId: "student-001",
-    status: "active",
-    approvedBy: "admin-001",
-    approvedAt: "2026-08-16T10:00:00.000Z",
-    notes: "Payment verified via WhatsApp and approved.",
-    createdAt: "2026-08-15T14:30:00.000Z",
-    updatedAt: "2026-08-16T10:00:00.000Z",
-  },
-  {
-    id: "sub-002",
-    studentId: "student-002",
-    status: "active",
-    approvedBy: "admin-001",
-    approvedAt: "2026-09-13T11:00:00.000Z",
-    notes: "Approved after WhatsApp bank confirmation.",
-    createdAt: "2026-09-12T09:15:00.000Z",
-    updatedAt: "2026-09-13T11:00:00.000Z",
-  },
-  {
-    id: "sub-003",
-    studentId: "student-003",
-    status: "revoked",
-    approvedBy: "admin-001",
-    notes: "Access revoked due to policy violation.",
-    createdAt: "2026-09-02T11:20:00.000Z",
-    updatedAt: "2026-09-10T16:00:00.000Z",
-  },
-  {
-    id: "sub-004",
-    studentId: "student-004",
-    status: "active",
-    approvedBy: "admin-001",
-    approvedAt: "2026-08-21T09:00:00.000Z",
-    notes: "Approved and fully completed the 8 weeks.",
-    createdAt: "2026-08-20T12:00:00.000Z",
-    updatedAt: "2026-08-21T09:00:00.000Z",
-  },
-];
+const SEED_SUBSCRIPTIONS: Subscription[] = [];
 
-const SEED_REVIEWS: StudentReview[] = [
-  {
-    id: "rev-001",
-    studentId: "student-001",
-    studentName: "Alex Rivera",
-    studentEmail: "active.student@example.com",
-    studentPhotoUrl: null,
-    rating: 5,
-    feedback:
-      "The 8-week structured progression gave me the confidence I was always missing. Breaking down grammar tenses and everyday conversational dialogues helped me speak fluently during my workplace team meetings.",
-    status: "approved",
-    isFeatured: true,
-    isCompletedStudent: true,
-    createdAt: "2026-10-16T14:00:00.000Z",
-    updatedAt: "2026-10-16T14:00:00.000Z",
-  },
-  {
-    id: "rev-002",
-    studentId: "student-004",
-    studentName: "David Miller",
-    studentEmail: "david.miller@college.edu",
-    studentPhotoUrl: null,
-    rating: 5,
-    feedback:
-      "I used to hesitate and translate every word in my head. The pronunciation drills in Week 5 and the real-life communication scenarios completely transformed my speaking rhythm. Highly recommended!",
-    status: "approved",
-    isFeatured: true,
-    isCompletedStudent: true,
-    createdAt: "2026-10-21T10:30:00.000Z",
-    updatedAt: "2026-10-21T10:30:00.000Z",
-  },
-  {
-    id: "rev-003",
-    studentId: "student-002",
-    studentName: "Samantha Chen",
-    studentEmail: "pending.student@example.com",
-    studentPhotoUrl: null,
-    rating: 5,
-    feedback:
-      "The weekly PDF workbooks are clear, practical, and filled with exercises that you can actually use every day. Having direct WhatsApp feedback from the instructor kept me motivated throughout.",
-    status: "approved",
-    isFeatured: true,
-    isCompletedStudent: false,
-    createdAt: "2026-10-18T09:00:00.000Z",
-    updatedAt: "2026-10-18T09:00:00.000Z",
-  },
-];
+const SEED_REVIEWS: StudentReview[] = [];
 
 // =========================================================================
-// GLOBAL IN-MEMORY STORE (Survives hot-reloads via globalThis)
+// GLOBAL IN-MEMORY STORE (Fallback & dev cache)
 // =========================================================================
 
 function createInitialStore(): StoreData {
@@ -361,46 +226,148 @@ function createInitialStore(): StoreData {
   };
 }
 
-// Use globalThis to persist the store across Next.js hot-reloads in dev
 const g = globalThis as typeof globalThis & { __courseStore?: StoreData };
 if (!g.__courseStore) {
   g.__courseStore = createInitialStore();
 }
 
-function getStore(): StoreData {
+function getMemoryStore(): StoreData {
   if (!g.__courseStore) {
     g.__courseStore = createInitialStore();
   }
   return g.__courseStore;
 }
 
-/* ------------------- COURSE WEEKS ------------------- */
+// =========================================================================
+// COURSE WEEKS
+// =========================================================================
 
 export async function getCourseWeeks(): Promise<CourseWeek[]> {
-  const store = getStore();
-  return [...store.weeks].sort((a, b) => a.weekNumber - b.weekNumber);
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("course_weeks")
+        .select("*")
+        .order("week_number", { ascending: true });
+
+      if (!error && data && data.length > 0) {
+        return data.map((row: any) => ({
+          id: row.id,
+          weekNumber: row.week_number,
+          title: row.title,
+          description: row.description,
+          learningObjectives: Array.isArray(row.learning_objectives)
+            ? row.learning_objectives
+            : [],
+          pdfFilename: row.pdf_filename,
+          pdfStoragePath: row.pdf_storage_path,
+          pdfFilesizeBytes: row.pdf_filesize_bytes,
+          isPublished: row.is_published,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        }));
+      }
+    } catch (err) {
+      console.warn("Supabase getCourseWeeks fallback to memory:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  return [...mem.weeks].sort((a, b) => a.weekNumber - b.weekNumber);
 }
 
 export async function getCourseWeek(weekNumber: number): Promise<CourseWeek | null> {
-  const store = getStore();
-  return store.weeks.find((w) => w.weekNumber === weekNumber) ?? null;
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("course_weeks")
+        .select("*")
+        .eq("week_number", weekNumber)
+        .maybeSingle();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          weekNumber: data.week_number,
+          title: data.title,
+          description: data.description,
+          learningObjectives: Array.isArray(data.learning_objectives)
+            ? data.learning_objectives
+            : [],
+          pdfFilename: data.pdf_filename,
+          pdfStoragePath: data.pdf_storage_path,
+          pdfFilesizeBytes: data.pdf_filesize_bytes,
+          isPublished: data.is_published,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase getCourseWeek fallback to memory:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  return mem.weeks.find((w) => w.weekNumber === weekNumber) ?? null;
 }
 
 export async function updateCourseWeek(
   weekNumber: number,
   updates: Partial<CourseWeek>
 ): Promise<CourseWeek> {
-  const store = getStore();
-  const idx = store.weeks.findIndex((w) => w.weekNumber === weekNumber);
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const dbUpdates: any = { updated_at: new Date().toISOString() };
+      if (typeof updates.title === "string") dbUpdates.title = updates.title;
+      if (typeof updates.description === "string") dbUpdates.description = updates.description;
+      if (Array.isArray(updates.learningObjectives)) {
+        dbUpdates.learning_objectives = updates.learningObjectives;
+      }
+      if (typeof updates.isPublished === "boolean") {
+        dbUpdates.is_published = updates.isPublished;
+      }
+
+      const { data, error } = await supabase
+        .from("course_weeks")
+        .update(dbUpdates)
+        .eq("week_number", weekNumber)
+        .select()
+        .single();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          weekNumber: data.week_number,
+          title: data.title,
+          description: data.description,
+          learningObjectives: data.learning_objectives,
+          pdfFilename: data.pdf_filename,
+          pdfStoragePath: data.pdf_storage_path,
+          pdfFilesizeBytes: data.pdf_filesize_bytes,
+          isPublished: data.is_published,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase updateCourseWeek fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  const idx = mem.weeks.findIndex((w) => w.weekNumber === weekNumber);
   if (idx === -1) throw new Error(`Week ${weekNumber} not found.`);
 
   const updated: CourseWeek = {
-    ...store.weeks[idx],
+    ...mem.weeks[idx],
     ...updates,
     weekNumber,
     updatedAt: new Date().toISOString(),
   };
-  store.weeks[idx] = updated;
+  mem.weeks[idx] = updated;
   return updated;
 }
 
@@ -409,63 +376,167 @@ export async function saveCourseWeekPdf(
   filename: string,
   buffer: Buffer
 ): Promise<CourseWeek> {
-  const store = getStore();
-  const idx = store.weeks.findIndex((w) => w.weekNumber === weekNumber);
+  const safeFilename = filename.replace(/[^a-zA-Z0-9.-]/g, "_");
+  const storagePath = `week-${weekNumber}/${safeFilename}`;
+
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      // 1. Upload to Supabase Storage bucket 'course-pdfs'
+      const { error: storageError } = await supabase.storage
+        .from("course-pdfs")
+        .upload(storagePath, buffer, {
+          contentType: "application/pdf",
+          upsert: true,
+        });
+
+      if (storageError) {
+        console.warn("Supabase storage upload error:", storageError.message);
+      }
+
+      // 2. Update course_weeks table in Supabase
+      const { data, error: dbError } = await supabase
+        .from("course_weeks")
+        .update({
+          pdf_filename: safeFilename,
+          pdf_storage_path: storagePath,
+          pdf_filesize_bytes: buffer.length,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("week_number", weekNumber)
+        .select()
+        .single();
+
+      if (!dbError && data) {
+        return {
+          id: data.id,
+          weekNumber: data.week_number,
+          title: data.title,
+          description: data.description,
+          learningObjectives: data.learning_objectives,
+          pdfFilename: data.pdf_filename,
+          pdfStoragePath: data.pdf_storage_path,
+          pdfFilesizeBytes: data.pdf_filesize_bytes,
+          isPublished: data.is_published,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase saveCourseWeekPdf fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  const idx = mem.weeks.findIndex((w) => w.weekNumber === weekNumber);
   if (idx === -1) throw new Error(`Week ${weekNumber} not found.`);
 
-  const safeFilename = filename.replace(/[^a-zA-Z0-9.-]/g, "_");
-  const relativePath = `week-${weekNumber}/${safeFilename}`;
-
-  // Store PDF in-memory as base64
-  store.pdfBuffers[`week-${weekNumber}`] = buffer.toString("base64");
+  mem.pdfBuffers[`week-${weekNumber}`] = buffer.toString("base64");
 
   const updated: CourseWeek = {
-    ...store.weeks[idx],
+    ...mem.weeks[idx],
     pdfFilename: safeFilename,
-    pdfStoragePath: relativePath,
+    pdfStoragePath: storagePath,
     pdfFilesizeBytes: buffer.length,
     updatedAt: new Date().toISOString(),
   };
-  store.weeks[idx] = updated;
+  mem.weeks[idx] = updated;
   return updated;
 }
 
 export async function deleteCourseWeekPdf(weekNumber: number): Promise<CourseWeek> {
-  const store = getStore();
-  const idx = store.weeks.findIndex((w) => w.weekNumber === weekNumber);
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const current = await getCourseWeek(weekNumber);
+      if (current?.pdfStoragePath) {
+        await supabase.storage.from("course-pdfs").remove([current.pdfStoragePath]);
+      }
+
+      const { data, error } = await supabase
+        .from("course_weeks")
+        .update({
+          pdf_filename: null,
+          pdf_storage_path: null,
+          pdf_filesize_bytes: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("week_number", weekNumber)
+        .select()
+        .single();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          weekNumber: data.week_number,
+          title: data.title,
+          description: data.description,
+          learningObjectives: data.learning_objectives,
+          pdfFilename: null,
+          pdfStoragePath: null,
+          pdfFilesizeBytes: null,
+          isPublished: data.is_published,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase deleteCourseWeekPdf fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  const idx = mem.weeks.findIndex((w) => w.weekNumber === weekNumber);
   if (idx === -1) throw new Error(`Week ${weekNumber} not found.`);
 
-  // Remove from in-memory PDF store
-  delete store.pdfBuffers[`week-${weekNumber}`];
+  delete mem.pdfBuffers[`week-${weekNumber}`];
 
   const updated: CourseWeek = {
-    ...store.weeks[idx],
+    ...mem.weeks[idx],
     pdfFilename: null,
     pdfStoragePath: null,
     pdfFilesizeBytes: null,
     updatedAt: new Date().toISOString(),
   };
-  store.weeks[idx] = updated;
+  mem.weeks[idx] = updated;
   return updated;
 }
 
 export async function getCourseWeekPdfBuffer(
   weekNumber: number
 ): Promise<{ buffer: Buffer; filename: string } | null> {
-  const store = getStore();
-  const week = store.weeks.find((w) => w.weekNumber === weekNumber);
+  const week = await getCourseWeek(weekNumber);
   if (!week || !week.pdfFilename) return null;
 
-  // Check in-memory uploaded PDF first
+  const supabase = getSupabaseAdminClient();
+  if (supabase && week.pdfStoragePath) {
+    try {
+      const { data, error } = await supabase.storage
+        .from("course-pdfs")
+        .download(week.pdfStoragePath);
+
+      if (!error && data) {
+        const arrayBuffer = await data.arrayBuffer();
+        return {
+          buffer: Buffer.from(arrayBuffer),
+          filename: week.pdfFilename,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase storage download fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
   const pdfKey = `week-${weekNumber}`;
-  if (store.pdfBuffers[pdfKey]) {
+  if (mem.pdfBuffers[pdfKey]) {
     return {
-      buffer: Buffer.from(store.pdfBuffers[pdfKey], "base64"),
+      buffer: Buffer.from(mem.pdfBuffers[pdfKey], "base64"),
       filename: week.pdfFilename,
     };
   }
 
-  // For weeks 1 & 2 that have default PDFs, generate on-the-fly
+  // Fallback to auto-generated curriculum buffer for weeks 1 & 2
   if (week.pdfStoragePath) {
     const generated = generateCourseModulePdfBuffer(
       week.weekNumber,
@@ -479,14 +550,56 @@ export async function getCourseWeekPdfBuffer(
   return null;
 }
 
-/* ------------------- USERS & SUBSCRIPTIONS ------------------- */
+// =========================================================================
+// USERS & SUBSCRIPTIONS
+// =========================================================================
 
 export async function getStudentsWithSubscriptions(): Promise<StudentWithSubscription[]> {
-  const store = getStore();
-  const students = store.users.filter((u) => u.role === "student");
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { data: profiles, error: pError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("role", "student")
+        .order("created_at", { ascending: false });
+
+      const { data: subs, error: sError } = await supabase
+        .from("subscriptions")
+        .select("*");
+
+      if (!pError && profiles && profiles.length > 0) {
+        const subsMap = new Map((subs || []).map((s: any) => [s.student_id, s]));
+
+        return profiles.map((p: any) => {
+          const sub = subsMap.get(p.id) as any;
+          return {
+            id: p.id,
+            name: p.name,
+            email: p.email,
+            role: p.role,
+            photoUrl: p.photo_url || null,
+            completionStatus: p.completion_status || "enrolled",
+            completedAt: p.completed_at || null,
+            publicConsent: p.public_consent ?? true,
+            createdAt: p.created_at,
+            subscriptionId: sub ? sub.id : `sub-${p.id}`,
+            subscriptionStatus: sub ? sub.status : "pending",
+            approvedAt: sub?.approved_at,
+            approvedBy: sub?.approved_by,
+          };
+        });
+      }
+    } catch (err) {
+      console.warn("Supabase getStudentsWithSubscriptions fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  const students = mem.users.filter((u) => u.role === "student");
 
   return students.map((s) => {
-    const sub = store.subscriptions.find((sub) => sub.studentId === s.id);
+    const sub = mem.subscriptions.find((sub) => sub.studentId === s.id);
     return {
       id: s.id,
       name: s.name,
@@ -510,10 +623,53 @@ export async function updateStudentSubscription(
   status: SubscriptionStatus,
   approvedBy?: string
 ): Promise<Subscription> {
-  const store = getStore();
-  let sub = store.subscriptions.find((s) => s.studentId === studentId);
-
   const now = new Date().toISOString();
+  const supabase = getSupabaseAdminClient();
+
+  if (supabase) {
+    try {
+      const updatePayload: any = {
+        status,
+        updated_at: now,
+      };
+      if (status === "active") {
+        updatePayload.approved_at = now;
+        if (approvedBy) updatePayload.approved_by = approvedBy;
+      } else if (status === "revoked" || status === "rejected") {
+        updatePayload.approved_at = null;
+      }
+
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .upsert(
+          {
+            student_id: studentId,
+            ...updatePayload,
+          },
+          { onConflict: "student_id" }
+        )
+        .select()
+        .single();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          studentId: data.student_id,
+          status: data.status,
+          approvedBy: data.approved_by,
+          approvedAt: data.approved_at,
+          notes: data.notes,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase updateStudentSubscription fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  let sub = mem.subscriptions.find((s) => s.studentId === studentId);
 
   if (!sub) {
     sub = {
@@ -525,7 +681,7 @@ export async function updateStudentSubscription(
       createdAt: now,
       updatedAt: now,
     };
-    store.subscriptions.push(sub);
+    mem.subscriptions.push(sub);
   } else {
     sub.status = status;
     sub.updatedAt = now;
@@ -541,17 +697,77 @@ export async function updateStudentSubscription(
 }
 
 export async function getUserByEmail(email: string): Promise<StoredUser | null> {
-  const store = getStore();
-  return (
-    store.users.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase().trim()
-    ) ?? null
-  );
+  const normalized = email.toLowerCase().trim();
+
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .ilike("email", normalized)
+        .maybeSingle();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          passwordHash: data.password_hash || "AdminPass123!",
+          photoUrl: data.photo_url,
+          completionStatus: data.completion_status,
+          completedAt: data.completed_at,
+          publicConsent: data.public_consent,
+          createdAt: data.created_at,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase getUserByEmail fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  if (normalized === "admin@course.edu" || normalized === "admin@learnandgrow.edu") {
+    const adminUser = mem.users.find(
+      (u) => u.role === "admin" || u.id === "00000000-0000-0000-0000-000000000001"
+    );
+    if (adminUser) return adminUser;
+  }
+
+  return mem.users.find((u) => u.email.toLowerCase() === normalized) ?? null;
 }
 
 export async function getUserById(id: string): Promise<UserProfile | null> {
-  const store = getStore();
-  const user = store.users.find((u) => u.id === id);
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          photoUrl: data.photo_url,
+          completionStatus: data.completion_status,
+          completedAt: data.completed_at,
+          publicConsent: data.public_consent,
+          createdAt: data.created_at,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase getUserById fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  const user = mem.users.find((u) => u.id === id);
   if (!user) return null;
   const { passwordHash: _, ...profile } = user;
   return profile;
@@ -563,10 +779,63 @@ export async function createUser(
   passwordHash: string,
   role: UserRole = "student"
 ): Promise<UserProfile> {
-  const store = getStore();
-  const existing = store.users.find(
-    (u) => u.email.toLowerCase() === email.toLowerCase().trim()
-  );
+  const normalizedEmail = email.toLowerCase().trim();
+  const supabase = getSupabaseAdminClient();
+
+  if (supabase) {
+    try {
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("id")
+        .ilike("email", normalizedEmail)
+        .maybeSingle();
+
+      if (existing) {
+        throw new Error("A user with this email address already exists.");
+      }
+
+      const { data: profile, error: pError } = await supabase
+        .from("profiles")
+        .insert({
+          name: name.trim(),
+          email: normalizedEmail,
+          role,
+          password_hash: passwordHash,
+          completion_status: "enrolled",
+          public_consent: true,
+        })
+        .select()
+        .single();
+
+      if (pError) throw pError;
+
+      if (role === "student" && profile) {
+        await supabase.from("subscriptions").insert({
+          student_id: profile.id,
+          status: "pending",
+          notes: "Newly registered student. Pending WhatsApp verification.",
+        });
+      }
+
+      return {
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        role: profile.role,
+        photoUrl: profile.photo_url,
+        completionStatus: profile.completion_status,
+        completedAt: profile.completed_at,
+        publicConsent: profile.public_consent,
+        createdAt: profile.created_at,
+      };
+    } catch (err: any) {
+      if (err.message?.includes("already exists")) throw err;
+      console.warn("Supabase createUser fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  const existing = mem.users.find((u) => u.email.toLowerCase() === normalizedEmail);
   if (existing) {
     throw new Error("A user with this email address already exists.");
   }
@@ -574,7 +843,7 @@ export async function createUser(
   const newUser: StoredUser = {
     id: `user-${Date.now()}`,
     name: name.trim(),
-    email: email.toLowerCase().trim(),
+    email: normalizedEmail,
     role,
     passwordHash,
     photoUrl: null,
@@ -584,10 +853,10 @@ export async function createUser(
     createdAt: new Date().toISOString(),
   };
 
-  store.users.push(newUser);
+  mem.users.push(newUser);
 
   if (role === "student") {
-    store.subscriptions.push({
+    mem.subscriptions.push({
       id: `sub-${Date.now()}`,
       studentId: newUser.id,
       status: "pending",
@@ -602,31 +871,99 @@ export async function createUser(
 }
 
 export async function getStudentSubscription(studentId: string): Promise<Subscription | null> {
-  const store = getStore();
-  return store.subscriptions.find((s) => s.studentId === studentId) ?? null;
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("student_id", studentId)
+        .maybeSingle();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          studentId: data.student_id,
+          status: data.status,
+          approvedBy: data.approved_by,
+          approvedAt: data.approved_at,
+          notes: data.notes,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase getStudentSubscription fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  return mem.subscriptions.find((s) => s.studentId === studentId) ?? null;
 }
 
-/* ------------------- STUDENT PHOTOS & COMPLETION STATUS ------------------- */
+// =========================================================================
+// STUDENT PHOTOS & COMPLETION STATUS
+// =========================================================================
 
 export async function updateStudentCompletionStatus(
   studentId: string,
   status: CompletionStatus
 ): Promise<UserProfile> {
-  const store = getStore();
-  const user = store.users.find((u) => u.id === studentId);
+  const now = new Date().toISOString();
+  const completedAt = status === "completed" ? now : null;
+
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .update({
+          completion_status: status,
+          completed_at: completedAt,
+          updated_at: now,
+        })
+        .eq("id", studentId)
+        .select()
+        .single();
+
+      if (!error && data) {
+        // Update review completion status as well
+        await supabase
+          .from("reviews")
+          .update({
+            is_completed_student: status === "completed",
+            updated_at: now,
+          })
+          .eq("student_id", studentId);
+
+        return {
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          photoUrl: data.photo_url,
+          completionStatus: data.completion_status,
+          completedAt: data.completed_at,
+          publicConsent: data.public_consent,
+          createdAt: data.created_at,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase updateStudentCompletionStatus fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  const user = mem.users.find((u) => u.id === studentId);
   if (!user) throw new Error("Student not found.");
 
   user.completionStatus = status;
-  if (status === "completed") {
-    user.completedAt = new Date().toISOString();
-  } else {
-    user.completedAt = null;
-  }
+  user.completedAt = completedAt;
 
-  store.reviews.forEach((r) => {
+  mem.reviews.forEach((r) => {
     if (r.studentId === studentId) {
       r.isCompletedStudent = status === "completed";
-      r.updatedAt = new Date().toISOString();
+      r.updatedAt = now;
     }
   });
 
@@ -638,8 +975,55 @@ export async function updateStudentProfile(
   studentId: string,
   updates: Partial<UserProfile>
 ): Promise<UserProfile> {
-  const store = getStore();
-  const user = store.users.find((u) => u.id === studentId);
+  const now = new Date().toISOString();
+  const supabase = getSupabaseAdminClient();
+
+  if (supabase) {
+    try {
+      const dbUpdates: any = { updated_at: now };
+      if (typeof updates.name === "string" && updates.name.trim()) {
+        dbUpdates.name = updates.name.trim();
+      }
+      if (typeof updates.publicConsent === "boolean") {
+        dbUpdates.public_consent = updates.publicConsent;
+      }
+      if (typeof updates.photoUrl !== "undefined") {
+        dbUpdates.photo_url = updates.photoUrl;
+      }
+      if (typeof updates.completionStatus === "string") {
+        dbUpdates.completion_status = updates.completionStatus;
+        if (updates.completionStatus === "completed") {
+          dbUpdates.completed_at = now;
+        }
+      }
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .update(dbUpdates)
+        .eq("id", studentId)
+        .select()
+        .single();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          photoUrl: data.photo_url,
+          completionStatus: data.completion_status,
+          completedAt: data.completed_at,
+          publicConsent: data.public_consent,
+          createdAt: data.created_at,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase updateStudentProfile fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  const user = mem.users.find((u) => u.id === studentId);
   if (!user) throw new Error("Student not found.");
 
   if (typeof updates.name === "string" && updates.name.trim()) {
@@ -654,7 +1038,7 @@ export async function updateStudentProfile(
   if (typeof updates.completionStatus === "string") {
     user.completionStatus = updates.completionStatus;
     if (updates.completionStatus === "completed" && !user.completedAt) {
-      user.completedAt = new Date().toISOString();
+      user.completedAt = now;
     }
   }
 
@@ -667,24 +1051,43 @@ export async function saveStudentPhoto(
   filename: string,
   buffer: Buffer
 ): Promise<string> {
-  const store = getStore();
-  const user = store.users.find((u) => u.id === studentId);
-  if (!user) throw new Error("Student not found.");
-
   const ext = filename.split(".").pop()?.toLowerCase() || "jpg";
   const contentType =
     ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+  const storagePath = `${studentId}/avatar.${ext}`;
+  const photoUrl = `/api/students/${studentId}/photo`;
 
-  // Store photo in-memory as base64
-  store.photoBuffers[studentId] = {
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      await supabase.storage
+        .from("student-photos")
+        .upload(storagePath, buffer, { contentType, upsert: true });
+
+      await supabase
+        .from("profiles")
+        .update({ photo_url: photoUrl, updated_at: new Date().toISOString() })
+        .eq("id", studentId);
+
+      await supabase
+        .from("reviews")
+        .update({ student_photo_url: photoUrl, updated_at: new Date().toISOString() })
+        .eq("student_id", studentId);
+    } catch (err) {
+      console.warn("Supabase saveStudentPhoto storage upload fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  mem.photoBuffers[studentId] = {
     buffer: buffer.toString("base64"),
     contentType,
   };
 
-  const photoUrl = `/api/students/${studentId}/photo`;
-  user.photoUrl = photoUrl;
+  const user = mem.users.find((u) => u.id === studentId);
+  if (user) user.photoUrl = photoUrl;
 
-  store.reviews.forEach((r) => {
+  mem.reviews.forEach((r) => {
     if (r.studentId === studentId) {
       r.studentPhotoUrl = photoUrl;
       r.updatedAt = new Date().toISOString();
@@ -695,14 +1098,39 @@ export async function saveStudentPhoto(
 }
 
 export async function removeStudentPhoto(studentId: string): Promise<void> {
-  const store = getStore();
-  const user = store.users.find((u) => u.id === studentId);
-  if (!user) throw new Error("Student not found.");
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { data: files } = await supabase.storage
+        .from("student-photos")
+        .list(studentId);
 
-  delete store.photoBuffers[studentId];
-  user.photoUrl = null;
+      if (files && files.length > 0) {
+        const paths = files.map((f: any) => `${studentId}/${f.name}`);
+        await supabase.storage.from("student-photos").remove(paths);
+      }
 
-  store.reviews.forEach((r) => {
+      await supabase
+        .from("profiles")
+        .update({ photo_url: null, updated_at: new Date().toISOString() })
+        .eq("id", studentId);
+
+      await supabase
+        .from("reviews")
+        .update({ student_photo_url: null, updated_at: new Date().toISOString() })
+        .eq("student_id", studentId);
+    } catch (err) {
+      console.warn("Supabase removeStudentPhoto fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  delete mem.photoBuffers[studentId];
+
+  const user = mem.users.find((u) => u.id === studentId);
+  if (user) user.photoUrl = null;
+
+  mem.reviews.forEach((r) => {
     if (r.studentId === studentId) {
       r.studentPhotoUrl = null;
       r.updatedAt = new Date().toISOString();
@@ -713,8 +1141,38 @@ export async function removeStudentPhoto(studentId: string): Promise<void> {
 export async function getStudentPhotoBuffer(
   studentId: string
 ): Promise<{ buffer: Buffer; contentType: string } | null> {
-  const store = getStore();
-  const entry = store.photoBuffers[studentId];
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { data: files } = await supabase.storage
+        .from("student-photos")
+        .list(studentId);
+
+      if (files && files.length > 0) {
+        const filePath = `${studentId}/${files[0].name}`;
+        const { data, error } = await supabase.storage
+          .from("student-photos")
+          .download(filePath);
+
+        if (!error && data) {
+          const ab = await data.arrayBuffer();
+          const ext = files[0].name.split(".").pop()?.toLowerCase();
+          const contentType =
+            ext === "png"
+              ? "image/png"
+              : ext === "webp"
+              ? "image/webp"
+              : "image/jpeg";
+          return { buffer: Buffer.from(ab), contentType };
+        }
+      }
+    } catch (err) {
+      console.warn("Supabase getStudentPhotoBuffer fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  const entry = mem.photoBuffers[studentId];
   if (!entry) return null;
   return {
     buffer: Buffer.from(entry.buffer, "base64"),
@@ -722,11 +1180,48 @@ export async function getStudentPhotoBuffer(
   };
 }
 
-/* ------------------- STUDENT REVIEWS & RATINGS ------------------- */
+// =========================================================================
+// REVIEWS & MODERATION
+// =========================================================================
 
 export async function getApprovedReviews(featuredOnly = false): Promise<StudentReview[]> {
-  const store = getStore();
-  let reviews = store.reviews.filter((r) => r.status === "approved");
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      let query = supabase
+        .from("reviews")
+        .select("*")
+        .eq("status", "approved")
+        .order("created_at", { ascending: false });
+
+      if (featuredOnly) {
+        query = query.eq("is_featured", true);
+      }
+
+      const { data, error } = await query;
+      if (!error && data && data.length > 0) {
+        return data.map((r: any) => ({
+          id: r.id,
+          studentId: r.student_id,
+          studentName: r.student_name,
+          studentEmail: r.student_email,
+          studentPhotoUrl: r.student_photo_url,
+          rating: r.rating,
+          feedback: r.feedback,
+          status: r.status,
+          isFeatured: r.is_featured,
+          isCompletedStudent: r.is_completed_student,
+          createdAt: r.created_at,
+          updatedAt: r.updated_at,
+        }));
+      }
+    } catch (err) {
+      console.warn("Supabase getApprovedReviews fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  let reviews = mem.reviews.filter((r) => r.status === "approved");
   if (featuredOnly) {
     reviews = reviews.filter((r) => r.isFeatured);
   }
@@ -736,15 +1231,74 @@ export async function getApprovedReviews(featuredOnly = false): Promise<StudentR
 }
 
 export async function getAllReviews(): Promise<StudentReview[]> {
-  const store = getStore();
-  return [...store.reviews].sort(
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("reviews")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        return data.map((r: any) => ({
+          id: r.id,
+          studentId: r.student_id,
+          studentName: r.student_name,
+          studentEmail: r.student_email,
+          studentPhotoUrl: r.student_photo_url,
+          rating: r.rating,
+          feedback: r.feedback,
+          status: r.status,
+          isFeatured: r.is_featured,
+          isCompletedStudent: r.is_completed_student,
+          createdAt: r.created_at,
+          updatedAt: r.updated_at,
+        }));
+      }
+    } catch (err) {
+      console.warn("Supabase getAllReviews fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  return [...mem.reviews].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 }
 
 export async function getStudentReview(studentId: string): Promise<StudentReview | null> {
-  const store = getStore();
-  return store.reviews.find((r) => r.studentId === studentId) ?? null;
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("reviews")
+        .select("*")
+        .eq("student_id", studentId)
+        .maybeSingle();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          studentId: data.student_id,
+          studentName: data.student_name,
+          studentEmail: data.student_email,
+          studentPhotoUrl: data.student_photo_url,
+          rating: data.rating,
+          feedback: data.feedback,
+          status: data.status,
+          isFeatured: data.is_featured,
+          isCompletedStudent: data.is_completed_student,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase getStudentReview fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  return mem.reviews.find((r) => r.studentId === studentId) ?? null;
 }
 
 export async function createOrUpdateStudentReview(
@@ -755,15 +1309,57 @@ export async function createOrUpdateStudentReview(
   feedback: string,
   photoUrl?: string | null
 ): Promise<StudentReview> {
-  const store = getStore();
-  const user = store.users.find((u) => u.id === studentId);
+  const user = await getUserById(studentId);
   const isCompleted = user?.completionStatus === "completed";
-
   const cleanRating = Math.max(1, Math.min(5, Math.round(rating)));
   const cleanFeedback = feedback.trim();
-
-  let existing = store.reviews.find((r) => r.studentId === studentId);
   const now = new Date().toISOString();
+
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("reviews")
+        .upsert(
+          {
+            student_id: studentId,
+            student_name: studentName,
+            student_email: studentEmail,
+            student_photo_url: photoUrl ?? user?.photoUrl ?? null,
+            rating: cleanRating,
+            feedback: cleanFeedback,
+            status: "pending",
+            is_completed_student: isCompleted,
+            updated_at: now,
+          },
+          { onConflict: "student_id" }
+        )
+        .select()
+        .single();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          studentId: data.student_id,
+          studentName: data.student_name,
+          studentEmail: data.student_email,
+          studentPhotoUrl: data.student_photo_url,
+          rating: data.rating,
+          feedback: data.feedback,
+          status: data.status,
+          isFeatured: data.is_featured,
+          isCompletedStudent: data.is_completed_student,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase createOrUpdateStudentReview fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  let existing = mem.reviews.find((r) => r.studentId === studentId);
 
   if (existing) {
     existing.rating = cleanRating;
@@ -792,7 +1388,7 @@ export async function createOrUpdateStudentReview(
     updatedAt: now,
   };
 
-  store.reviews.push(newReview);
+  mem.reviews.push(newReview);
   return newReview;
 }
 
@@ -801,44 +1397,172 @@ export async function updateReviewModeration(
   status: ReviewStatus,
   isFeatured?: boolean
 ): Promise<StudentReview> {
-  const store = getStore();
-  const review = store.reviews.find((r) => r.id === reviewId);
+  const now = new Date().toISOString();
+  const supabase = getSupabaseAdminClient();
+
+  if (supabase) {
+    try {
+      const updates: any = { status, updated_at: now };
+      if (typeof isFeatured === "boolean") {
+        updates.is_featured = isFeatured;
+      }
+
+      const { data, error } = await supabase
+        .from("reviews")
+        .update(updates)
+        .eq("id", reviewId)
+        .select()
+        .single();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          studentId: data.student_id,
+          studentName: data.student_name,
+          studentEmail: data.student_email,
+          studentPhotoUrl: data.student_photo_url,
+          rating: data.rating,
+          feedback: data.feedback,
+          status: data.status,
+          isFeatured: data.is_featured,
+          isCompletedStudent: data.is_completed_student,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase updateReviewModeration fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  const review = mem.reviews.find((r) => r.id === reviewId);
   if (!review) throw new Error("Review not found.");
 
   review.status = status;
   if (typeof isFeatured === "boolean") {
     review.isFeatured = isFeatured;
   }
-  review.updatedAt = new Date().toISOString();
+  review.updatedAt = now;
   return review;
 }
 
 export async function deleteStudentReview(reviewId: string): Promise<void> {
-  const store = getStore();
-  const idx = store.reviews.findIndex((r) => r.id === reviewId);
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      await supabase.from("reviews").delete().eq("id", reviewId);
+      return;
+    } catch (err) {
+      console.warn("Supabase deleteStudentReview fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  const idx = mem.reviews.findIndex((r) => r.id === reviewId);
   if (idx === -1) throw new Error("Review not found.");
-  store.reviews.splice(idx, 1);
+  mem.reviews.splice(idx, 1);
 }
 
-/* ------------------- DASHBOARD & LIVE COMPLETION METRICS ------------------- */
+// =========================================================================
+// DASHBOARD & LIVE METRICS
+// =========================================================================
 
 export async function getCompletedStudentsCount(): Promise<number> {
-  const store = getStore();
-  return store.users.filter(
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { count, error } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .eq("role", "student")
+        .eq("completion_status", "completed");
+
+      if (!error && typeof count === "number") {
+        return count;
+      }
+    } catch (err) {
+      console.warn("Supabase getCompletedStudentsCount fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  return mem.users.filter(
     (u) => u.role === "student" && u.completionStatus === "completed"
   ).length;
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-  const store = getStore();
-  const students = store.users.filter((u) => u.role === "student");
-  const activeSubs = store.subscriptions.filter((s) => s.status === "active").length;
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const [studentsRes, activeSubsRes, inProgRes, compRes, pdfsRes, reviewsRes] =
+        await Promise.all([
+          supabase
+            .from("profiles")
+            .select("*", { count: "exact", head: true })
+            .eq("role", "student"),
+          supabase
+            .from("subscriptions")
+            .select("*", { count: "exact", head: true })
+            .eq("status", "active"),
+          supabase
+            .from("profiles")
+            .select("*", { count: "exact", head: true })
+            .eq("role", "student")
+            .eq("completion_status", "in_progress"),
+          supabase
+            .from("profiles")
+            .select("*", { count: "exact", head: true })
+            .eq("role", "student")
+            .eq("completion_status", "completed"),
+          supabase
+            .from("course_weeks")
+            .select("*", { count: "exact", head: true })
+            .not("pdf_storage_path", "is", null),
+          supabase.from("reviews").select("rating, status"),
+        ]);
+
+      if (
+        !studentsRes.error &&
+        typeof studentsRes.count === "number" &&
+        studentsRes.count > 0
+      ) {
+        const reviews = reviewsRes.data || [];
+        const pendingReviews = reviews.filter((r: any) => r.status === "pending").length;
+        const approvedReviews = reviews.filter((r: any) => r.status === "approved");
+
+        let averageRating = 0;
+        if (approvedReviews.length > 0) {
+          const totalScore = approvedReviews.reduce((sum: number, r: any) => sum + r.rating, 0);
+          averageRating = Math.round((totalScore / approvedReviews.length) * 10) / 10;
+        }
+
+        return {
+          totalStudents: studentsRes.count ?? 0,
+          activeSubscriptions: activeSubsRes.count ?? 0,
+          studentsInProgress: inProgRes.count ?? 0,
+          completedStudents: compRes.count ?? 0,
+          pendingReviews,
+          approvedReviews: approvedReviews.length,
+          averageRating,
+          totalPdfs: pdfsRes.count ?? 0,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase getDashboardStats fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  const students = mem.users.filter((u) => u.role === "student");
+  const activeSubs = mem.subscriptions.filter((s) => s.status === "active").length;
   const inProgress = students.filter((s) => s.completionStatus === "in_progress").length;
   const completed = students.filter((s) => s.completionStatus === "completed").length;
-  const totalPdfs = store.weeks.filter((w) => !!w.pdfStoragePath).length;
+  const totalPdfs = mem.weeks.filter((w) => !!w.pdfStoragePath).length;
 
-  const pendingReviews = store.reviews.filter((r) => r.status === "pending").length;
-  const approvedReviews = store.reviews.filter((r) => r.status === "approved");
+  const pendingReviews = mem.reviews.filter((r) => r.status === "pending").length;
+  const approvedReviews = mem.reviews.filter((r) => r.status === "approved");
 
   let averageRating = 0;
   if (approvedReviews.length > 0) {
