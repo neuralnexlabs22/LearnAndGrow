@@ -173,3 +173,13 @@ export interface AssessmentEvaluationResult {
   }>;
 }
 
+export interface CoursePricing {
+  originalPrice: number;
+  sellingPrice: number;
+  currency: string;
+  discountPercent?: number;
+  offerTag?: string;
+  isOfferActive: boolean;
+  updatedAt?: string;
+}
+

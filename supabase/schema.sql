@@ -475,4 +475,50 @@ ON CONFLICT (id) DO UPDATE SET
   correct_answer = EXCLUDED.correct_answer,
   explanation = EXCLUDED.explanation;
 
+-- =============================================================================
+-- COURSE PRICING & FEE BREAKDOWN TABLE
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS public.course_pricing (
+  id TEXT PRIMARY KEY DEFAULT 'default',
+  original_price NUMERIC NOT NULL DEFAULT 1199,
+  selling_price NUMERIC NOT NULL DEFAULT 999,
+  currency TEXT NOT NULL DEFAULT '₹',
+  discount_percent INT DEFAULT 17,
+  offer_tag TEXT DEFAULT 'LIMITED TIME OFFER',
+  is_offer_active BOOLEAN NOT NULL DEFAULT true,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.course_pricing ENABLE ROW LEVEL SECURITY;
+
+-- Everyone can view active pricing
+DROP POLICY IF EXISTS "Public can view pricing" ON public.course_pricing;
+CREATE POLICY "Public can view pricing"
+  ON public.course_pricing FOR SELECT
+  USING (true);
+
+-- Only admins can insert or update pricing
+DROP POLICY IF EXISTS "Admins can update pricing" ON public.course_pricing;
+CREATE POLICY "Admins can update pricing"
+  ON public.course_pricing FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.id = auth.uid() AND profiles.role = 'admin'
+    )
+  );
+
+-- Seed default pricing row
+INSERT INTO public.course_pricing (id, original_price, selling_price, currency, discount_percent, offer_tag, is_offer_active)
+VALUES ('default', 1199, 999, '₹', 17, 'LIMITED TIME OFFER', true)
+ON CONFLICT (id) DO UPDATE SET
+  original_price = EXCLUDED.original_price,
+  selling_price = EXCLUDED.selling_price,
+  currency = EXCLUDED.currency,
+  discount_percent = EXCLUDED.discount_percent,
+  offer_tag = EXCLUDED.offer_tag,
+  is_offer_active = EXCLUDED.is_offer_active;
+
+
 

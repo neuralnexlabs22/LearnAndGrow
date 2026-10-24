@@ -24,6 +24,8 @@ import {
   Camera,
   Image as ImageIcon,
   CheckCheck,
+  Tag,
+  DollarSign,
 } from "lucide-react";
 import {
   CourseWeek,
@@ -37,10 +39,12 @@ import {
   AssessmentSettings,
   AssessmentSubmission,
   AssessmentStats,
+  CoursePricing,
 } from "@/types";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { PdfViewerModal } from "@/components/PdfViewerModal";
 import { AssessmentAdminSection } from "@/components/AssessmentAdminSection";
+import { PriceBreakdownCard } from "@/components/PriceBreakdownCard";
 import { formatDisplayDate } from "@/lib/config";
 
 interface AdminDashboardClientProps {
@@ -52,6 +56,7 @@ interface AdminDashboardClientProps {
   initialAssessmentSettings: AssessmentSettings;
   initialAssessmentSubmissions: AssessmentSubmission[];
   initialAssessmentStats: AssessmentStats;
+  initialPricing?: CoursePricing;
 }
 
 export function AdminDashboardClient({
@@ -63,14 +68,26 @@ export function AdminDashboardClient({
   initialAssessmentSettings,
   initialAssessmentSubmissions,
   initialAssessmentStats,
+  initialPricing,
 }: AdminDashboardClientProps) {
   const [activeTab, setActiveTab] = useState<
-    "weeks" | "students" | "reviews" | "assessment"
+    "weeks" | "students" | "reviews" | "assessment" | "pricing"
   >("weeks");
   const [weeks, setWeeks] = useState<CourseWeek[]>(initialWeeks);
   const [students, setStudents] = useState<StudentWithSubscription[]>(initialStudents);
   const [reviews, setReviews] = useState<StudentReview[]>(initialReviews);
   const [stats, setStats] = useState<DashboardStats>(initialStats);
+  const [pricing, setPricing] = useState<CoursePricing>(
+    initialPricing || {
+      originalPrice: 1199,
+      sellingPrice: 999,
+      currency: "₹",
+      discountPercent: 17,
+      offerTag: "LIMITED TIME OFFER",
+      isOfferActive: true,
+    }
+  );
+  const [isSavingPricing, setIsSavingPricing] = useState(false);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -500,6 +517,27 @@ export function AdminDashboardClient({
     });
   };
 
+  const handleSavePricing = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingPricing(true);
+    try {
+      const res = await fetch("/api/admin/pricing", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pricing),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      setPricing(data.pricing);
+      showToast("Course pricing & fee breakdown updated successfully!");
+    } catch (err: any) {
+      showToast(err.message || "Failed to save pricing.", "error");
+    } finally {
+      setIsSavingPricing(false);
+    }
+  };
+
   // Filter students
   const filteredStudents = students.filter((s) => {
     const matchesQuery =
@@ -667,6 +705,21 @@ export function AdminDashboardClient({
           <span>English Assessment</span>
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-[#15803D] font-bold border border-emerald-200">
             {initialAssessmentQuestions.length} Qs
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("pricing")}
+          className={`pb-3 text-sm font-bold tracking-tight transition-all relative shrink-0 flex items-center gap-2 ${
+            activeTab === "pricing"
+              ? "text-[#C25E38] border-b-2 border-[#C25E38]"
+              : "text-[#78716C] hover:text-[#1C1917]"
+          }`}
+        >
+          <Tag className="w-4 h-4 text-[#C25E38]" />
+          <span>Course Fee & Pricing</span>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-[#92400E] font-bold border border-amber-200">
+            {pricing.currency}{pricing.sellingPrice}
           </span>
         </button>
       </div>
@@ -1213,6 +1266,239 @@ export function AdminDashboardClient({
           initialStats={initialAssessmentStats}
           showToast={showToast}
         />
+      )}
+
+      {/* TAB 5: COURSE PRICING & FEE BREAKDOWN MANAGEMENT */}
+      {activeTab === "pricing" && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2 border-b border-[#E7E2D6]">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#C25E38]">
+                  Commercial Settings
+                </span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">
+                  Live Dynamic Fee
+                </span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold text-[#1C1917] tracking-tight mt-1">
+                Course Fees & Price Breakdown Management
+              </h3>
+              <p className="text-xs sm:text-sm text-[#78716C] mt-0.5">
+                Set and update the original fee, discounted selling fee, and promo badge. Changes apply instantly across the course page and WhatsApp enrollment links.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* PRICING FORM */}
+            <div className="lg:col-span-7 bg-white border border-[#D4CDBC] rounded-2xl p-6 sm:p-8 space-y-6 beige-card-shadow">
+              <form onSubmit={handleSavePricing} className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Original Price */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#78716C] mb-1.5">
+                      Original Strikethrough Price
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[#78716C]">
+                        {pricing.currency}
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        required
+                        value={pricing.originalPrice}
+                        onChange={(e) => {
+                          const orig = Number(e.target.value);
+                          const sell = pricing.sellingPrice;
+                          const discount =
+                            orig > 0
+                              ? Math.max(0, Math.round(((orig - sell) / orig) * 100))
+                              : 0;
+                          setPricing({
+                            ...pricing,
+                            originalPrice: orig,
+                            discountPercent: discount,
+                          });
+                        }}
+                        className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-[#D4CDBC] bg-[#FAF8F5] text-base font-bold text-[#1C1917] focus:outline-none focus:ring-2 focus:ring-[#C25E38]"
+                        placeholder="1199"
+                      />
+                    </div>
+                    <p className="text-[11px] text-[#78716C] mt-1">
+                      Displayed crossed out (e.g. Original: ₹1,199)
+                    </p>
+                  </div>
+
+                  {/* Selling Price */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#15803D] mb-1.5">
+                      Selling Price (Active Fee)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[#15803D]">
+                        {pricing.currency}
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        required
+                        value={pricing.sellingPrice}
+                        onChange={(e) => {
+                          const sell = Number(e.target.value);
+                          const orig = pricing.originalPrice;
+                          const discount =
+                            orig > 0
+                              ? Math.max(0, Math.round(((orig - sell) / orig) * 100))
+                              : 0;
+                          setPricing({
+                            ...pricing,
+                            sellingPrice: sell,
+                            discountPercent: discount,
+                          });
+                        }}
+                        className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-[#A7F3D0] bg-[#F0FDF4] text-base font-extrabold text-[#15803D] focus:outline-none focus:ring-2 focus:ring-[#15803D]"
+                        placeholder="999"
+                      />
+                    </div>
+                    <p className="text-[11px] text-[#15803D] mt-1">
+                      Prominently highlighted in bright neon lime (e.g. Selling: ₹999)
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Currency Symbol */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#78716C] mb-1.5">
+                      Currency Symbol
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={pricing.currency}
+                      onChange={(e) =>
+                        setPricing({ ...pricing, currency: e.target.value })
+                      }
+                      className="w-full px-4 py-2.5 rounded-xl border border-[#D4CDBC] bg-[#FAF8F5] text-sm font-semibold text-[#1C1917] focus:outline-none focus:ring-2 focus:ring-[#C25E38]"
+                      placeholder="₹"
+                    />
+                  </div>
+
+                  {/* Offer Tag */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#78716C] mb-1.5">
+                      Offer Badge / Tagline
+                    </label>
+                    <input
+                      type="text"
+                      value={pricing.offerTag || ""}
+                      onChange={(e) =>
+                        setPricing({ ...pricing, offerTag: e.target.value })
+                      }
+                      className="w-full px-4 py-2.5 rounded-xl border border-[#D4CDBC] bg-[#FAF8F5] text-sm font-semibold text-[#1C1917] focus:outline-none focus:ring-2 focus:ring-[#C25E38]"
+                      placeholder="LIMITED TIME OFFER"
+                    />
+                  </div>
+                </div>
+
+                {/* Offer Active Switch */}
+                <div className="p-4 rounded-xl bg-[#F5F2EB] border border-[#E7E2D6] flex items-center justify-between">
+                  <div>
+                    <span className="text-sm font-bold text-[#1C1917] block">
+                      Promotional Discount Active
+                    </span>
+                    <span className="text-xs text-[#78716C]">
+                      Toggle whether to display the discount savings badge and strikethrough price.
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={pricing.isOfferActive}
+                      onChange={(e) =>
+                        setPricing({ ...pricing, isOfferActive: e.target.checked })
+                      }
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-[#D4CDBC] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#15803D]" />
+                  </label>
+                </div>
+
+                {/* Computed Savings Overview */}
+                {(() => {
+                  const orig = Number(pricing.originalPrice) || 0;
+                  const sell = Number(pricing.sellingPrice) || 0;
+                  const savings = Math.max(0, orig - sell);
+                  const discount =
+                    orig > 0 ? Math.round((savings / orig) * 100) : 0;
+                  return (
+                    <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-bold text-[#92400E] block">
+                          Calculated Savings
+                        </span>
+                        <span className="text-[#B45309]">
+                          Students save {pricing.currency || "₹"}
+                          {savings.toLocaleString("en-IN")} per enrollment
+                        </span>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-amber-200 text-[#78350F] font-extrabold text-xs">
+                        {discount}% OFF
+                      </span>
+                    </div>
+                  );
+                })()}
+
+                {/* Submit button */}
+                <div className="pt-2 flex items-center justify-end">
+                  <button
+                    type="submit"
+                    disabled={isSavingPricing}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-[#C25E38] hover:bg-[#A94E2C] text-white shadow-sm transition-all hover:shadow disabled:opacity-50"
+                  >
+                    {isSavingPricing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Saving Changes...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>Save Pricing Changes</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* LIVE PREVIEW OF CARD */}
+            <div className="lg:col-span-5 space-y-4">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#78716C]">
+                  Live Student View Preview
+                </span>
+                <span className="text-[11px] font-semibold text-[#15803D] bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
+                  Matches Course Page
+                </span>
+              </div>
+              <PriceBreakdownCard pricing={pricing} showEnrollButton={false} />
+              <div className="p-4 rounded-xl bg-white border border-[#E7E2D6] text-xs text-[#78716C] space-y-1">
+                <div className="font-bold text-[#1C1917] flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
+                  <span>Instant Public Sync</span>
+                </div>
+                <p>
+                  Saving here updates the fee cards immediately on the course page and pre-fills WhatsApp enrollment messages with <strong>{pricing.currency}{pricing.sellingPrice}</strong>.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* EDIT WEEK DETAILS MODAL */}

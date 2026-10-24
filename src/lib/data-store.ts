@@ -22,6 +22,7 @@ import {
   AssessmentSubmission,
   AssessmentStats,
   AssessmentEvaluationResult,
+  CoursePricing,
 } from "@/types";
 import { generateCourseModulePdfBuffer } from "./pdf-generator";
 import { getSupabaseAdminClient, isSupabaseConfigured } from "./supabase";
@@ -44,6 +45,7 @@ interface StoreData {
   assessmentQuestions: AssessmentQuestion[];
   assessmentSettings: AssessmentSettings;
   assessmentSubmissions: AssessmentSubmission[];
+  pricing: CoursePricing;
 }
 
 // =========================================================================
@@ -536,7 +538,18 @@ export const SEED_ASSESSMENT_SETTINGS: AssessmentSettings = {
   updatedAt: "2026-08-01T10:00:00.000Z",
 };
 
+export const DEFAULT_PRICING: CoursePricing = {
+  originalPrice: 1199,
+  sellingPrice: 999,
+  currency: "₹",
+  discountPercent: 17,
+  offerTag: "LIMITED TIME OFFER",
+  isOfferActive: true,
+  updatedAt: "2026-10-24T10:00:00.000Z",
+};
+
 const ASSESSMENT_STORE_PATH = path.join(process.cwd(), "data", "assessment_store.json");
+const PRICING_STORE_PATH = path.join(process.cwd(), "data", "pricing_store.json");
 
 function loadAssessmentStoreFromDisk(): {
   questions: AssessmentQuestion[];
@@ -570,12 +583,37 @@ function saveAssessmentStoreToDisk(data: {
   }
 }
 
+function loadPricingStoreFromDisk(): CoursePricing | null {
+  try {
+    if (fs.existsSync(PRICING_STORE_PATH)) {
+      const raw = fs.readFileSync(PRICING_STORE_PATH, "utf-8");
+      return JSON.parse(raw);
+    }
+  } catch (err) {
+    console.warn("Could not read pricing_store.json from disk:", err);
+  }
+  return null;
+}
+
+function savePricingStoreToDisk(pricing: CoursePricing) {
+  try {
+    const dir = path.dirname(PRICING_STORE_PATH);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(PRICING_STORE_PATH, JSON.stringify(pricing, null, 2), "utf-8");
+  } catch (err) {
+    console.warn("Could not write pricing_store.json to disk:", err);
+  }
+}
+
 // =========================================================================
 // GLOBAL IN-MEMORY STORE (Fallback & dev cache)
 // =========================================================================
 
 function createInitialStore(): StoreData {
   const disk = loadAssessmentStoreFromDisk();
+  const pricingDisk = loadPricingStoreFromDisk();
   return {
     users: JSON.parse(JSON.stringify(SEED_USERS)),
     subscriptions: JSON.parse(JSON.stringify(SEED_SUBSCRIPTIONS)),
@@ -586,6 +624,7 @@ function createInitialStore(): StoreData {
     assessmentQuestions: disk?.questions || JSON.parse(JSON.stringify(SEED_ASSESSMENT_QUESTIONS)),
     assessmentSettings: disk?.settings || JSON.parse(JSON.stringify(SEED_ASSESSMENT_SETTINGS)),
     assessmentSubmissions: disk?.submissions || [],
+    pricing: pricingDisk || { ...DEFAULT_PRICING },
   };
 }
 
@@ -597,6 +636,9 @@ if (!g.__courseStore) {
 function getMemoryStore(): StoreData {
   if (!g.__courseStore) {
     g.__courseStore = createInitialStore();
+  }
+  if (!g.__courseStore.pricing || !g.__courseStore.pricing.originalPrice) {
+    g.__courseStore.pricing = loadPricingStoreFromDisk() || { ...DEFAULT_PRICING };
   }
   return g.__courseStore;
 }
@@ -2552,4 +2594,122 @@ export async function getAssessmentStats(): Promise<AssessmentStats> {
     advancedCount,
   };
 }
+
+// =========================================================================
+// COURSE PRICING & FEE BREAKDOWN METHODS
+// =========================================================================
+
+/**
+ * Retrieves the current course pricing breakdown.
+ * Queries Supabase `course_pricing` table first if connected, falling back to disk/memory.
+ */
+export async function getCoursePricing(): Promise<CoursePricing> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = getSupabaseAdminClient();
+      if (supabase) {
+        const { data, error } = await supabase
+          .from("course_pricing")
+          .select("*")
+          .eq("id", "default")
+          .maybeSingle();
+
+        if (data && !error) {
+          const orig = Number(data.original_price);
+          const sell = Number(data.selling_price);
+          const discount =
+            data.discount_percent ??
+            (orig > 0 ? Math.max(0, Math.round(((orig - sell) / orig) * 100)) : 0);
+
+          return {
+            originalPrice: orig,
+            sellingPrice: sell,
+            currency: data.currency || "₹",
+            discountPercent: discount,
+            offerTag: data.offer_tag || "LIMITED TIME OFFER",
+            isOfferActive: data.is_offer_active ?? true,
+            updatedAt: data.updated_at,
+          };
+        }
+      }
+    } catch (err) {
+      console.warn("Supabase getCoursePricing fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  return { ...mem.pricing };
+}
+
+/**
+ * Updates course pricing and fee breakdown.
+ * Persists to Supabase `course_pricing` and local disk cache.
+ */
+export async function updateCoursePricing(
+  updates: Partial<CoursePricing>
+): Promise<CoursePricing> {
+  const mem = getMemoryStore();
+
+  const originalPrice =
+    updates.originalPrice !== undefined
+      ? Number(updates.originalPrice)
+      : mem.pricing.originalPrice;
+
+  const sellingPrice =
+    updates.sellingPrice !== undefined
+      ? Number(updates.sellingPrice)
+      : mem.pricing.sellingPrice;
+
+  const calculatedDiscount =
+    originalPrice > 0
+      ? Math.max(0, Math.round(((originalPrice - sellingPrice) / originalPrice) * 100))
+      : 0;
+
+  const newPricing: CoursePricing = {
+    originalPrice,
+    sellingPrice,
+    currency: updates.currency || mem.pricing.currency || "₹",
+    discountPercent:
+      updates.discountPercent !== undefined
+        ? Number(updates.discountPercent)
+        : calculatedDiscount,
+    offerTag:
+      updates.offerTag !== undefined ? updates.offerTag : mem.pricing.offerTag,
+    isOfferActive:
+      updates.isOfferActive !== undefined
+        ? Boolean(updates.isOfferActive)
+        : mem.pricing.isOfferActive,
+    updatedAt: new Date().toISOString(),
+  };
+
+  mem.pricing = newPricing;
+  savePricingStoreToDisk(newPricing);
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = getSupabaseAdminClient();
+      if (supabase) {
+        const { error } = await supabase.from("course_pricing").upsert({
+          id: "default",
+          original_price: newPricing.originalPrice,
+          selling_price: newPricing.sellingPrice,
+          currency: newPricing.currency,
+          discount_percent: newPricing.discountPercent,
+          offer_tag: newPricing.offerTag,
+          is_offer_active: newPricing.isOfferActive,
+          updated_at: newPricing.updatedAt,
+        });
+
+        if (error) {
+          console.warn("Supabase updateCoursePricing upsert warning:", error);
+        }
+      }
+    } catch (err) {
+      console.warn("Supabase updateCoursePricing fallback:", err);
+    }
+  }
+
+  return newPricing;
+}
+
 

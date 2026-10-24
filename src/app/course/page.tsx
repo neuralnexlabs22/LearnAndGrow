@@ -19,12 +19,14 @@ import {
   getCourseWeeks,
   getApprovedReviews,
   getStudentReview,
+  getCoursePricing,
 } from "@/lib/data-store";
 import { COURSE_CONFIG, getEnrollmentWhatsAppUrl } from "@/lib/config";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { CourseModuleList } from "./CourseModuleList";
 import { ReviewsSection } from "@/components/ReviewsSection";
+import { PriceBreakdownCard } from "@/components/PriceBreakdownCard";
 
 export const dynamic = "force-dynamic";
 
@@ -36,8 +38,11 @@ export const metadata = {
 
 export default async function CoursePage() {
   const { user, subscriptionStatus } = await getCurrentSession();
-  const weeks = await getCourseWeeks();
-  const approvedReviews = await getApprovedReviews();
+  const [weeks, approvedReviews, pricing] = await Promise.all([
+    getCourseWeeks(),
+    getApprovedReviews(),
+    getCoursePricing(),
+  ]);
   const hasAccess = user?.role === "admin" || subscriptionStatus === "active";
   const whatsAppUrl = getEnrollmentWhatsAppUrl(user?.email);
 
@@ -202,6 +207,53 @@ export default async function CoursePage() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* COURSE FEES & PRICE BREAKDOWN SECTION */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-[#F5F2EB] border border-[#D4CDBC] rounded-3xl p-6 sm:p-10 beige-card-shadow">
+            <div className="lg:col-span-7 space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#15803D] bg-emerald-100 px-3 py-1 rounded-full border border-emerald-200">
+                  {pricing.offerTag || "Course Fee Structure"}
+                </span>
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#E8E3D7] text-[#44403C]">
+                  One-Time Payment • No Subscriptions
+                </span>
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#1C1917] tracking-tight">
+                All-Inclusive Course Fees & Enrollment Structure
+              </h2>
+
+              <p className="text-sm sm:text-base text-[#57534E] leading-relaxed">
+                Invest in your English speaking fluency with complete transparency. Pay once and receive full lifetime access to all 8 weekly learning modules, downloadable PDF workbooks, personalized feedback, and direct WhatsApp instructor support.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-[#1C1917]">
+                  <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0" />
+                  <span>8 Weeks Complete Curriculum</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-[#1C1917]">
+                  <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0" />
+                  <span>8 Verified PDF Workbooks</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-[#1C1917]">
+                  <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0" />
+                  <span>Direct WhatsApp Mentor Advisory</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-[#1C1917]">
+                  <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0" />
+                  <span>Official Course Certificate</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-5">
+              <PriceBreakdownCard pricing={pricing} userEmail={user?.email} />
+            </div>
+          </div>
         </div>
 
         {/* COURSE INFORMATION & LEARNING OUTCOMES */}

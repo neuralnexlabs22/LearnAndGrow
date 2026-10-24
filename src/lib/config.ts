@@ -83,6 +83,22 @@ export function getEnrollmentWhatsAppUrl(email?: string): string {
 }
 
 /**
+ * Pre-filled message with specific offer pricing details
+ */
+export function getPriceOfferWhatsAppUrl(
+  originalPrice: number,
+  sellingPrice: number,
+  currency: string = "₹",
+  email?: string
+): string {
+  let message = `Hello Learn and Grow! I would like to enroll in your 8-week Spoken English Course at the offer price of ${currency}${sellingPrice} (Original: ${currency}${originalPrice}). Please share the enrollment, payment, and batch details.`;
+  if (email) {
+    message += ` (Registered Email: ${email})`;
+  }
+  return buildWhatsAppUrl(message);
+}
+
+/**
  * Pre-filled message for specific week syllabus inquiries
  */
 export function getWeekInquiryWhatsAppUrl(

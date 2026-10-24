@@ -9,6 +9,7 @@ import {
   getAssessmentSettings,
   getAssessmentSubmissions,
   getAssessmentStats,
+  getCoursePricing,
 } from "@/lib/data-store";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -72,6 +73,7 @@ export default async function AdminPage() {
     assessmentSettings,
     assessmentSubmissions,
     assessmentStats,
+    pricing,
   ] = await Promise.all([
     getCourseWeeks(),
     getStudentsWithSubscriptions(),
@@ -81,6 +83,7 @@ export default async function AdminPage() {
     getAssessmentSettings(),
     getAssessmentSubmissions(),
     getAssessmentStats(),
+    getCoursePricing(),
   ]);
 
   return (
@@ -120,6 +123,7 @@ export default async function AdminPage() {
             initialAssessmentSettings={assessmentSettings}
             initialAssessmentSubmissions={assessmentSubmissions}
             initialAssessmentStats={assessmentStats}
+            initialPricing={pricing}
           />
         </div>
       </main>
