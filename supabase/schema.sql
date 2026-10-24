@@ -415,7 +415,7 @@ INSERT INTO public.assessment_settings (
   beginner_max_score,
   intermediate_max_score,
   beginner_heading,
-  beginnerMessage,
+  beginner_message,
   intermediate_heading,
   intermediate_message,
   advanced_heading,
