@@ -89,3 +89,87 @@ export interface AuthSession {
   user: UserProfile;
   subscriptionStatus: SubscriptionStatus;
 }
+
+export type AssessmentLevel = "beginner" | "intermediate" | "advanced";
+
+export interface AssessmentQuestion {
+  id: string;
+  orderIndex: number;
+  level: AssessmentLevel;
+  questionText: string;
+  options: string[]; // exactly 4 options
+  correctAnswer: string;
+  explanation?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AssessmentSettings {
+  id: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  instructions: string;
+  totalQuestions: number;
+  marksPerQuestion: number;
+  beginnerMaxScore: number;
+  intermediateMaxScore: number;
+  beginnerHeading: string;
+  beginnerMessage: string;
+  intermediateHeading: string;
+  intermediateMessage: string;
+  advancedHeading: string;
+  advancedMessage: string;
+  ctaText: string;
+  whatsAppTemplate: string;
+  isActive: boolean;
+  updatedAt: string;
+}
+
+export interface AssessmentSubmission {
+  id: string;
+  studentName?: string;
+  studentEmail?: string;
+  score: number;
+  totalQuestions: number;
+  accuracyPercentage: number;
+  level: AssessmentLevel;
+  levelTitle: string;
+  answers: Record<string, string>;
+  submittedAt: string;
+}
+
+export interface AssessmentStats {
+  totalAttempts: number;
+  completedAttempts: number;
+  averageScore: number;
+  averageAccuracy: number;
+  beginnerCount: number;
+  intermediateCount: number;
+  advancedCount: number;
+}
+
+export interface AssessmentEvaluationResult {
+  submissionId: string;
+  score: number;
+  totalQuestions: number;
+  accuracyPercentage: number;
+  level: AssessmentLevel;
+  levelTitle: string;
+  feedbackHeading: string;
+  feedbackMessage: string;
+  recommendedCtaText: string;
+  whatsAppUrl: string;
+  breakdown: Array<{
+    questionId: string;
+    orderIndex: number;
+    questionText: string;
+    level: AssessmentLevel;
+    selectedAnswer: string;
+    correctAnswer: string;
+    isCorrect: boolean;
+    explanation?: string;
+  }>;
+}
+

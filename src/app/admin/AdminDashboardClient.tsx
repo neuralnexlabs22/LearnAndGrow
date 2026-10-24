@@ -33,9 +33,14 @@ import {
   CompletionStatus,
   ReviewStatus,
   DashboardStats,
+  AssessmentQuestion,
+  AssessmentSettings,
+  AssessmentSubmission,
+  AssessmentStats,
 } from "@/types";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { PdfViewerModal } from "@/components/PdfViewerModal";
+import { AssessmentAdminSection } from "@/components/AssessmentAdminSection";
 import { formatDisplayDate } from "@/lib/config";
 
 interface AdminDashboardClientProps {
@@ -43,6 +48,10 @@ interface AdminDashboardClientProps {
   initialStudents: StudentWithSubscription[];
   initialReviews: StudentReview[];
   initialStats: DashboardStats;
+  initialAssessmentQuestions: AssessmentQuestion[];
+  initialAssessmentSettings: AssessmentSettings;
+  initialAssessmentSubmissions: AssessmentSubmission[];
+  initialAssessmentStats: AssessmentStats;
 }
 
 export function AdminDashboardClient({
@@ -50,8 +59,14 @@ export function AdminDashboardClient({
   initialStudents,
   initialReviews,
   initialStats,
+  initialAssessmentQuestions,
+  initialAssessmentSettings,
+  initialAssessmentSubmissions,
+  initialAssessmentStats,
 }: AdminDashboardClientProps) {
-  const [activeTab, setActiveTab] = useState<"weeks" | "students" | "reviews">("weeks");
+  const [activeTab, setActiveTab] = useState<
+    "weeks" | "students" | "reviews" | "assessment"
+  >("weeks");
   const [weeks, setWeeks] = useState<CourseWeek[]>(initialWeeks);
   const [students, setStudents] = useState<StudentWithSubscription[]>(initialStudents);
   const [reviews, setReviews] = useState<StudentReview[]>(initialReviews);
@@ -639,6 +654,21 @@ export function AdminDashboardClient({
             </span>
           )}
         </button>
+
+        <button
+          onClick={() => setActiveTab("assessment")}
+          className={`pb-3 text-sm font-bold tracking-tight transition-all relative shrink-0 flex items-center gap-2 ${
+            activeTab === "assessment"
+              ? "text-[#15803D] border-b-2 border-[#15803D]"
+              : "text-[#78716C] hover:text-[#1C1917]"
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-[#15803D]" />
+          <span>English Assessment</span>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-[#15803D] font-bold border border-emerald-200">
+            {initialAssessmentQuestions.length} Qs
+          </span>
+        </button>
       </div>
 
       {/* TAB 1: COURSE WEEKS MANAGEMENT */}
@@ -1172,6 +1202,17 @@ export function AdminDashboardClient({
             )}
           </div>
         </div>
+      )}
+
+      {/* TAB 4: ENGLISH ASSESSMENT MANAGEMENT */}
+      {activeTab === "assessment" && (
+        <AssessmentAdminSection
+          initialQuestions={initialAssessmentQuestions}
+          initialSettings={initialAssessmentSettings}
+          initialSubmissions={initialAssessmentSubmissions}
+          initialStats={initialAssessmentStats}
+          showToast={showToast}
+        />
       )}
 
       {/* EDIT WEEK DETAILS MODAL */}

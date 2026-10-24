@@ -5,6 +5,10 @@ import {
   getStudentsWithSubscriptions,
   getDashboardStats,
   getAllReviews,
+  getAssessmentQuestions,
+  getAssessmentSettings,
+  getAssessmentSubmissions,
+  getAssessmentStats,
 } from "@/lib/data-store";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -59,11 +63,24 @@ export default async function AdminPage() {
     );
   }
 
-  const [weeks, students, reviews, stats] = await Promise.all([
+  const [
+    weeks,
+    students,
+    reviews,
+    stats,
+    assessmentQuestions,
+    assessmentSettings,
+    assessmentSubmissions,
+    assessmentStats,
+  ] = await Promise.all([
     getCourseWeeks(),
     getStudentsWithSubscriptions(),
     getAllReviews(),
     getDashboardStats(),
+    getAssessmentQuestions(true),
+    getAssessmentSettings(),
+    getAssessmentSubmissions(),
+    getAssessmentStats(),
   ]);
 
   return (
@@ -99,6 +116,10 @@ export default async function AdminPage() {
             initialStudents={students}
             initialReviews={reviews}
             initialStats={stats}
+            initialAssessmentQuestions={assessmentQuestions}
+            initialAssessmentSettings={assessmentSettings}
+            initialAssessmentSubmissions={assessmentSubmissions}
+            initialAssessmentStats={assessmentStats}
           />
         </div>
       </main>

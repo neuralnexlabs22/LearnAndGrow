@@ -67,12 +67,12 @@ export function ReviewsSection({
           </div>
 
           <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1C1917] tracking-tight">
-            Real Feedback from English Learners
+            Every Step Forward Matters
           </h2>
 
           <p className="text-sm text-[#57534E] leading-relaxed">
-            Read authentic reviews from students who took the 8-week journey to
-            overcome hesitation and gain speaking clarity.
+            Read genuine reflections and success stories from adult learners who took the 8-week journey to
+            overcome hesitation and build real-world spoken English confidence.
           </p>
         </div>
 
@@ -130,11 +130,10 @@ export function ReviewsSection({
             <MessageSquarePlus className="w-6 h-6" />
           </div>
           <h3 className="text-base font-bold text-[#1C1917]">
-            No Public Reviews Yet
+            Student Stories in Progress
           </h3>
           <p className="text-xs text-[#57534E] leading-relaxed">
-            Be the first student to share your 8-week English learning journey
-            and inspire fellow learners!
+            Our students are currently progressing through their 8-week spoken English journey. Genuine, administrator-approved student reviews and milestone reflections will appear here.
           </p>
         </div>
       ) : (

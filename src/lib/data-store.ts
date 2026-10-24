@@ -16,9 +16,19 @@ import {
   CompletionStatus,
   ReviewStatus,
   DashboardStats,
+  AssessmentLevel,
+  AssessmentQuestion,
+  AssessmentSettings,
+  AssessmentSubmission,
+  AssessmentStats,
+  AssessmentEvaluationResult,
 } from "@/types";
 import { generateCourseModulePdfBuffer } from "./pdf-generator";
 import { getSupabaseAdminClient, isSupabaseConfigured } from "./supabase";
+import { buildAssessmentWhatsAppUrl } from "./config";
+import fs from "fs";
+import path from "path";
+import { randomUUID } from "crypto";
 
 export interface StoredUser extends UserProfile {
   passwordHash: string;
@@ -31,6 +41,9 @@ interface StoreData {
   reviews: StudentReview[];
   photoBuffers: Record<string, { buffer: string; contentType: string }>; // base64 encoded
   pdfBuffers: Record<string, string>; // base64 encoded, keyed by weekNumber
+  assessmentQuestions: AssessmentQuestion[];
+  assessmentSettings: AssessmentSettings;
+  assessmentSubmissions: AssessmentSubmission[];
 }
 
 // =========================================================================
@@ -41,14 +54,14 @@ const SEED_WEEKS: CourseWeek[] = [
   {
     id: "week-1",
     weekNumber: 1,
-    title: "English Foundations and Basic Sentence Formation",
+    title: "English Foundations",
     description:
-      "Master essential sentence structures (SVO), subject-verb agreement, common auxiliary verbs, and foundational conversational patterns with zero confusion.",
+      "Learn sentence formation, basic vocabulary, and how to introduce yourself confidently.",
     learningObjectives: [
       "Subject-Verb-Object (SVO) Core Architecture",
       "Articles (A, An, The) & Demonstrative Pronouns",
       "Auxiliary Verbs (Be, Do, Have) in Present Simple",
-      "Essential Everyday Greetings & Self-Introductions",
+      "Essential Everyday Greetings & Confident Self-Introductions",
     ],
     pdfFilename: "Week-01-English-Foundations.pdf",
     pdfStoragePath: "week-1/Week-01-English-Foundations.pdf",
@@ -60,9 +73,9 @@ const SEED_WEEKS: CourseWeek[] = [
   {
     id: "week-2",
     weekNumber: 2,
-    title: "Grammar and Tenses Mastery",
+    title: "Grammar and Tenses",
     description:
-      "Gain complete control over past, present, and future tenses. Learn how native speakers convey timelines, continuous actions, and completed experiences naturally.",
+      "Understand essential grammar rules and learn to use present, past, and future tenses.",
     learningObjectives: [
       "Present Simple vs. Present Continuous in Real Contexts",
       "Past Simple vs. Present Perfect: Eliminating Common Errors",
@@ -79,9 +92,9 @@ const SEED_WEEKS: CourseWeek[] = [
   {
     id: "week-3",
     weekNumber: 3,
-    title: "Vocabulary and Everyday Expressions",
+    title: "Vocabulary and Daily English",
     description:
-      "Expand beyond basic vocabulary with 250+ high-frequency collocations, phrasal verbs, idioms, and natural transitions used in daily interactions.",
+      "Improve your vocabulary and learn useful expressions for everyday situations.",
     learningObjectives: [
       "High-Frequency Phrasal Verbs for Everyday Life",
       "Collocations & Natural Word Pairings",
@@ -98,9 +111,9 @@ const SEED_WEEKS: CourseWeek[] = [
   {
     id: "week-4",
     weekNumber: 4,
-    title: "Spoken English and Conversation Practice",
+    title: "Spoken English Practice",
     description:
-      "Develop spoken fluency, overcome hesitation, and practice real-time conversational turn-taking, active listening cues, and storytelling techniques.",
+      "Practise conversations, asking questions, answering confidently, and expressing your thoughts.",
     learningObjectives: [
       "Overcoming Hesitation & Fear of Making Mistakes",
       "Conversational Connectors & Fillers Used Naturally",
@@ -117,9 +130,9 @@ const SEED_WEEKS: CourseWeek[] = [
   {
     id: "week-5",
     weekNumber: 5,
-    title: "Pronunciation, Accent Clarity and Listening Skills",
+    title: "Pronunciation and Listening",
     description:
-      "Sharpen your acoustic comprehension and speech clarity. Master vowel distinctions, syllable stress, connected speech, and native intonation rhythms.",
+      "Improve pronunciation, listening skills, clarity, and fluency.",
     learningObjectives: [
       "Vowel & Consonant Minimal Pairs Training",
       "Word Stress, Syllable Timing & Sentence Intonation",
@@ -136,9 +149,9 @@ const SEED_WEEKS: CourseWeek[] = [
   {
     id: "week-6",
     weekNumber: 6,
-    title: "Reading Comprehension and Writing Precision",
+    title: "Reading and Writing",
     description:
-      "Analyze diverse texts, build analytical comprehension, and draft clear, cohesive emails, professional letters, and personal essays.",
+      "Learn to write clear messages, emails, and simple paragraphs in English.",
     learningObjectives: [
       "Skimming & Scanning Techniques for Articles & Books",
       "Professional Email Etiquette & Structural Formats",
@@ -155,9 +168,9 @@ const SEED_WEEKS: CourseWeek[] = [
   {
     id: "week-7",
     weekNumber: 7,
-    title: "Communication Skills and Real-Life Situations",
+    title: "Interview and Workplace English",
     description:
-      "Apply your English in workplace environments, job interviews, customer service, telephone calls, travel scenarios, and negotiations.",
+      "Practise interview answers, professional conversations, meetings, and workplace communication.",
     learningObjectives: [
       "Interview Preparation & Self-Introduction Mastery",
       "Workplace Meetings, Summaries & Action Items",
@@ -174,9 +187,9 @@ const SEED_WEEKS: CourseWeek[] = [
   {
     id: "week-8",
     weekNumber: 8,
-    title: "Revision, Practical Exercises, and Final Assessment",
+    title: "Revision and Final Assessment",
     description:
-      "Consolidate your 8-week knowledge with practical roleplays, comprehensive grammar & vocabulary review, and your final spoken English evaluation.",
+      "Review what you have learned and assess your progress.",
     learningObjectives: [
       "Comprehensive Grammar & Phrasal Verb Synthesis",
       "Live Roleplay Simulation & Spoken Review",
@@ -196,6 +209,18 @@ const SEED_USERS: StoredUser[] = [
   {
     id: "00000000-0000-0000-0000-000000000001",
     name: "Course Administrator",
+    email: "learnandgrow050518@gmail.com",
+    role: "admin",
+    photoUrl: null,
+    completionStatus: "completed",
+    completedAt: undefined,
+    publicConsent: false,
+    passwordHash: "AdminPass123!",
+    createdAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "00000000-0000-0000-0000-000000000002",
+    name: "Course Administrator (Fallback)",
     email: "admin@course.edu",
     role: "admin",
     photoUrl: null,
@@ -212,10 +237,345 @@ const SEED_SUBSCRIPTIONS: Subscription[] = [];
 const SEED_REVIEWS: StudentReview[] = [];
 
 // =========================================================================
+// SEED DATA: 20 Free English Grammar Assessment Questions
+// =========================================================================
+
+export const SEED_ASSESSMENT_QUESTIONS: AssessmentQuestion[] = [
+  {
+    id: "q-01",
+    orderIndex: 1,
+    level: "beginner",
+    questionText: "She _____ to school every day.",
+    options: ["A) go", "B) goes", "C) going", "D) gone"],
+    correctAnswer: "B) goes",
+    explanation: 'Third-person singular "she" takes the singular verb form "goes" in present simple tense.',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "q-02",
+    orderIndex: 2,
+    level: "beginner",
+    questionText: "I saw _____ elephant at the zoo.",
+    options: ["A) a", "B) an", "C) the", "D) no article"],
+    correctAnswer: "B) an",
+    explanation: 'The word "elephant" begins with a vowel sound, so the indefinite article "an" is used.',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "q-03",
+    orderIndex: 3,
+    level: "beginner",
+    questionText: "They _____ playing cricket now.",
+    options: ["A) is", "B) am", "C) are", "D) was"],
+    correctAnswer: "C) are",
+    explanation: 'Plural subject "they" requires the plural auxiliary verb "are" in present continuous tense.',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "q-04",
+    orderIndex: 4,
+    level: "beginner",
+    questionText: "This is Rani. _____ is my friend.",
+    options: ["A) He", "B) It", "C) They", "D) She"],
+    correctAnswer: "D) She",
+    explanation: 'Rani is a female singular person, so the personal pronoun "She" is correct.',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "q-05",
+    orderIndex: 5,
+    level: "beginner",
+    questionText: "We _____ dinner at 8 p.m. yesterday.",
+    options: ["A) eat", "B) eaten", "C) ate", "D) eating"],
+    correctAnswer: "C) ate",
+    explanation: 'The past time marker "yesterday" requires the past simple form "ate".',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "q-06",
+    orderIndex: 6,
+    level: "beginner",
+    questionText: "The book is _____ the table.",
+    options: ["A) on", "B) at", "C) between", "D) from"],
+    correctAnswer: "A) on",
+    explanation: 'We use "on" for contact with a horizontal or vertical surface like a table.',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "q-07",
+    orderIndex: 7,
+    level: "beginner",
+    questionText: "There _____ two apples in the basket.",
+    options: ["A) is", "B) are", "C) was", "D) has"],
+    correctAnswer: "B) are",
+    explanation: '"Two apples" is plural, so the plural verb "are" is required in present tense.',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "q-08",
+    orderIndex: 8,
+    level: "intermediate",
+    questionText: "I _____ here since 2022, and I still live here.",
+    options: ["A) lived", "B) am living", "C) have lived", "D) had lived"],
+    correctAnswer: "C) have lived",
+    explanation: 'An action starting in the past and continuing into the present requires present perfect ("have lived").',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "q-09",
+    orderIndex: 9,
+    level: "intermediate",
+    questionText: "If she _____ hard, she will pass the exam.",
+    options: ["A) studied", "B) studies", "C) will study", "D) has studied"],
+    correctAnswer: "B) studies",
+    explanation: 'In first conditional clauses (If + present simple, will + base verb), use "studies".',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "q-10",
+    orderIndex: 10,
+    level: "intermediate",
+    questionText: "She is interested _____ learning English.",
+    options: ["A) on", "B) at", "C) for", "D) in"],
+    correctAnswer: "D) in",
+    explanation: 'The adjective "interested" takes the preposition "in".',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "q-11",
+    orderIndex: 11,
+    level: "intermediate",
+    questionText: "By the time we arrived, the movie _____.",
+    options: ["A) starts", "B) has started", "C) had started", "D) will start"],
+    correctAnswer: "C) had started",
+    explanation: 'Past perfect ("had started") indicates an action completed before another past event.',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "q-12",
+    orderIndex: 12,
+    level: "intermediate",
+    questionText: "Neither Ravi nor his friends _____ ready.",
+    options: ["A) is", "B) are", "C) was", "D) has"],
+    correctAnswer: "B) are",
+    explanation: 'In "neither... nor" constructions, the verb agrees with the closer subject ("his friends", plural).',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "q-13",
+    orderIndex: 13,
+    level: "intermediate",
+    questionText: "This is the woman _____ helped me yesterday.",
+    options: ["A) which", "B) whose", "C) who", "D) whom"],
+    correctAnswer: "C) who",
+    explanation: 'The relative pronoun "who" refers to people acting as the subject of the clause.',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "q-14",
+    orderIndex: 14,
+    level: "intermediate",
+    questionText: "He was tired, _____ he continued working.",
+    options: ["A) because", "B) although", "C) so", "D) but"],
+    correctAnswer: "D) but",
+    explanation: '"But" introduces a contrasting coordinating idea between two independent clauses.',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "q-15",
+    orderIndex: 15,
+    level: "advanced",
+    questionText: "If I _____ about the traffic, I would have left earlier.",
+    options: ["A) knew", "B) had known", "C) have known", "D) would know"],
+    correctAnswer: "B) had known",
+    explanation: 'Third conditional (unreal past) uses "had known" with "would have left".',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "q-16",
+    orderIndex: 16,
+    level: "advanced",
+    questionText: 'The manager said, "I am busy." Choose the correct reported speech form.',
+    options: [
+      "A) The manager said that I am busy.",
+      "B) The manager said that he was busy.",
+      "C) The manager said that he is busy yesterday.",
+      "D) The manager said that he were busy.",
+    ],
+    correctAnswer: "B) The manager said that he was busy.",
+    explanation: 'In reported speech, present simple shifts back to past simple ("am" -> "was").',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "q-17",
+    orderIndex: 17,
+    level: "advanced",
+    questionText: 'Choose the correct passive form: "They have completed the project."',
+    options: [
+      "A) The project has been completed.",
+      "B) The project had completed.",
+      "C) The project is completing.",
+      "D) The project has being completed.",
+    ],
+    correctAnswer: "A) The project has been completed.",
+    explanation: 'Present perfect passive structure: has/have + been + past participle ("has been completed").',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "q-18",
+    orderIndex: 18,
+    level: "advanced",
+    questionText: "No sooner _____ the station than the train left.",
+    options: [
+      "A) we reached",
+      "B) had we reached",
+      "C) we had reached",
+      "D) did we reached",
+    ],
+    correctAnswer: "B) had we reached",
+    explanation: 'Negative inversion after "No sooner" requires auxiliary verb before subject: "had we reached".',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "q-19",
+    orderIndex: 19,
+    level: "advanced",
+    questionText: "Choose the grammatically correct sentence.",
+    options: [
+      "A) Despite of the rain, we went out.",
+      "B) Although the rain, we went out.",
+      "C) In spite of the rain, we went out.",
+      "D) Despite it was raining, we went out.",
+    ],
+    correctAnswer: "C) In spite of the rain, we went out.",
+    explanation: '"In spite of" is followed by a noun phrase ("the rain"). "Despite" does not take "of".',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+  {
+    id: "q-20",
+    orderIndex: 20,
+    level: "advanced",
+    questionText: "Choose the correct sentence using inversion for emphasis.",
+    options: [
+      "A) Rarely I have seen such a beautiful view.",
+      "B) Rarely have I seen such a beautiful view.",
+      "C) Rarely did I have seen such a beautiful view.",
+      "D) Rarely I saw have such a beautiful view.",
+    ],
+    correctAnswer: "B) Rarely have I seen such a beautiful view.",
+    explanation: 'When a sentence begins with a negative adverb like "Rarely", subject-auxiliary inversion is used ("have I seen").',
+    isActive: true,
+    createdAt: "2026-08-01T10:00:00.000Z",
+    updatedAt: "2026-08-01T10:00:00.000Z",
+  },
+];
+
+export const SEED_ASSESSMENT_SETTINGS: AssessmentSettings = {
+  id: "default",
+  title: "Take a Free English Assessment",
+  subtitle: "Learn and Grow – English Assessment",
+  description:
+    "Discover your current English grammar level with our free 20-question assessment. Find out where you stand and take the next step towards speaking English confidently.",
+  instructions:
+    "Choose the best option for each question. You can change your answers before final submission.",
+  totalQuestions: 20,
+  marksPerQuestion: 1,
+  beginnerMaxScore: 7,
+  intermediateMaxScore: 14,
+  beginnerHeading: "Let's Build Your Foundation!",
+  beginnerMessage:
+    "Your English learning journey starts here. Strengthen your grammar and vocabulary with regular practice.",
+  intermediateHeading: "Good Job!",
+  intermediateMessage:
+    "You have a good foundation in English. Keep practising to improve your fluency.",
+  advancedHeading: "Excellent Work!",
+  advancedMessage:
+    "You demonstrated strong grammar knowledge. Continue practising to refine your communication skills.",
+  ctaText: "Join Our Spoken English Class",
+  whatsAppTemplate:
+    "Hello Learn and Grow! I have completed the English Grammar Assessment.{{name}}\nMy Score: {{score}}/{{total}}\nAccuracy: {{accuracy}}\nMy Level: {{level}}\nI am interested in joining your 8-week Spoken English Course. Please share the syllabus, course fee, and enrollment details.",
+  isActive: true,
+  updatedAt: "2026-08-01T10:00:00.000Z",
+};
+
+const ASSESSMENT_STORE_PATH = path.join(process.cwd(), "data", "assessment_store.json");
+
+function loadAssessmentStoreFromDisk(): {
+  questions: AssessmentQuestion[];
+  settings: AssessmentSettings;
+  submissions: AssessmentSubmission[];
+} | null {
+  try {
+    if (fs.existsSync(ASSESSMENT_STORE_PATH)) {
+      const raw = fs.readFileSync(ASSESSMENT_STORE_PATH, "utf-8");
+      return JSON.parse(raw);
+    }
+  } catch (err) {
+    console.warn("Could not read assessment_store.json from disk:", err);
+  }
+  return null;
+}
+
+function saveAssessmentStoreToDisk(data: {
+  questions: AssessmentQuestion[];
+  settings: AssessmentSettings;
+  submissions: AssessmentSubmission[];
+}) {
+  try {
+    const dir = path.dirname(ASSESSMENT_STORE_PATH);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(ASSESSMENT_STORE_PATH, JSON.stringify(data, null, 2), "utf-8");
+  } catch (err) {
+    console.warn("Could not write assessment_store.json to disk:", err);
+  }
+}
+
+// =========================================================================
 // GLOBAL IN-MEMORY STORE (Fallback & dev cache)
 // =========================================================================
 
 function createInitialStore(): StoreData {
+  const disk = loadAssessmentStoreFromDisk();
   return {
     users: JSON.parse(JSON.stringify(SEED_USERS)),
     subscriptions: JSON.parse(JSON.stringify(SEED_SUBSCRIPTIONS)),
@@ -223,6 +583,9 @@ function createInitialStore(): StoreData {
     reviews: JSON.parse(JSON.stringify(SEED_REVIEWS)),
     photoBuffers: {},
     pdfBuffers: {},
+    assessmentQuestions: disk?.questions || JSON.parse(JSON.stringify(SEED_ASSESSMENT_QUESTIONS)),
+    assessmentSettings: disk?.settings || JSON.parse(JSON.stringify(SEED_ASSESSMENT_SETTINGS)),
+    assessmentSubmissions: disk?.submissions || [],
   };
 }
 
@@ -728,9 +1091,13 @@ export async function getUserByEmail(email: string): Promise<StoredUser | null> 
   }
 
   const mem = getMemoryStore();
-  if (normalized === "admin@course.edu" || normalized === "admin@learnandgrow.edu") {
+  if (
+    normalized === "learnandgrow050518@gmail.com" ||
+    normalized === "admin@course.edu" ||
+    normalized === "admin@learnandgrow.edu"
+  ) {
     const adminUser = mem.users.find(
-      (u) => u.role === "admin" || u.id === "00000000-0000-0000-0000-000000000001"
+      (u) => u.role === "admin" || u.email.toLowerCase() === normalized
     );
     if (adminUser) return adminUser;
   }
@@ -1581,3 +1948,608 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     totalPdfs,
   };
 }
+
+// =========================================================================
+// FREE ENGLISH GRAMMAR ASSESSMENT: LOGIC & DATA OPERATIONS
+// =========================================================================
+
+export function normalizeAnswer(ans: string): string {
+  if (!ans) return "";
+  return ans.trim().toLowerCase();
+}
+
+export function checkIsAnswerCorrect(userAns: string, correctAns: string): boolean {
+  if (!userAns || !correctAns) return false;
+  const normUser = normalizeAnswer(userAns);
+  const normCorrect = normalizeAnswer(correctAns);
+
+  if (normUser === normCorrect) return true;
+
+  // Stripping option letter prefixes like "A) ", "b) ", "a. ", "A - "
+  const stripPrefix = (str: string) => str.replace(/^[a-d][\).\s\-]+/i, "").trim();
+  const strippedUser = stripPrefix(normUser);
+  const strippedCorrect = stripPrefix(normCorrect);
+
+  if (strippedUser && strippedCorrect && strippedUser === strippedCorrect) return true;
+
+  // Check matching by leading letter prefix e.g. "B" vs "B) goes"
+  const userLetter = normUser.match(/^[a-d]/i)?.[0];
+  const correctLetter = normCorrect.match(/^[a-d]/i)?.[0];
+  if (userLetter && correctLetter && userLetter === correctLetter) return true;
+
+  return false;
+}
+
+/**
+ * Retrieves all assessment questions from Supabase or resilient fallback store
+ */
+export async function getAssessmentQuestions(
+  includeInactive = false
+): Promise<AssessmentQuestion[]> {
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      let query = supabase
+        .from("assessment_questions")
+        .select("*")
+        .order("order_index", { ascending: true });
+
+      if (!includeInactive) {
+        query = query.eq("is_active", true);
+      }
+
+      const { data, error } = await query;
+      if (!error && data && data.length > 0) {
+        return data.map((row: any) => ({
+          id: row.id,
+          orderIndex: row.order_index,
+          level: row.level as AssessmentLevel,
+          questionText: row.question_text,
+          options: Array.isArray(row.options) ? row.options : [],
+          correctAnswer: row.correct_answer,
+          explanation: row.explanation || undefined,
+          isActive: row.is_active,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        }));
+      }
+    } catch (err) {
+      console.warn("Supabase getAssessmentQuestions fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  let questions = [...mem.assessmentQuestions];
+  if (!includeInactive) {
+    questions = questions.filter((q) => q.isActive);
+  }
+  return questions.sort((a, b) => a.orderIndex - b.orderIndex);
+}
+
+/**
+ * Public questions for students — strictly omits correct answers and answers key
+ */
+export async function getAssessmentQuestionsForStudent(): Promise<
+  Omit<AssessmentQuestion, "correctAnswer">[]
+> {
+  const fullQuestions = await getAssessmentQuestions(false);
+  return fullQuestions.map((q) => ({
+    id: q.id,
+    orderIndex: q.orderIndex,
+    level: q.level,
+    questionText: q.questionText,
+    options: q.options,
+    explanation: undefined, // Hidden until after submission
+    isActive: q.isActive,
+    createdAt: q.createdAt,
+    updatedAt: q.updatedAt,
+  }));
+}
+
+/**
+ * Retrieves a single assessment question by ID
+ */
+export async function getAssessmentQuestionById(
+  id: string
+): Promise<AssessmentQuestion | null> {
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("assessment_questions")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          orderIndex: data.order_index,
+          level: data.level as AssessmentLevel,
+          questionText: data.question_text,
+          options: Array.isArray(data.options) ? data.options : [],
+          correctAnswer: data.correct_answer,
+          explanation: data.explanation || undefined,
+          isActive: data.is_active,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase getAssessmentQuestionById fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  return mem.assessmentQuestions.find((q) => q.id === id) || null;
+}
+
+/**
+ * Creates or updates an assessment question with full validation
+ */
+export async function saveAssessmentQuestion(
+  questionData: Partial<AssessmentQuestion> & { id?: string }
+): Promise<AssessmentQuestion> {
+  if (!questionData.questionText || !questionData.questionText.trim()) {
+    throw new Error("Question text is required.");
+  }
+
+  if (
+    !Array.isArray(questionData.options) ||
+    questionData.options.length !== 4 ||
+    questionData.options.some((opt) => !opt || !opt.trim())
+  ) {
+    throw new Error("Every question must have exactly four non-empty answer options.");
+  }
+
+  if (!questionData.correctAnswer || !questionData.correctAnswer.trim()) {
+    throw new Error("A valid correct answer must be selected.");
+  }
+
+  const validLevels: AssessmentLevel[] = ["beginner", "intermediate", "advanced"];
+  const level: AssessmentLevel = validLevels.includes(questionData.level as AssessmentLevel)
+    ? (questionData.level as AssessmentLevel)
+    : "beginner";
+
+  const now = new Date().toISOString();
+  const mem = getMemoryStore();
+
+  let targetId = questionData.id;
+  let orderIndex = questionData.orderIndex;
+
+  if (!targetId) {
+    targetId = `q-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    if (orderIndex === undefined) {
+      const maxOrder = mem.assessmentQuestions.reduce(
+        (max, q) => Math.max(max, q.orderIndex),
+        0
+      );
+      orderIndex = maxOrder + 1;
+    }
+  } else if (orderIndex === undefined) {
+    const existing = mem.assessmentQuestions.find((q) => q.id === targetId);
+    orderIndex = existing ? existing.orderIndex : mem.assessmentQuestions.length + 1;
+  }
+
+  const savedQuestion: AssessmentQuestion = {
+    id: targetId,
+    orderIndex,
+    level,
+    questionText: questionData.questionText.trim(),
+    options: questionData.options.map((opt) => opt.trim()),
+    correctAnswer: questionData.correctAnswer.trim(),
+    explanation: questionData.explanation?.trim() || undefined,
+    isActive: questionData.isActive !== undefined ? questionData.isActive : true,
+    createdAt: questionData.createdAt || now,
+    updatedAt: now,
+  };
+
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      await supabase.from("assessment_questions").upsert({
+        id: savedQuestion.id,
+        order_index: savedQuestion.orderIndex,
+        level: savedQuestion.level,
+        question_text: savedQuestion.questionText,
+        options: savedQuestion.options,
+        correct_answer: savedQuestion.correctAnswer,
+        explanation: savedQuestion.explanation || null,
+        is_active: savedQuestion.isActive,
+        created_at: savedQuestion.createdAt,
+        updated_at: savedQuestion.updatedAt,
+      });
+    } catch (err) {
+      console.warn("Supabase saveAssessmentQuestion fallback:", err);
+    }
+  }
+
+  const existingIdx = mem.assessmentQuestions.findIndex((q) => q.id === targetId);
+  if (existingIdx >= 0) {
+    mem.assessmentQuestions[existingIdx] = savedQuestion;
+  } else {
+    mem.assessmentQuestions.push(savedQuestion);
+  }
+  mem.assessmentQuestions.sort((a, b) => a.orderIndex - b.orderIndex);
+
+  saveAssessmentStoreToDisk({
+    questions: mem.assessmentQuestions,
+    settings: mem.assessmentSettings,
+    submissions: mem.assessmentSubmissions,
+  });
+
+  return savedQuestion;
+}
+
+/**
+ * Deletes an assessment question by ID
+ */
+export async function deleteAssessmentQuestion(id: string): Promise<boolean> {
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      await supabase.from("assessment_questions").delete().eq("id", id);
+    } catch (err) {
+      console.warn("Supabase deleteAssessmentQuestion fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  const initialLen = mem.assessmentQuestions.length;
+  mem.assessmentQuestions = mem.assessmentQuestions.filter((q) => q.id !== id);
+
+  saveAssessmentStoreToDisk({
+    questions: mem.assessmentQuestions,
+    settings: mem.assessmentSettings,
+    submissions: mem.assessmentSubmissions,
+  });
+
+  return mem.assessmentQuestions.length < initialLen;
+}
+
+/**
+ * Reorders assessment questions according to an ordered list of IDs
+ */
+export async function reorderAssessmentQuestions(orderedIds: string[]): Promise<boolean> {
+  const mem = getMemoryStore();
+  const updatedQuestions: AssessmentQuestion[] = [];
+
+  orderedIds.forEach((id, index) => {
+    const q = mem.assessmentQuestions.find((item) => item.id === id);
+    if (q) {
+      q.orderIndex = index + 1;
+      q.updatedAt = new Date().toISOString();
+      updatedQuestions.push(q);
+    }
+  });
+
+  const supabase = getSupabaseAdminClient();
+  if (supabase && updatedQuestions.length > 0) {
+    try {
+      for (const q of updatedQuestions) {
+        await supabase
+          .from("assessment_questions")
+          .update({ order_index: q.orderIndex, updated_at: q.updatedAt })
+          .eq("id", q.id);
+      }
+    } catch (err) {
+      console.warn("Supabase reorderAssessmentQuestions fallback:", err);
+    }
+  }
+
+  mem.assessmentQuestions.sort((a, b) => a.orderIndex - b.orderIndex);
+
+  saveAssessmentStoreToDisk({
+    questions: mem.assessmentQuestions,
+    settings: mem.assessmentSettings,
+    submissions: mem.assessmentSubmissions,
+  });
+
+  return true;
+}
+
+/**
+ * Retrieves assessment settings
+ */
+export async function getAssessmentSettings(): Promise<AssessmentSettings> {
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("assessment_settings")
+        .select("*")
+        .eq("id", "default")
+        .maybeSingle();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          title: data.title,
+          subtitle: data.subtitle,
+          description: data.description,
+          instructions: data.instructions,
+          totalQuestions: data.total_questions,
+          marksPerQuestion: data.marks_per_question,
+          beginnerMaxScore: data.beginner_max_score,
+          intermediateMaxScore: data.intermediate_max_score,
+          beginnerHeading: data.beginner_heading,
+          beginnerMessage: data.beginner_message,
+          intermediateHeading: data.intermediate_heading,
+          intermediateMessage: data.intermediate_message,
+          advancedHeading: data.advanced_heading,
+          advancedMessage: data.advanced_message,
+          ctaText: data.cta_text,
+          whatsAppTemplate: data.whatsapp_template,
+          isActive: data.is_active,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase getAssessmentSettings fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  return mem.assessmentSettings;
+}
+
+/**
+ * Updates assessment settings
+ */
+export async function updateAssessmentSettings(
+  settingsData: Partial<AssessmentSettings>
+): Promise<AssessmentSettings> {
+  const mem = getMemoryStore();
+  const now = new Date().toISOString();
+
+  const updated: AssessmentSettings = {
+    ...mem.assessmentSettings,
+    ...settingsData,
+    id: "default",
+    updatedAt: now,
+  };
+
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      await supabase.from("assessment_settings").upsert({
+        id: "default",
+        title: updated.title,
+        subtitle: updated.subtitle,
+        description: updated.description,
+        instructions: updated.instructions,
+        total_questions: updated.totalQuestions,
+        marks_per_question: updated.marksPerQuestion,
+        beginner_max_score: updated.beginnerMaxScore,
+        intermediate_max_score: updated.intermediateMaxScore,
+        beginner_heading: updated.beginnerHeading,
+        beginner_message: updated.beginnerMessage,
+        intermediate_heading: updated.intermediateHeading,
+        intermediate_message: updated.intermediateMessage,
+        advanced_heading: updated.advancedHeading,
+        advanced_message: updated.advancedMessage,
+        cta_text: updated.ctaText,
+        whatsapp_template: updated.whatsAppTemplate,
+        is_active: updated.isActive,
+        updated_at: updated.updatedAt,
+      });
+    } catch (err) {
+      console.warn("Supabase updateAssessmentSettings fallback:", err);
+    }
+  }
+
+  mem.assessmentSettings = updated;
+
+  saveAssessmentStoreToDisk({
+    questions: mem.assessmentQuestions,
+    settings: mem.assessmentSettings,
+    submissions: mem.assessmentSubmissions,
+  });
+
+  return updated;
+}
+
+/**
+ * Trusted server-side assessment evaluation and score calculation
+ * Scores answers against authoritative answer keys, records attempt, and builds WhatsApp CTA
+ */
+export async function submitAssessmentAttempt(params: {
+  answers: Record<string, string>;
+  studentName?: string;
+  studentEmail?: string;
+}): Promise<AssessmentEvaluationResult> {
+  const settings = await getAssessmentSettings();
+  const activeQuestions = await getAssessmentQuestions(false);
+
+  if (activeQuestions.length === 0) {
+    throw new Error("Assessment is currently unavailable or has no active questions.");
+  }
+
+  let correctCount = 0;
+  const breakdown: AssessmentEvaluationResult["breakdown"] = [];
+
+  for (const q of activeQuestions) {
+    const userAns = params.answers[q.id] || "";
+    const isCorrect = checkIsAnswerCorrect(userAns, q.correctAnswer);
+    if (isCorrect) {
+      correctCount += settings.marksPerQuestion || 1;
+    }
+
+    breakdown.push({
+      questionId: q.id,
+      orderIndex: q.orderIndex,
+      questionText: q.questionText,
+      level: q.level,
+      selectedAnswer: userAns,
+      correctAnswer: q.correctAnswer,
+      isCorrect,
+      explanation: q.explanation,
+    });
+  }
+
+  const totalQuestions = activeQuestions.length;
+  const score = correctCount;
+  const accuracyPercentage = Math.round((score / totalQuestions) * 100);
+
+  // Proficiency classification based on configurable score thresholds
+  let level: AssessmentLevel = "advanced";
+  let levelTitle = "Advanced Level";
+  let feedbackHeading = settings.advancedHeading;
+  let feedbackMessage = settings.advancedMessage;
+
+  if (score <= settings.beginnerMaxScore) {
+    level = "beginner";
+    levelTitle = "Beginner Level";
+    feedbackHeading = settings.beginnerHeading;
+    feedbackMessage = settings.beginnerMessage;
+  } else if (score <= settings.intermediateMaxScore) {
+    level = "intermediate";
+    levelTitle = "Intermediate Level";
+    feedbackHeading = settings.intermediateHeading;
+    feedbackMessage = settings.intermediateMessage;
+  }
+
+  const whatsAppUrl = buildAssessmentWhatsAppUrl({
+    score,
+    totalQuestions,
+    accuracyPercentage,
+    levelTitle,
+    studentName: params.studentName,
+    customTemplate: settings.whatsAppTemplate,
+  });
+
+  const submissionId = randomUUID();
+  const now = new Date().toISOString();
+
+  const submissionRecord: AssessmentSubmission = {
+    id: submissionId,
+    studentName: params.studentName?.trim() || undefined,
+    studentEmail: params.studentEmail?.trim() || undefined,
+    score,
+    totalQuestions,
+    accuracyPercentage,
+    level,
+    levelTitle,
+    answers: params.answers,
+    submittedAt: now,
+  };
+
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      await supabase.from("assessment_submissions").insert({
+        id: submissionRecord.id,
+        student_name: submissionRecord.studentName || null,
+        student_email: submissionRecord.studentEmail || null,
+        score: submissionRecord.score,
+        total_questions: submissionRecord.totalQuestions,
+        accuracy_percentage: submissionRecord.accuracyPercentage,
+        level: submissionRecord.level,
+        level_title: submissionRecord.levelTitle,
+        answers: submissionRecord.answers,
+        submitted_at: submissionRecord.submittedAt,
+      });
+    } catch (err) {
+      console.warn("Supabase submitAssessmentAttempt fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  mem.assessmentSubmissions.unshift(submissionRecord);
+
+  saveAssessmentStoreToDisk({
+    questions: mem.assessmentQuestions,
+    settings: mem.assessmentSettings,
+    submissions: mem.assessmentSubmissions,
+  });
+
+  return {
+    submissionId,
+    score,
+    totalQuestions,
+    accuracyPercentage,
+    level,
+    levelTitle,
+    feedbackHeading,
+    feedbackMessage,
+    recommendedCtaText: settings.ctaText || "Join Our Spoken English Class",
+    whatsAppUrl,
+    breakdown,
+  };
+}
+
+/**
+ * Retrieves assessment submissions list (admin only)
+ */
+export async function getAssessmentSubmissions(): Promise<AssessmentSubmission[]> {
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("assessment_submissions")
+        .select("*")
+        .order("submitted_at", { ascending: false });
+
+      if (!error && data) {
+        return data.map((row: any) => ({
+          id: row.id,
+          studentName: row.student_name || undefined,
+          studentEmail: row.student_email || undefined,
+          score: row.score,
+          totalQuestions: row.total_questions,
+          accuracyPercentage: row.accuracy_percentage,
+          level: row.level as AssessmentLevel,
+          levelTitle: row.level_title,
+          answers: row.answers || {},
+          submittedAt: row.submitted_at,
+        }));
+      }
+    } catch (err) {
+      console.warn("Supabase getAssessmentSubmissions fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  return [...mem.assessmentSubmissions].sort(
+    (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+  );
+}
+
+/**
+ * Computes live assessment statistics from real submission records
+ */
+export async function getAssessmentStats(): Promise<AssessmentStats> {
+  const submissions = await getAssessmentSubmissions();
+
+  const totalAttempts = submissions.length;
+  const completedAttempts = submissions.length;
+
+  let averageScore = 0;
+  let averageAccuracy = 0;
+  let beginnerCount = 0;
+  let intermediateCount = 0;
+  let advancedCount = 0;
+
+  if (totalAttempts > 0) {
+    const totalScore = submissions.reduce((sum, s) => sum + s.score, 0);
+    const totalAccuracy = submissions.reduce((sum, s) => sum + s.accuracyPercentage, 0);
+
+    averageScore = Math.round((totalScore / totalAttempts) * 10) / 10;
+    averageAccuracy = Math.round(totalAccuracy / totalAttempts);
+
+    beginnerCount = submissions.filter((s) => s.level === "beginner").length;
+    intermediateCount = submissions.filter((s) => s.level === "intermediate").length;
+    advancedCount = submissions.filter((s) => s.level === "advanced").length;
+  }
+
+  return {
+    totalAttempts,
+    completedAttempts,
+    averageScore,
+    averageAccuracy,
+    beginnerCount,
+    intermediateCount,
+    advancedCount,
+  };
+}
+

@@ -96,6 +96,18 @@ export function Navbar({ currentUser, subscriptionStatus }: NavbarProps) {
               Course Modules
             </Link>
 
+            <Link
+              href="/assessment"
+              className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                pathname === "/assessment"
+                  ? "bg-[#DCFCE7] text-[#166534] font-semibold border border-[#BBF7D0]"
+                  : "text-[#15803D] hover:bg-[#F0FDF4] font-semibold"
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#15803D]" />
+              <span>Free Assessment</span>
+            </Link>
+
             {currentUser?.role === "admin" && (
               <Link
                 href="/admin"
@@ -229,6 +241,18 @@ export function Navbar({ currentUser, subscriptionStatus }: NavbarProps) {
               }`}
             >
               Course Modules (8 Weeks)
+            </Link>
+            <Link
+              href="/assessment"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`px-3 py-2 rounded-lg text-base font-semibold flex items-center gap-2 ${
+                pathname === "/assessment"
+                  ? "bg-[#DCFCE7] text-[#166534]"
+                  : "text-[#15803D] bg-[#F0FDF4]"
+              }`}
+            >
+              <Sparkles className="w-4 h-4 text-[#15803D]" />
+              <span>Free English Assessment (20 MCQs)</span>
             </Link>
             {currentUser?.role === "admin" && (
               <Link

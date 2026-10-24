@@ -44,11 +44,14 @@ export const COURSE_CONFIG = {
       desc: "Draft professional emails, clear messages, and well-structured real-life correspondence.",
     },
   ],
+  contactEmail: "learnandgrow050518@gmail.com",
+  contactPhone: "8148440389",
+  contactPhoneDisplay: "+91 81484 40389",
 };
 
 // Configurable Admin WhatsApp Number
 export const ADMIN_WHATSAPP_NUMBER =
-  process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_NUMBER || "15550192834";
+  process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_NUMBER || "918148440389";
 
 /**
  * Builds a valid WhatsApp click-to-chat URL:
@@ -56,7 +59,11 @@ export const ADMIN_WHATSAPP_NUMBER =
  */
 export function buildWhatsAppUrl(message: string, overrideNumber?: string): string {
   const rawNumber = overrideNumber || ADMIN_WHATSAPP_NUMBER;
-  const cleanNumber = rawNumber.replace(/\D/g, "");
+  let cleanNumber = rawNumber.replace(/\D/g, "");
+  // Prefix Indian country code (91) if 10-digit number is provided without country code
+  if (cleanNumber.length === 10) {
+    cleanNumber = `91${cleanNumber}`;
+  }
   const encodedText = encodeURIComponent(message.trim());
   return `https://wa.me/${cleanNumber}?text=${encodedText}`;
 }
@@ -66,7 +73,7 @@ export function buildWhatsAppUrl(message: string, overrideNumber?: string): stri
  */
 export function getEnrollmentWhatsAppUrl(email?: string): string {
   let message =
-    "Hello! I am interested in joining Learn and Grow's 8-Week English Learning Course (Speak English with Confidence). Please share the syllabus, course fee, payment instructions, and enrollment procedure.";
+    "Hello Learn and Grow! I am interested in your 8-week Spoken English Course. Please share the syllabus, course fee, duration, and enrollment details.";
 
   if (email) {
     message += ` (Registered Email: ${email})`;
@@ -104,4 +111,56 @@ export function formatDisplayDate(dateInput?: string | number | Date | null): st
     return "";
   }
 }
+
+/**
+ * Builds the WhatsApp click-to-chat URL with the student's dynamic assessment results.
+ * Matches exact format from user specifications:
+ * Hello Learn and Grow! I have completed the English Grammar Assessment.
+ * [Student Name: Jane Doe]
+ * My Score: 16/20
+ * Accuracy: 80%
+ * My Level: Intermediate
+ * I am interested in joining your 8-week Spoken English Course. Please share the syllabus, course fee, and enrollment details.
+ */
+export function buildAssessmentWhatsAppUrl(params: {
+  score: number;
+  totalQuestions: number;
+  accuracyPercentage: number;
+  levelTitle: string;
+  studentName?: string;
+  customTemplate?: string;
+}): string {
+  const { score, totalQuestions, accuracyPercentage, levelTitle, studentName, customTemplate } = params;
+
+  // Clean level title (e.g. "Intermediate Level" -> "Intermediate")
+  const cleanLevel = levelTitle.replace(/\s+Level$/i, "").trim();
+
+  if (customTemplate && customTemplate.trim()) {
+    let msg = customTemplate
+      .replace(/{{score}}/g, String(score))
+      .replace(/{{total}}/g, String(totalQuestions))
+      .replace(/{{accuracy}}/g, `${accuracyPercentage}%`)
+      .replace(/{{level}}/g, cleanLevel)
+      .replace(/{{name}}/g, studentName?.trim() ? `\nStudent Name: ${studentName.trim()}` : "");
+    return buildWhatsAppUrl(msg);
+  }
+
+  let lines: string[] = [
+    "Hello Learn and Grow! I have completed the English Grammar Assessment.",
+  ];
+
+  if (studentName && studentName.trim()) {
+    lines.push(`Student Name: ${studentName.trim()}`);
+  }
+
+  lines.push(`My Score: ${score}/${totalQuestions}`);
+  lines.push(`Accuracy: ${accuracyPercentage}%`);
+  lines.push(`My Level: ${cleanLevel}`);
+  lines.push(
+    "I am interested in joining your 8-week Spoken English Course. Please share the syllabus, course fee, and enrollment details."
+  );
+
+  return buildWhatsAppUrl(lines.join("\n"));
+}
+
 

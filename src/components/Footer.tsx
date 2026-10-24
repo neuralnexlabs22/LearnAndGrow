@@ -60,7 +60,7 @@ export function Footer() {
                   href="/"
                   className="hover:text-[#1C1917] transition-colors flex items-center gap-1"
                 >
-                  Course Home
+                  Home
                 </Link>
               </li>
               <li>
@@ -68,29 +68,31 @@ export function Footer() {
                   href="/course"
                   className="hover:text-[#1C1917] transition-colors flex items-center gap-1"
                 >
-                  8-Week English Syllabus
+                  Course (8 Weeks)
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/login"
-                  className="hover:text-[#1C1917] transition-colors flex items-center gap-1"
+                  href="/assessment"
+                  className="hover:text-[#15803D] font-semibold text-[#15803D] transition-colors flex items-center gap-1"
                 >
-                  Student Sign In
+                  Free English Assessment
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/register"
+                <a
+                  href={whatsAppUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hover:text-[#1C1917] transition-colors flex items-center gap-1"
                 >
-                  Create Student Account
-                </Link>
+                  WhatsApp Contact
+                </a>
               </li>
               <li>
                 <Link
                   href="/admin"
-                  className="hover:text-[#B45309] transition-colors flex items-center gap-1 text-xs text-[#78716C]"
+                  className="hover:text-[#B45309] transition-colors flex items-center gap-1 text-xs text-[#78716C] pt-1"
                 >
                   Administrator Portal
                 </Link>
@@ -99,35 +101,51 @@ export function Footer() {
           </div>
 
           {/* Enrollment & WhatsApp Support */}
-          <div>
+          <div className="space-y-3">
             <h4 className="text-xs font-bold tracking-wider text-[#1C1917] uppercase mb-4">
-              WhatsApp Enrollment
+              Contact & Enrollment
             </h4>
-            <p className="text-xs text-[#78716C] mb-3 leading-relaxed">
+            <p className="text-xs text-[#78716C] leading-relaxed">
               Course tuition, payment verification, and enrollment questions are
               handled directly with the instructor via WhatsApp.
             </p>
-            <a
-              href={whatsAppUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold bg-[#15803D] hover:bg-[#166534] text-white shadow-sm transition-all hover:shadow"
-            >
-              <MessageCircle className="w-4 h-4 fill-white" />
-              <span>Contact Instructor on WhatsApp</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </a>
+            <div className="space-y-1.5 text-xs text-[#44403C] pt-1">
+              <p className="flex items-center gap-1.5">
+                <span className="font-semibold text-[#1C1917]">Phone:</span>
+                <a href="tel:+918148440389" className="hover:text-[#15803D] hover:underline">
+                  +91 81484 40389
+                </a>
+              </p>
+              <p className="flex items-center gap-1.5">
+                <span className="font-semibold text-[#1C1917]">Email:</span>
+                <a href="mailto:learnandgrow050518@gmail.com" className="hover:text-[#15803D] hover:underline">
+                  learnandgrow050518@gmail.com
+                </a>
+              </p>
+            </div>
+            <div className="pt-2">
+              <a
+                href={whatsAppUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold bg-[#15803D] hover:bg-[#166534] text-white shadow-sm transition-all hover:shadow"
+              >
+                <MessageCircle className="w-4 h-4 fill-white" />
+                <span>Message on WhatsApp</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </a>
+            </div>
           </div>
         </div>
 
         <div className="mt-12 pt-8 border-t border-[#E7E2D6] flex flex-col sm:flex-row items-center justify-between text-xs text-[#78716C] gap-4">
-          <p suppressHydrationWarning>
-            © {new Date().getFullYear()} Learn and Grow. All rights reserved.
+          <p className="font-semibold text-[#44403C]">
+            Learn and Grow — Learn Today. Communicate Better. Grow Tomorrow.
           </p>
-          <p className="flex items-center gap-2">
-            <span>LEARN | IMPROVE | ACHIEVE</span>
+          <p className="flex items-center gap-2" suppressHydrationWarning>
+            <span>© {new Date().getFullYear()} Learn and Grow</span>
             <span>•</span>
-            <span>WhatsApp Verified Enrollment</span>
+            <span>8-Week Spoken English Course</span>
           </p>
         </div>
       </div>

@@ -1,0 +1,478 @@
+{
+  "questions": [
+    {
+      "id": "q-01",
+      "orderIndex": 1,
+      "level": "beginner",
+      "questionText": "She _____ to school every day.",
+      "options": [
+        "A) go",
+        "B) goes",
+        "C) going",
+        "D) gone"
+      ],
+      "correctAnswer": "B) goes",
+      "explanation": "Third-person singular \"she\" takes the singular verb form \"goes\" in present simple tense.",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "q-02",
+      "orderIndex": 2,
+      "level": "beginner",
+      "questionText": "I saw _____ elephant at the zoo.",
+      "options": [
+        "A) a",
+        "B) an",
+        "C) the",
+        "D) no article"
+      ],
+      "correctAnswer": "B) an",
+      "explanation": "The word \"elephant\" begins with a vowel sound, so the indefinite article \"an\" is used.",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "q-03",
+      "orderIndex": 3,
+      "level": "beginner",
+      "questionText": "They _____ playing cricket now.",
+      "options": [
+        "A) is",
+        "B) am",
+        "C) are",
+        "D) was"
+      ],
+      "correctAnswer": "C) are",
+      "explanation": "Plural subject \"they\" requires the plural auxiliary verb \"are\" in present continuous tense.",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "q-04",
+      "orderIndex": 4,
+      "level": "beginner",
+      "questionText": "This is Rani. _____ is my friend.",
+      "options": [
+        "A) He",
+        "B) It",
+        "C) They",
+        "D) She"
+      ],
+      "correctAnswer": "D) She",
+      "explanation": "Rani is a female singular person, so the personal pronoun \"She\" is correct.",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "q-05",
+      "orderIndex": 5,
+      "level": "beginner",
+      "questionText": "We _____ dinner at 8 p.m. yesterday.",
+      "options": [
+        "A) eat",
+        "B) eaten",
+        "C) ate",
+        "D) eating"
+      ],
+      "correctAnswer": "C) ate",
+      "explanation": "The past time marker \"yesterday\" requires the past simple form \"ate\".",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "q-06",
+      "orderIndex": 6,
+      "level": "beginner",
+      "questionText": "The book is _____ the table.",
+      "options": [
+        "A) on",
+        "B) at",
+        "C) between",
+        "D) from"
+      ],
+      "correctAnswer": "A) on",
+      "explanation": "We use \"on\" for contact with a horizontal or vertical surface like a table.",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "q-07",
+      "orderIndex": 7,
+      "level": "beginner",
+      "questionText": "There _____ two apples in the basket.",
+      "options": [
+        "A) is",
+        "B) are",
+        "C) was",
+        "D) has"
+      ],
+      "correctAnswer": "B) are",
+      "explanation": "\"Two apples\" is plural, so the plural verb \"are\" is required in present tense.",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "q-08",
+      "orderIndex": 8,
+      "level": "intermediate",
+      "questionText": "I _____ here since 2022, and I still live here.",
+      "options": [
+        "A) lived",
+        "B) am living",
+        "C) have lived",
+        "D) had lived"
+      ],
+      "correctAnswer": "C) have lived",
+      "explanation": "An action starting in the past and continuing into the present requires present perfect (\"have lived\").",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "q-09",
+      "orderIndex": 9,
+      "level": "intermediate",
+      "questionText": "If she _____ hard, she will pass the exam.",
+      "options": [
+        "A) studied",
+        "B) studies",
+        "C) will study",
+        "D) has studied"
+      ],
+      "correctAnswer": "B) studies",
+      "explanation": "In first conditional clauses (If + present simple, will + base verb), use \"studies\".",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "q-10",
+      "orderIndex": 10,
+      "level": "intermediate",
+      "questionText": "She is interested _____ learning English.",
+      "options": [
+        "A) on",
+        "B) at",
+        "C) for",
+        "D) in"
+      ],
+      "correctAnswer": "D) in",
+      "explanation": "The adjective \"interested\" takes the preposition \"in\".",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "q-11",
+      "orderIndex": 11,
+      "level": "intermediate",
+      "questionText": "By the time we arrived, the movie _____.",
+      "options": [
+        "A) starts",
+        "B) has started",
+        "C) had started",
+        "D) will start"
+      ],
+      "correctAnswer": "C) had started",
+      "explanation": "Past perfect (\"had started\") indicates an action completed before another past event.",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "q-12",
+      "orderIndex": 12,
+      "level": "intermediate",
+      "questionText": "Neither Ravi nor his friends _____ ready.",
+      "options": [
+        "A) is",
+        "B) are",
+        "C) was",
+        "D) has"
+      ],
+      "correctAnswer": "B) are",
+      "explanation": "In \"neither... nor\" constructions, the verb agrees with the closer subject (\"his friends\", plural).",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "q-13",
+      "orderIndex": 13,
+      "level": "intermediate",
+      "questionText": "This is the woman _____ helped me yesterday.",
+      "options": [
+        "A) which",
+        "B) whose",
+        "C) who",
+        "D) whom"
+      ],
+      "correctAnswer": "C) who",
+      "explanation": "The relative pronoun \"who\" refers to people acting as the subject of the clause.",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "q-14",
+      "orderIndex": 14,
+      "level": "intermediate",
+      "questionText": "He was tired, _____ he continued working.",
+      "options": [
+        "A) because",
+        "B) although",
+        "C) so",
+        "D) but"
+      ],
+      "correctAnswer": "D) but",
+      "explanation": "\"But\" introduces a contrasting coordinating idea between two independent clauses.",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "q-15",
+      "orderIndex": 15,
+      "level": "advanced",
+      "questionText": "If I _____ about the traffic, I would have left earlier.",
+      "options": [
+        "A) knew",
+        "B) had known",
+        "C) have known",
+        "D) would know"
+      ],
+      "correctAnswer": "B) had known",
+      "explanation": "Third conditional (unreal past) uses \"had known\" with \"would have left\".",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "q-16",
+      "orderIndex": 16,
+      "level": "advanced",
+      "questionText": "The manager said, \"I am busy.\" Choose the correct reported speech form.",
+      "options": [
+        "A) The manager said that I am busy.",
+        "B) The manager said that he was busy.",
+        "C) The manager said that he is busy yesterday.",
+        "D) The manager said that he were busy."
+      ],
+      "correctAnswer": "B) The manager said that he was busy.",
+      "explanation": "In reported speech, present simple shifts back to past simple (\"am\" -> \"was\").",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "q-17",
+      "orderIndex": 17,
+      "level": "advanced",
+      "questionText": "Choose the correct passive form: \"They have completed the project.\"",
+      "options": [
+        "A) The project has been completed.",
+        "B) The project had completed.",
+        "C) The project is completing.",
+        "D) The project has being completed."
+      ],
+      "correctAnswer": "A) The project has been completed.",
+      "explanation": "Present perfect passive structure: has/have + been + past participle (\"has been completed\").",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "q-18",
+      "orderIndex": 18,
+      "level": "advanced",
+      "questionText": "No sooner _____ the station than the train left.",
+      "options": [
+        "A) we reached",
+        "B) had we reached",
+        "C) we had reached",
+        "D) did we reached"
+      ],
+      "correctAnswer": "B) had we reached",
+      "explanation": "Negative inversion after \"No sooner\" requires auxiliary verb before subject: \"had we reached\".",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "q-19",
+      "orderIndex": 19,
+      "level": "advanced",
+      "questionText": "Choose the grammatically correct sentence.",
+      "options": [
+        "A) Despite of the rain, we went out.",
+        "B) Although the rain, we went out.",
+        "C) In spite of the rain, we went out.",
+        "D) Despite it was raining, we went out."
+      ],
+      "correctAnswer": "C) In spite of the rain, we went out.",
+      "explanation": "\"In spite of\" is followed by a noun phrase (\"the rain\"). \"Despite\" does not take \"of\".",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "q-20",
+      "orderIndex": 20,
+      "level": "advanced",
+      "questionText": "Choose the correct sentence using inversion for emphasis.",
+      "options": [
+        "A) Rarely I have seen such a beautiful view.",
+        "B) Rarely have I seen such a beautiful view.",
+        "C) Rarely did I have seen such a beautiful view.",
+        "D) Rarely I saw have such a beautiful view."
+      ],
+      "correctAnswer": "B) Rarely have I seen such a beautiful view.",
+      "explanation": "When a sentence begins with a negative adverb like \"Rarely\", subject-auxiliary inversion is used (\"have I seen\").",
+      "isActive": true,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    }
+  ],
+  "settings": {
+    "id": "default",
+    "title": "Take a Free English Assessment",
+    "subtitle": "Learn and Grow – English Assessment",
+    "description": "Discover your current English grammar level with our free 20-question assessment. Find out where you stand and take the next step towards speaking English confidently.",
+    "instructions": "Choose the best option for each question. You can change your answers before final submission.",
+    "totalQuestions": 20,
+    "marksPerQuestion": 1,
+    "beginnerMaxScore": 7,
+    "intermediateMaxScore": 14,
+    "beginnerHeading": "Let's Build Your Foundation!",
+    "beginnerMessage": "Your English learning journey starts here. Strengthen your grammar and vocabulary with regular practice.",
+    "intermediateHeading": "Good Job!",
+    "intermediateMessage": "You have a good foundation in English. Keep practising to improve your fluency.",
+    "advancedHeading": "Excellent Work!",
+    "advancedMessage": "You demonstrated strong grammar knowledge. Continue practising to refine your communication skills.",
+    "ctaText": "Join Our Spoken English Class",
+    "whatsAppTemplate": "Hello Learn and Grow! I have completed the English Grammar Assessment.{{name}}\nMy Score: {{score}}/{{total}}\nAccuracy: {{accuracy}}\nMy Level: {{level}}\nI am interested in joining your 8-week Spoken English Course. Please share the syllabus, course fee, and enrollment details.",
+    "isActive": true,
+    "updatedAt": "2026-08-01T10:00:00.000Z"
+  },
+  "submissions": [
+    {
+      "id": "40e51f5b-f8be-40c3-ab57-3fe76d2bd221",
+      "studentName": "rohith",
+      "score": 7,
+      "totalQuestions": 20,
+      "accuracyPercentage": 35,
+      "level": "beginner",
+      "levelTitle": "Beginner Level",
+      "answers": {
+        "q-01": "C) going",
+        "q-02": "D) no article",
+        "q-03": "C) are",
+        "q-04": "B) It",
+        "q-05": "C) ate",
+        "q-06": "B) at",
+        "q-07": "B) are",
+        "q-08": "D) had lived",
+        "q-09": "D) has studied",
+        "q-10": "D) in",
+        "q-11": "C) had started",
+        "q-12": "D) has",
+        "q-13": "C) who",
+        "q-14": "D) but",
+        "q-15": "D) would know",
+        "q-16": "D) The manager said that he were busy.",
+        "q-17": "D) The project has being completed.",
+        "q-18": "D) did we reached",
+        "q-19": "D) Despite it was raining, we went out.",
+        "q-20": "D) Rarely I saw have such a beautiful view."
+      },
+      "submittedAt": "2026-10-24T15:34:03.899Z"
+    },
+    {
+      "id": "4f71f10b-60db-4eeb-997c-a4d410e8cb7a",
+      "score": 5,
+      "totalQuestions": 20,
+      "accuracyPercentage": 25,
+      "level": "beginner",
+      "levelTitle": "Beginner Level",
+      "answers": {
+        "q-01": "B) goes",
+        "q-02": "B) an",
+        "q-03": "C) are",
+        "q-04": "D) She",
+        "q-05": "C) ate"
+      },
+      "submittedAt": "2026-10-24T15:33:06.425Z"
+    },
+    {
+      "id": "18ecf390-0c43-46f2-a623-7e0bb5bf57e9",
+      "score": 12,
+      "totalQuestions": 20,
+      "accuracyPercentage": 60,
+      "level": "intermediate",
+      "levelTitle": "Intermediate Level",
+      "answers": {
+        "q-01": "B) goes",
+        "q-02": "B) an",
+        "q-03": "C) are",
+        "q-04": "D) She",
+        "q-05": "C) ate",
+        "q-06": "A) on",
+        "q-07": "B) are",
+        "q-08": "C) have lived",
+        "q-09": "B) studies",
+        "q-10": "D) in",
+        "q-11": "C) had started",
+        "q-12": "B) are",
+        "q-13": "wrong",
+        "q-14": "wrong",
+        "q-15": "wrong",
+        "q-16": "wrong",
+        "q-17": "wrong",
+        "q-18": "wrong",
+        "q-19": "wrong",
+        "q-20": "wrong"
+      },
+      "submittedAt": "2026-10-24T15:32:55.469Z"
+    },
+    {
+      "id": "40437ed2-9d19-485a-a93b-39fb01aa5660",
+      "studentName": "Jane Doe",
+      "score": 16,
+      "totalQuestions": 20,
+      "accuracyPercentage": 80,
+      "level": "advanced",
+      "levelTitle": "Advanced Level",
+      "answers": {
+        "q-01": "B) goes",
+        "q-02": "B) an",
+        "q-03": "C) are",
+        "q-04": "D) She",
+        "q-05": "C) ate",
+        "q-06": "A) on",
+        "q-07": "B) are",
+        "q-08": "C) have lived",
+        "q-09": "B) studies",
+        "q-10": "D) in",
+        "q-11": "C) had started",
+        "q-12": "B) are",
+        "q-13": "C) who",
+        "q-14": "D) but",
+        "q-15": "B) had known",
+        "q-16": "B) The manager said that he was busy.",
+        "q-17": "B) The project had completed.",
+        "q-18": "A) we reached",
+        "q-19": "A) Despite of the rain, we went out.",
+        "q-20": "A) Rarely I have seen such a beautiful view."
+      },
+      "submittedAt": "2026-10-24T15:32:40.003Z"
+    }
+  ]
+}

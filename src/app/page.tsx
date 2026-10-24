@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   BookOpen,
   Calendar,
@@ -17,6 +18,12 @@ import {
   PenTool,
   Headphones,
   Award,
+  GraduationCap,
+  Briefcase,
+  Building2,
+  Compass,
+  PhoneCall,
+  Clock,
 } from "lucide-react";
 import { getCurrentSession } from "@/lib/auth";
 import {
@@ -30,6 +37,9 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { CourseCompletionCounter } from "@/components/CourseCompletionCounter";
 import { ReviewsSection } from "@/components/ReviewsSection";
+import { AssessmentFirstVisitOverlay } from "@/components/AssessmentFirstVisitOverlay";
+import { AssessmentHeroBanner } from "@/components/AssessmentHeroBanner";
+import { AssessmentTriggerLink } from "@/components/AssessmentTriggerLink";
 
 export const dynamic = "force-dynamic";
 
@@ -46,241 +56,415 @@ export default async function HomePage() {
 
   const whatsAppUrl = getEnrollmentWhatsAppUrl(user?.email);
 
-  const highlightIcons = [
-    BookOpen,
-    Sparkles,
-    MessageSquare,
-    Volume2,
-    Headphones,
-    PenTool,
+  // 5 Target Audience Groups
+  const targetAudience = [
+    {
+      title: "College Students",
+      desc: "Prepare for campus interviews, seminar presentations, group discussions, and fluent everyday interactions.",
+      icon: GraduationCap,
+      badge: "Campus & Seminars",
+      accent: "from-blue-600/10 to-indigo-600/10 text-blue-700",
+    },
+    {
+      title: "Job Seekers",
+      desc: "Build self-introduction confidence, practice common interview questions, and overcome nervousness during recruitment.",
+      icon: Briefcase,
+      badge: "Interview Ready",
+      accent: "from-emerald-600/10 to-teal-600/10 text-emerald-700",
+    },
+    {
+      title: "Working Professionals",
+      desc: "Communicate clearly in team meetings, status calls, client discussions, professional emails, and workplace presentations.",
+      icon: Building2,
+      badge: "Workplace Growth",
+      accent: "from-amber-600/10 to-orange-600/10 text-amber-700",
+    },
+    {
+      title: "English Beginners",
+      desc: "Start from basic sentence formation, eliminate hesitation, understand grammar rules simply, and speak without fear.",
+      icon: Compass,
+      badge: "Strong Basics",
+      accent: "from-rose-600/10 to-red-600/10 text-rose-700",
+    },
+    {
+      title: "Anyone Improving Communication Skills",
+      desc: "Broaden your vocabulary, improve pronunciation clarity, master social conversations, and speak with natural ease.",
+      icon: Users,
+      badge: "Daily Fluency",
+      accent: "from-purple-600/10 to-violet-600/10 text-purple-700",
+    },
+  ];
+
+  // 8 Course Benefits
+  const courseBenefits = [
+    {
+      title: "Simple and Practical English Lessons",
+      desc: "Learn through bite-sized, real-life examples designed for adult learners, focusing on conversational usage rather than rigid rules.",
+      icon: BookOpen,
+    },
+    {
+      title: "Grammar Explained in an Easy Way",
+      desc: "Understand tenses, sentence formation, and sentence structure with clear, straightforward explanations that eliminate confusion.",
+      icon: CheckCircle2,
+    },
+    {
+      title: "Everyday Conversation Practice",
+      desc: "Build conversational reflexes for daily scenarios: greetings, asking questions, ordering, expressing opinions, and casual dialogue.",
+      icon: MessageSquare,
+    },
+    {
+      title: "Vocabulary Building",
+      desc: "Expand your active word bank with high-frequency expressions, collocations, phrasal verbs, and natural transitions.",
+      icon: Sparkles,
+    },
+    {
+      title: "Pronunciation and Listening Practice",
+      desc: "Sharpen acoustic comprehension, vowel clarity, syllable stress, rhythm, and understand fast-paced native speech.",
+      icon: Headphones,
+    },
+    {
+      title: "Interview Preparation",
+      desc: "Practice confident self-introductions, behavioral answers, professional body language, and articulateness for career opportunities.",
+      icon: Briefcase,
+    },
+    {
+      title: "Workplace and Professional English",
+      desc: "Communicate effectively in office meetings, client emails, team briefings, status reports, and business correspondence.",
+      icon: Building2,
+    },
+    {
+      title: "Assessments to Track Your Progress",
+      desc: "Regular self-checks, grammar assessments, and constructive feedback milestones to measure your tangible growth.",
+      icon: Award,
+    },
+  ];
+
+  // Fallback 8 weeks metadata if empty
+  const defaultEightWeeks = [
+    {
+      weekNumber: 1,
+      title: "Week 1 — English Foundations",
+      description: "Learn sentence formation, basic vocabulary, and how to introduce yourself confidently.",
+    },
+    {
+      weekNumber: 2,
+      title: "Week 2 — Grammar and Tenses",
+      description: "Understand essential grammar rules and learn to use present, past, and future tenses.",
+    },
+    {
+      weekNumber: 3,
+      title: "Week 3 — Vocabulary and Daily English",
+      description: "Improve your vocabulary and learn useful expressions for everyday situations.",
+    },
+    {
+      weekNumber: 4,
+      title: "Week 4 — Spoken English Practice",
+      description: "Practise conversations, asking questions, answering confidently, and expressing your thoughts.",
+    },
+    {
+      weekNumber: 5,
+      title: "Week 5 — Pronunciation and Listening",
+      description: "Improve pronunciation, listening skills, clarity, and fluency.",
+    },
+    {
+      weekNumber: 6,
+      title: "Week 6 — Reading and Writing",
+      description: "Learn to write clear messages, emails, and simple paragraphs in English.",
+    },
+    {
+      weekNumber: 7,
+      title: "Week 7 — Interview and Workplace English",
+      description: "Practise interview answers, professional conversations, meetings, and workplace communication.",
+    },
+    {
+      weekNumber: 8,
+      title: "Week 8 — Revision and Final Assessment",
+      description: "Review what you have learned and assess your progress.",
+    },
   ];
 
   const faqs = [
     {
-      q: "How long does the English course take to complete?",
-      a: "The course is strictly structured across 8 weeks. Each week focuses on a key communication milestone — from grammar foundations to live conversational roleplays — designed for 6 to 8 hours of study per week.",
+      q: "How long is the Spoken English Course?",
+      a: "The course is structured across 8 practical weeks. Each week targets a specific communication milestone — from grammar foundations and sentence formation to workplace English and live conversational practice.",
     },
     {
       q: "How does enrollment and payment through WhatsApp work?",
-      a: "To ensure direct instructor guidance and tailored onboarding, enrollment is initiated via WhatsApp. Click the WhatsApp button, and the instructor will share course fees and payment instructions. Once completed, your subscription is verified in the Admin Dashboard, granting immediate access to all weekly materials.",
+      a: "To provide direct guidance and personalized batch placement, enrollment is initiated via WhatsApp. Simply click the WhatsApp button, and the course administrator will share course fees, duration, and enrollment instructions. Once confirmed, your subscription is activated for immediate workbook access.",
     },
     {
-      q: "What learning materials are provided each week?",
-      a: "Each week features an official, downloadable PDF study workbook containing vocabulary builders, conversational dialogues, pronunciation drills, grammar notes, and self-evaluation exercises.",
+      q: "What learning materials are included each week?",
+      a: "Each week includes an official downloadable PDF study workbook with vocabulary builders, conversational dialogues, pronunciation drills, grammar notes, and self-evaluation exercises.",
     },
     {
-      q: "Can I access the PDF materials if I am not subscribed?",
-      a: "No. All course materials are stored in private storage and strictly protected behind server-side authentication. Visitors and non-subscribed users can review the 8-week syllabus and learning objectives, but materials only unlock for students with an active, approved subscription.",
+      q: "Can I access the PDF workbooks without subscribing?",
+      a: "No. Course materials are kept in private storage and strictly protected behind server-side authentication. Visitors can explore the complete 8-week syllabus, while materials unlock for students with an active, approved subscription.",
     },
     {
-      q: "How is student course completion verified?",
-      a: "Course completion is evaluated individually by the instructor upon review of your weekly assignments and final spoken evaluation. The completion counter on this page reflects genuine unique graduates.",
+      q: "How does the Free English Grammar Assessment work?",
+      a: "Our free 20-question assessment covers Beginner, Intermediate, and Advanced questions. It provides your instant score (e.g. 16/20), accuracy percentage, proficiency badge, feedback, and a direct WhatsApp link to share your results with the instructor.",
     },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FBF9F5] text-[#1C1917]">
+    <div className="min-h-screen flex flex-col bg-[#FAF8F5] text-[#1C1917]">
+      {/* First-Visit Assessment Overlay for New Visitors */}
+      <AssessmentFirstVisitOverlay />
+
       <Navbar currentUser={user} subscriptionStatus={subscriptionStatus} />
 
       <main className="flex-1">
-        {/* HERO SECTION — Help Your Child Speak English with Confidence */}
-        <section className="relative overflow-hidden pt-10 pb-16 md:pt-16 md:pb-24 border-b border-[#E7E2D6] bg-gradient-to-b from-[#F5F2EB]/60 via-[#FBF9F5] to-[#FBF9F5]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-              {/* Left Column: Headline, Description, CTAs, Trust Signals */}
-              <div className="lg:col-span-7 space-y-6 text-left">
-                {/* Brand & Course Badge */}
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EFECE4] text-[#44403C] border border-[#DCD4C4] text-xs font-semibold tracking-wide shadow-xs">
-                  <span className="w-2 h-2 rounded-full bg-[#15803D] animate-pulse" />
-                  <span className="text-[#0F2D59] font-bold">Learn and Grow</span>
-                  <span className="text-[#A8A29E]">•</span>
-                  <span className="tracking-wider text-[11px] font-semibold text-[#57534E]">LEARN | IMPROVE | ACHIEVE</span>
-                  <span className="text-[#A8A29E] hidden sm:inline">•</span>
-                  <span className="hidden sm:inline text-[#15803D] font-medium">8-Week Course</span>
-                </div>
+        {/* ================================================================= */}
+        {/* 1. OPENING HERO SECTION — PRIMARY DESIGN PRIORITY                */}
+        {/* ================================================================= */}
+        <section
+          aria-label="Spoken English Course Hero"
+          className="relative min-h-[600px] lg:min-h-[680px] flex items-center overflow-hidden bg-[#FAF8F5] text-[#1C1917] border-b border-[#E7E2D6]"
+        >
+          {/* Authentic College Students Photograph as Full-Width Hero Background (Prominent on Right) */}
+          <div className="absolute inset-y-0 right-0 w-full lg:w-[68%] xl:w-[64%] z-0 overflow-hidden">
+            <img
+              src="/images/college-students-speaking-english.jpg"
+              alt="Diverse group of college-age adult students deeply engaged in an active spoken English conversation around a study table with notebooks and laptop"
+              className="w-full h-full object-cover object-[52%_center] lg:object-[48%_center]"
+              loading="eager"
+              fetchPriority="high"
+            />
+            {/* Seamless warm fade to the left so headline and description have pristine white space */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#FAF8F5] via-[#FAF8F5]/40 to-transparent hidden lg:block" />
+            {/* Mobile soft overlay for text readability on small phones */}
+            <div className="absolute inset-0 bg-[#FAF8F5]/85 lg:hidden" />
+          </div>
 
-                {/* Main Heading */}
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.2rem] font-extrabold text-[#1C1917] tracking-tight leading-[1.15]">
-                  Help Your Child Speak English with{" "}
-                  <span className="text-[#C25E38] underline decoration-[#C25E38]/30 decoration-wavy decoration-2">
-                    Confidence
-                  </span>
-                </h1>
-
-                {/* Description */}
-                <p className="text-base sm:text-lg text-[#57534E] leading-relaxed max-w-xl">
-                  Build strong English foundations through an engaging 8-week learning journey designed to develop grammar, vocabulary, speaking, and communication skills.
-                </p>
-
-                {/* CTA Buttons */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2">
-                  <Link
-                    href="/course"
-                    className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-base font-semibold bg-[#C25E38] hover:bg-[#A94E2C] text-white shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
-                  >
-                    <BookOpen className="w-5 h-5" />
-                    <span>Explore the Course</span>
-                    <ArrowRight className="w-4 h-4 ml-1" />
-                  </Link>
-
-                  <a
-                    href={whatsAppUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-base font-semibold bg-[#15803D] hover:bg-[#166534] text-white shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
-                  >
-                    <MessageCircle className="w-5 h-5 fill-white" />
-                    <span>Enroll via WhatsApp</span>
-                  </a>
-                </div>
-
-                {/* Key Trust Signals */}
-                <div className="pt-3 flex flex-wrap items-center gap-y-2.5 gap-x-5 text-xs text-[#78716C]">
-                  <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
-                    <span>8 Weekly PDF Workbooks</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
-                    <span>Spoken English Drills</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
-                    <span>Direct WhatsApp Instructor Support</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
-                    <span>Verified Course Completion</span>
-                  </div>
-                </div>
+          {/* Hero Content Container */}
+          <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-20">
+            <div className="max-w-xl lg:max-w-[32rem] space-y-6 text-left">
+              {/* Eyebrow text */}
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-sm border border-[#DCD4C4] text-xs sm:text-sm font-semibold tracking-wide text-[#15803D] shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-[#15803D] animate-pulse" />
+                <span>LEARN AND GROW | 8-WEEK SPOKEN ENGLISH COURSE</span>
               </div>
 
-              {/* Right Column: High Quality Photograph of Children Learning */}
-              <div className="lg:col-span-5 relative mt-4 lg:mt-0">
-                <div className="relative mx-auto max-w-lg lg:max-w-none">
-                  {/* Subtle warm decorative glow */}
-                  <div className="absolute -inset-2 bg-gradient-to-tr from-[#C25E38]/15 via-[#2E7D32]/10 to-[#0F2D59]/10 rounded-3xl blur-xl opacity-70 -z-10" />
+              {/* Main Heading */}
+              <h1 className="text-3xl sm:text-4xl lg:text-[2.9rem] font-extrabold tracking-tight text-[#0A192F] leading-[1.14]">
+                Speak English with Confidence.{" "}
+                <span className="text-[#15803D] underline decoration-[#15803D]/30 decoration-wavy decoration-2">
+                  Grow Your Future.
+                </span>
+              </h1>
 
-                  {/* Image Card Container */}
-                  <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-[#D4CDBC] bg-white p-2 shadow-xl beige-card-shadow">
-                    <picture>
-                      <source srcSet="/images/children-learning-english.webp" type="image/webp" />
-                      <img
-                        src="/images/children-learning-english.jpg"
-                        alt="Young school children happily learning and reading English books together in a classroom"
-                        width={1200}
-                        height={900}
-                        loading="eager"
-                        fetchPriority="high"
-                        className="w-full h-auto aspect-[4/3] object-cover rounded-xl sm:rounded-2xl"
-                      />
-                    </picture>
+              {/* Description */}
+              <p className="text-sm sm:text-base lg:text-lg text-[#44403C] leading-relaxed font-normal">
+                Improve your English communication skills with our practical 8-week Spoken English Course.
+                Build confidence in everyday conversations, grammar, vocabulary, pronunciation, interviews,
+                and professional communication.
+              </p>
 
-                    {/* Subtle floating badge */}
-                    <div className="absolute bottom-4 left-4 right-4 sm:right-auto sm:max-w-[280px] bg-white/95 backdrop-blur-md border border-[#D4CDBC] rounded-xl p-3 shadow-md flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-[#ECFDF5] text-[#15803D] flex items-center justify-center shrink-0 border border-[#A7F3D0]">
-                        <Sparkles className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-[#1C1917]">Interactive & Engaging</p>
-                        <p className="text-[10px] text-[#78716C] leading-tight">Structured for young learners & everyday speaking confidence</p>
-                      </div>
-                    </div>
-                  </div>
+              {/* Call to Actions */}
+              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
+                {/* Primary CTA */}
+                <Link
+                  href="/course"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm sm:text-base font-bold bg-[#15803D] hover:bg-[#166534] text-white shadow-md hover:shadow-lg transition-all active:scale-[0.98] text-center"
+                >
+                  <BookOpen className="w-5 h-5" />
+                  <span>Explore the Course</span>
+                  <ArrowRight className="w-4 h-4 ml-0.5" />
+                </Link>
+
+                {/* Secondary CTA */}
+                <a
+                  href={whatsAppUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl text-sm sm:text-base font-bold bg-white hover:bg-[#F5F2EB] text-[#0F2D59] border border-[#DCD4C4] shadow-sm transition-all active:scale-[0.98] text-center"
+                >
+                  <MessageCircle className="w-5 h-5 fill-[#15803D] text-[#15803D]" />
+                  <span>Join via WhatsApp</span>
+                </a>
+              </div>
+
+              {/* Distinct Assessment Link */}
+              <div className="pt-1">
+                <AssessmentTriggerLink />
+              </div>
+
+              {/* Key Trust Signals */}
+              <div className="pt-3 border-t border-[#E7E2D6] flex flex-wrap items-center gap-y-2 gap-x-5 text-xs text-[#57534E] font-medium">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
+                  <span>8 Weekly PDF Workbooks</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
+                  <span>Practical Spoken Drills</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
+                  <span>Direct WhatsApp Instructor Support</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
+                  <span>Verified Course Completion</span>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* LIVE COURSE COMPLETION COUNTER */}
-        <CourseCompletionCounter
-          completedCount={stats.completedStudents}
-          totalStudents={stats.totalStudents}
-        />
+        {/* ================================================================= */}
+        {/* 2. DEDICATED FREE ASSESSMENT PROMOTION SECTION                   */}
+        {/* ================================================================= */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 sm:-mt-8 relative z-20">
+          <AssessmentHeroBanner />
+        </section>
 
-        {/* COURSE HIGHLIGHTS SECTION */}
+        {/* ================================================================= */}
+        {/* 3. WHO CAN JOIN LEARN AND GROW?                                  */}
+        {/* ================================================================= */}
         <section className="py-16 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14 space-y-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#C25E38]">
-              Comprehensive Learning Pillars
+          <div className="text-center max-w-2xl mx-auto mb-12 space-y-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#15803D]">
+              Tailored For Adult Learners
             </span>
-            <h2 className="text-3xl font-bold text-[#1C1917] tracking-tight">
-              Six Core Areas of English Mastery
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1C1917] tracking-tight">
+              Who Can Join Learn and Grow?
             </h2>
-            <p className="text-sm text-[#57534E]">
-              Every weekly module combines these six essential components to build
-              well-rounded, natural English communication skills.
+            <p className="text-base text-[#57534E]">
+              Designed for anyone ready to communicate better.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {COURSE_CONFIG.highlights.map((item, idx) => {
-              const IconComponent = highlightIcons[idx % highlightIcons.length];
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+            {targetAudience.map((audience, idx) => {
+              const Icon = audience.icon;
               return (
                 <div
                   key={idx}
-                  className="bg-white border border-[#E7E2D6] rounded-2xl p-6 space-y-3.5 beige-card-shadow hover:border-[#C25E38]/50 transition-all hover:shadow-md"
+                  className="bg-white border border-[#E7E2D6] rounded-2xl p-6 flex flex-col justify-between space-y-4 shadow-sm hover:shadow-md hover:border-[#15803D]/40 transition-all group"
                 >
-                  <div className="w-11 h-11 rounded-xl bg-[#FBF0EB] text-[#C25E38] flex items-center justify-center font-bold">
-                    <IconComponent className="w-5 h-5" />
+                  <div className="space-y-3">
+                    <div
+                      className={`w-12 h-12 rounded-xl bg-gradient-to-br ${audience.accent} flex items-center justify-center font-bold transition-transform group-hover:scale-105`}
+                    >
+                      <Icon className="w-6 h-6" />
+                    </div>
+                    <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-[#78716C] bg-[#F5F2EB] px-2.5 py-0.5 rounded-full">
+                      {audience.badge}
+                    </span>
+                    <h3 className="text-base font-bold text-[#1C1917]">
+                      {audience.title}
+                    </h3>
+                    <p className="text-xs text-[#57534E] leading-relaxed">
+                      {audience.desc}
+                    </p>
                   </div>
-                  <h3 className="text-base font-bold text-[#1C1917]">
-                    {item.title}
-                  </h3>
-                  <p className="text-xs text-[#57534E] leading-relaxed">
-                    {item.desc}
-                  </p>
+
+                  <div className="pt-3 border-t border-[#F0EBE0] flex items-center gap-1.5 text-xs text-[#15803D] font-semibold">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>8-Week Track</span>
+                  </div>
                 </div>
               );
             })}
           </div>
         </section>
 
-        {/* 8-WEEK LEARNING JOURNEY */}
-        <section className="py-16 bg-[#F5F2EB]/50 border-y border-[#E7E2D6]">
+        {/* ================================================================= */}
+        {/* 4. WHY CHOOSE LEARN AND GROW? (PRACTICAL ENGLISH)                 */}
+        {/* ================================================================= */}
+        <section className="py-16 md:py-24 bg-[#F5F2EB]/60 border-y border-[#E7E2D6]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-2xl mx-auto mb-14 space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#C25E38]">
-                Curriculum Progression
+              <span className="text-xs font-bold uppercase tracking-wider text-[#15803D]">
+                Why Choose Learn and Grow
               </span>
-              <h2 className="text-3xl font-bold text-[#1C1917] tracking-tight">
-                The 8-Week Learning Journey
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1C1917] tracking-tight">
+                Practical English for Real-Life Situations
               </h2>
-              <p className="text-sm text-[#57534E]">
-                Explore how each week systematically builds upon the previous,
-                guiding you from foundational sentence patterns to fluent conversation.
+              <p className="text-base text-[#57534E]">
+                Learn English in a simple, practical way and gradually build the confidence to
+                communicate in everyday and professional environments.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {weeks.map((week) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {courseBenefits.map((benefit, idx) => {
+                const Icon = benefit.icon;
+                return (
+                  <div
+                    key={idx}
+                    className="bg-white border border-[#E7E2D6] rounded-2xl p-6 space-y-3.5 shadow-sm hover:shadow-md hover:border-[#15803D]/40 transition-all flex flex-col justify-between"
+                  >
+                    <div className="space-y-3">
+                      <div className="w-11 h-11 rounded-xl bg-[#ECFDF5] text-[#15803D] border border-[#A7F3D0] flex items-center justify-center font-bold">
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <h3 className="text-base font-bold text-[#1C1917]">
+                        {benefit.title}
+                      </h3>
+                      <p className="text-xs text-[#57534E] leading-relaxed">
+                        {benefit.desc}
+                      </p>
+                    </div>
+
+                    <div className="pt-3 border-t border-[#F5F2EB] flex items-center text-[11px] font-medium text-[#78716C] gap-1">
+                      <span>Module Pillar {idx + 1}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* ================================================================= */}
+        {/* 5. OUR 8-WEEK LEARNING PROGRAM                                   */}
+        {/* ================================================================= */}
+        <section className="py-16 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-14 space-y-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#15803D]">
+              Complete Course Curriculum
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1C1917] tracking-tight">
+              Your Journey to Better English Starts Here
+            </h2>
+            <p className="text-base text-[#57534E]">
+              An eight-week learning path designed to strengthen your grammar and communication skills.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {(weeks.length > 0 ? weeks : defaultEightWeeks).map((weekItem: any) => {
+              const weekNum = weekItem.weekNumber;
+              const hasPdf = Boolean(weekItem.pdfStoragePath);
+              return (
                 <div
-                  key={week.id}
-                  className="bg-white border border-[#E7E2D6] rounded-xl p-5 flex flex-col justify-between hover:border-[#C25E38]/50 transition-all hover:shadow-md"
+                  key={weekItem.id || weekNum}
+                  className="bg-white border border-[#E7E2D6] rounded-2xl p-5 flex flex-col justify-between hover:border-[#15803D]/50 transition-all hover:shadow-md"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#EFECE4] text-[#C25E38] border border-[#DCD4C4]">
-                        Week {String(week.weekNumber).padStart(2, "0")}
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#EFECE4] text-[#15803D] border border-[#DCD4C4]">
+                        Week {String(weekNum).padStart(2, "0")}
                       </span>
-                      {week.pdfStoragePath ? (
+                      {hasPdf ? (
                         <span className="text-[11px] text-[#15803D] font-semibold flex items-center gap-1">
                           <FileText className="w-3.5 h-3.5" /> PDF Ready
                         </span>
                       ) : (
                         <span className="text-[11px] text-[#78716C] font-medium">
-                          Coming Soon
+                          Syllabus Available
                         </span>
                       )}
                     </div>
 
                     <h3 className="text-sm font-bold text-[#1C1917] line-clamp-2">
-                      {week.title}
+                      {weekItem.title}
                     </h3>
 
                     <p className="text-xs text-[#57534E] line-clamp-3 leading-relaxed">
-                      {week.description}
+                      {weekItem.description}
                     </p>
                   </div>
 
@@ -290,40 +474,96 @@ export default async function HomePage() {
                     </span>
                     <Link
                       href="/course"
-                      className="text-[#C25E38] font-semibold hover:underline flex items-center gap-0.5"
+                      className="text-[#15803D] font-semibold hover:underline flex items-center gap-0.5"
                     >
                       <span>Syllabus</span>
                       <ChevronRight className="w-3 h-3" />
                     </Link>
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
+          </div>
 
-            <div className="mt-12 text-center">
-              <Link
-                href="/course"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-[#292524] text-white hover:bg-[#1C1917] transition-all shadow-sm"
-              >
-                <span>Browse All 8 Modules on Course Page</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
+          <div className="mt-10 text-center">
+            <Link
+              href="/course"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-sm font-bold bg-[#0F2D59] text-white hover:bg-[#0A1F3D] transition-all shadow-md hover:shadow-lg"
+            >
+              <span>Explore Full 8-Week Syllabus & Learning Objectives</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </section>
 
-        {/* STUDENT SUCCESS STORIES & REVIEWS */}
+        {/* ================================================================= */}
+        {/* 6. LIVE COURSE COMPLETION COUNTER                                 */}
+        {/* ================================================================= */}
+        <CourseCompletionCounter
+          completedCount={stats.completedStudents}
+          totalStudents={stats.totalStudents}
+        />
+
+        {/* ================================================================= */}
+        {/* 7. STUDENT SUCCESS AND REVIEWS ("Every Step Forward Matters")     */}
+        {/* ================================================================= */}
         <ReviewsSection
           initialReviews={approvedReviews}
           currentUser={user}
           userReview={userReview}
         />
 
-        {/* ENROLLMENT PROCESS WORKFLOW */}
-        <section className="py-16 bg-[#F5F2EB] border-t border-[#E7E2D6]">
+        {/* ================================================================= */}
+        {/* 8. COURSE ENROLLMENT CTA (Near Bottom)                            */}
+        {/* ================================================================= */}
+        <section className="py-16 md:py-24 bg-gradient-to-br from-[#0F2D59] via-[#163B70] to-[#0A192F] text-white border-y border-[#1E457A]">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold text-emerald-300">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>ENROLLMENT OPEN</span>
+            </div>
+
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight">
+              Start Your English Learning Journey Today!
+            </h2>
+
+            <p className="text-base sm:text-lg text-stone-200 max-w-2xl mx-auto leading-relaxed">
+              Take the first step towards speaking English with greater confidence. Contact Learn and Grow to know more about the course, fees, duration, and enrolment.
+            </p>
+
+            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <a
+                href={whatsAppUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl text-base font-bold bg-[#15803D] hover:bg-[#166534] text-white shadow-xl hover:shadow-emerald-950/40 active:scale-95 transition-all cursor-pointer"
+              >
+                <MessageCircle className="w-5 h-5 fill-white text-white" />
+                <span>Enquire on WhatsApp</span>
+              </a>
+
+              <Link
+                href="/course"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl text-base font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all text-center"
+              >
+                <BookOpen className="w-5 h-5" />
+                <span>View Course Syllabus</span>
+              </Link>
+            </div>
+
+            <p className="text-xs text-stone-300 pt-2">
+              Instant response from course administrator • Pre-filled enquiry message ready to send
+            </p>
+          </div>
+        </section>
+
+        {/* ================================================================= */}
+        {/* 9. TRANSPARENT 5-STEP ENROLLMENT WORKFLOW                         */}
+        {/* ================================================================= */}
+        <section className="py-16 bg-[#F5F2EB] border-b border-[#E7E2D6]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-2xl mx-auto mb-14 space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#C25E38]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#15803D]">
                 Simple 5-Step Process
               </span>
               <h2 className="text-3xl font-bold text-[#1C1917] tracking-tight">
@@ -338,7 +578,7 @@ export default async function HomePage() {
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4 relative">
               <div className="bg-white border border-[#D4CDBC] rounded-xl p-5 flex flex-col justify-between space-y-3 shadow-xs">
                 <div>
-                  <span className="text-xs font-extrabold text-[#C25E38] block mb-1">
+                  <span className="text-xs font-extrabold text-[#15803D] block mb-1">
                     STEP 01
                   </span>
                   <h4 className="text-sm font-bold text-[#1C1917]">
@@ -406,35 +646,15 @@ export default async function HomePage() {
                 </div>
               </div>
             </div>
-
-            {/* Quick Action CTA inside workflow */}
-            <div className="mt-10 p-6 rounded-2xl bg-white border border-[#D4CDBC] max-w-2xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div>
-                <h4 className="text-sm font-bold text-[#1C1917]">
-                  Ready to join the next English learning batch?
-                </h4>
-                <p className="text-xs text-[#78716C] mt-0.5">
-                  Get the official course fee and seat availability on WhatsApp.
-                </p>
-              </div>
-
-              <a
-                href={whatsAppUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold bg-[#15803D] hover:bg-[#166534] text-white shrink-0 shadow-sm"
-              >
-                <MessageCircle className="w-4 h-4 fill-white" />
-                <span>Message on WhatsApp</span>
-              </a>
-            </div>
           </div>
         </section>
 
-        {/* FREQUENTLY ASKED QUESTIONS */}
+        {/* ================================================================= */}
+        {/* 10. FREQUENTLY ASKED QUESTIONS                                   */}
+        {/* ================================================================= */}
         <section className="py-16 md:py-24 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 space-y-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#C25E38]">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#15803D]">
               Got Questions?
             </span>
             <h2 className="text-3xl font-bold text-[#1C1917] tracking-tight">
@@ -452,7 +672,7 @@ export default async function HomePage() {
                 className="bg-white border border-[#E7E2D6] rounded-xl p-6 transition-all shadow-xs"
               >
                 <h3 className="text-base font-bold text-[#1C1917] mb-2 flex items-start gap-2.5">
-                  <HelpCircle className="w-4 h-4 text-[#C25E38] shrink-0 mt-1" />
+                  <HelpCircle className="w-4 h-4 text-[#15803D] shrink-0 mt-1" />
                   <span>{faq.q}</span>
                 </h3>
                 <p className="text-sm text-[#57534E] leading-relaxed pl-6.5">

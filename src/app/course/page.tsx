@@ -12,6 +12,7 @@ import {
   FileText,
   ArrowRight,
   Info,
+  Sparkles,
 } from "lucide-react";
 import { getCurrentSession } from "@/lib/auth";
 import {
@@ -80,6 +81,14 @@ export default async function CoursePage() {
               </p>
 
               <div className="pt-2 flex flex-wrap items-center gap-3">
+                <Link
+                  href="/assessment"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#DCFCE7] hover:bg-[#BBF7D0] text-[#166534] border border-[#BBF7D0] shadow-2xs transition-colors"
+                >
+                  <Sparkles className="w-4 h-4 text-[#15803D]" />
+                  <span>Take Free Grammar Assessment</span>
+                </Link>
+
                 <a
                   href={whatsAppUrl}
                   target="_blank"
