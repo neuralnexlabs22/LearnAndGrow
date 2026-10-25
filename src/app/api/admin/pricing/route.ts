@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { getCoursePricing, updateCoursePricing } from "@/lib/data-store";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 /**
  * Admin endpoint: Fetch current course pricing
@@ -11,7 +13,11 @@ export async function GET() {
   try {
     await requireAdmin();
     const pricing = await getCoursePricing();
-    return NextResponse.json(pricing);
+    return NextResponse.json(pricing, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      },
+    });
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Unauthorized" },
@@ -53,10 +59,27 @@ export async function PUT(req: NextRequest) {
       isOfferActive: body.isOfferActive !== undefined ? Boolean(body.isOfferActive) : true,
     });
 
-    return NextResponse.json({
-      success: true,
-      pricing: updated,
-    });
+    // Invalidate caches across the site so all visitors immediately see the updated fees
+    try {
+      revalidatePath("/", "layout");
+      revalidatePath("/");
+      revalidatePath("/course");
+      revalidatePath("/admin");
+    } catch (err) {
+      console.warn("revalidatePath warning:", err);
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        pricing: updated,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        },
+      }
+    );
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Failed to update pricing." },

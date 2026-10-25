@@ -1,6 +1,6 @@
-"useuse client";
+"use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { CoursePricing } from "@/types";
 import { getPriceOfferWhatsAppUrl } from "@/lib/config";
@@ -13,19 +13,63 @@ interface PriceBreakdownCardProps {
 }
 
 export function PriceBreakdownCard({
-  pricing,
+  pricing: initialPricing,
   userEmail,
   className = "",
   showEnrollButton = true,
 }: PriceBreakdownCardProps) {
-  // Safe defaults matching user design
-  const originalPrice = pricing?.originalPrice ?? 1199;
-  const sellingPrice = pricing?.sellingPrice ?? 999;
-  const currency = pricing?.currency ?? "₹";
+  const [pricing, setPricing] = useState<CoursePricing | undefined>(initialPricing);
+
+  // Sync if prop updates
+  useEffect(() => {
+    if (initialPricing) {
+      setPricing(initialPricing);
+    }
+  }, [initialPricing]);
+
+  // Always fetch latest pricing from /api/pricing to guarantee instant updates
+  useEffect(() => {
+    let isMounted = true;
+    const fetchLatestPricing = () => {
+      fetch("/api/pricing", { cache: "no-store" })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (isMounted && data && typeof data.sellingPrice === "number") {
+            setPricing(data);
+          }
+        })
+        .catch((err) => console.warn("Could not sync latest pricing:", err));
+    };
+
+    fetchLatestPricing();
+
+    // Listen for instant in-tab update event from Admin Dashboard
+    const handlePricingUpdated = (e: any) => {
+      if (e.detail) {
+        setPricing(e.detail);
+      } else {
+        fetchLatestPricing();
+      }
+    };
+
+    window.addEventListener("pricing-updated", handlePricingUpdated);
+    return () => {
+      isMounted = false;
+      window.removeEventListener("pricing-updated", handlePricingUpdated);
+    };
+  }, []);
+
+  // Safe defaults
+  const originalPrice = Number(pricing?.originalPrice) || 1199;
+  const sellingPrice = Number(pricing?.sellingPrice) || 999;
+  const currency = pricing?.currency || "₹";
   const savings = Math.max(0, originalPrice - sellingPrice);
   const discountPercent =
-    pricing?.discountPercent ??
-    (originalPrice > 0 ? Math.round((savings / originalPrice) * 100) : 0);
+    pricing?.discountPercent !== undefined && !isNaN(pricing.discountPercent)
+      ? pricing.discountPercent
+      : originalPrice > 0
+      ? Math.round((savings / originalPrice) * 100)
+      : 0;
   const offerTag = pricing?.offerTag || "LIMITED TIME OFFER";
 
   const whatsAppUrl = getPriceOfferWhatsAppUrl(
@@ -128,7 +172,7 @@ export function PriceBreakdownCard({
             >
               <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.584 1.774.88 2.796.88 3.179 0 5.767-2.587 5.767-5.766.001-3.18-2.585-5.767-5.767-5.767zm7.625 5.765c0 4.208-3.424 7.632-7.625 7.632-1.314 0-2.551-.341-3.633-.935l-4.041 1.059 1.08-3.938c-.689-1.144-1.077-2.482-1.077-3.818 0-4.209 3.424-7.633 7.671-7.633 4.207 0 7.625 3.424 7.625 7.633z" />
             </svg>
-            <span>Enroll on WhatsApp for {currency}{sellingPrice}</span>
+            <span>Enroll on WhatsApp for {currency}{sellingPrice.toLocaleString("en-IN")}</span>
           </a>
           <p className="text-center text-[11px] text-stone-400 mt-2.5">
             Instant batch enrollment & WhatsApp confirmation • Fast reply

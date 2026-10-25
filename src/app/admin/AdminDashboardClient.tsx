@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Users,
   CheckCircle2,
@@ -79,10 +80,10 @@ export function AdminDashboardClient({
   const [stats, setStats] = useState<DashboardStats>(initialStats);
   const [pricing, setPricing] = useState<CoursePricing>(
     initialPricing || {
-      originalPrice: 1199,
-      sellingPrice: 999,
+      originalPrice: 10500,
+      sellingPrice: 3500,
       currency: "₹",
-      discountPercent: 17,
+      discountPercent: 67,
       offerTag: "LIMITED TIME OFFER",
       isOfferActive: true,
     }
@@ -517,6 +518,8 @@ export function AdminDashboardClient({
     });
   };
 
+  const router = useRouter();
+
   const handleSavePricing = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingPricing(true);
@@ -530,6 +533,12 @@ export function AdminDashboardClient({
       if (!res.ok) throw new Error(data.error);
 
       setPricing(data.pricing);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("pricing-updated", { detail: data.pricing })
+        );
+      }
+      router.refresh();
       showToast("Course pricing & fee breakdown updated successfully!");
     } catch (err: any) {
       showToast(err.message || "Failed to save pricing.", "error");
@@ -993,7 +1002,7 @@ export function AdminDashboardClient({
                               {student.photoUrl && (
                                 <button
                                   onClick={() => handleRemoveStudentPhoto(student.id)}
-                                  className="text-[10px] text-[#DC2626] hover:underline mt-0.5 block"
+                                  className="text-[10px] text-[#DC2626] hover:text-[#991B1B] mt-0.5 block"
                                 >
                                   Remove photo
                                 </button>

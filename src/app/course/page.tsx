@@ -29,6 +29,7 @@ import { ReviewsSection } from "@/components/ReviewsSection";
 import { PriceBreakdownCard } from "@/components/PriceBreakdownCard";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata = {
   title: "8-Week English Course Curriculum & Modules | Speak English with Confidence",
@@ -154,7 +155,7 @@ export default async function CoursePage() {
                     href={whatsAppUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#92400E] underline hover:text-[#78350F]"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#92400E] hover:text-[#78350F]"
                   >
                     <span>Message Administrator on WhatsApp now</span>
                     <ArrowRight className="w-3.5 h-3.5" />

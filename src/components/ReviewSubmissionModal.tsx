@@ -282,7 +282,7 @@ export function ReviewSubmissionModal({
                 type="button"
                 onClick={handleWithdraw}
                 disabled={isWithdrawing}
-                className="text-xs font-semibold text-[#DC2626] hover:underline disabled:opacity-50"
+                className="text-xs font-semibold text-[#DC2626] hover:text-[#991B1B] transition-colors disabled:opacity-50"
               >
                 {isWithdrawing ? "Withdrawing..." : "Withdraw Review"}
               </button>

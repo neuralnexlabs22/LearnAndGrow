@@ -539,13 +539,13 @@ export const SEED_ASSESSMENT_SETTINGS: AssessmentSettings = {
 };
 
 export const DEFAULT_PRICING: CoursePricing = {
-  originalPrice: 1199,
-  sellingPrice: 999,
+  originalPrice: 10500,
+  sellingPrice: 3500,
   currency: "₹",
-  discountPercent: 17,
+  discountPercent: 67,
   offerTag: "LIMITED TIME OFFER",
   isOfferActive: true,
-  updatedAt: "2026-10-24T10:00:00.000Z",
+  updatedAt: "2026-10-25T10:00:00.000Z",
 };
 
 const ASSESSMENT_STORE_PATH = path.join(process.cwd(), "data", "assessment_store.json");

@@ -44,7 +44,7 @@ export function AssessmentTriggerLink({
       onClick={handleClick}
       className={
         className ||
-        "inline-flex items-center gap-1.5 text-sm sm:text-base font-bold text-[#15803D] hover:text-[#166534] transition-colors underline decoration-[#15803D]/40 decoration-2 underline-offset-4 cursor-pointer"
+        "inline-flex items-center gap-1.5 text-sm sm:text-base font-bold text-[#15803D] hover:text-[#166534] transition-colors cursor-pointer"
       }
     >
       {showIcon && <Sparkles className="w-4 h-4 text-[#15803D] shrink-0" />}

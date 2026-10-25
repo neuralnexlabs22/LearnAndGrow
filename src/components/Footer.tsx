@@ -112,13 +112,13 @@ export function Footer() {
             <div className="space-y-1.5 text-xs text-[#44403C] pt-1">
               <p className="flex items-center gap-1.5">
                 <span className="font-semibold text-[#1C1917]">Phone:</span>
-                <a href="tel:+918148440389" className="hover:text-[#15803D] hover:underline">
+                <a href="tel:+918148440389" className="hover:text-[#15803D] transition-colors">
                   +91 81484 40389
                 </a>
               </p>
               <p className="flex items-center gap-1.5">
                 <span className="font-semibold text-[#1C1917]">Email:</span>
-                <a href="mailto:learnandgrow050518@gmail.com" className="hover:text-[#15803D] hover:underline">
+                <a href="mailto:learnandgrow050518@gmail.com" className="hover:text-[#15803D] transition-colors">
                   learnandgrow050518@gmail.com
                 </a>
               </p>

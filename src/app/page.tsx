@@ -31,8 +31,9 @@ import {
   getApprovedReviews,
   getStudentReview,
   getDashboardStats,
+  getCoursePricing,
 } from "@/lib/data-store";
-import { COURSE_CONFIG, getEnrollmentWhatsAppUrl } from "@/lib/config";
+import { COURSE_CONFIG, getEnrollmentWhatsAppUrl, getPriceOfferWhatsAppUrl } from "@/lib/config";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { CourseCompletionCounter } from "@/components/CourseCompletionCounter";
@@ -40,21 +41,31 @@ import { ReviewsSection } from "@/components/ReviewsSection";
 import { AssessmentFirstVisitOverlay } from "@/components/AssessmentFirstVisitOverlay";
 import { AssessmentHeroBanner } from "@/components/AssessmentHeroBanner";
 import { AssessmentTriggerLink } from "@/components/AssessmentTriggerLink";
+import { PriceBreakdownCard } from "@/components/PriceBreakdownCard";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function HomePage() {
   const { user, subscriptionStatus } = await getCurrentSession();
-  const weeks = await getCourseWeeks();
-  const approvedReviews = await getApprovedReviews();
-  const stats = await getDashboardStats();
+  const [weeks, approvedReviews, stats, pricing] = await Promise.all([
+    getCourseWeeks(),
+    getApprovedReviews(),
+    getDashboardStats(),
+    getCoursePricing(),
+  ]);
 
   let userReview = null;
   if (user && user.role === "student") {
     userReview = await getStudentReview(user.id);
   }
 
-  const whatsAppUrl = getEnrollmentWhatsAppUrl(user?.email);
+  const whatsAppUrl = getPriceOfferWhatsAppUrl(
+    pricing.originalPrice,
+    pricing.sellingPrice,
+    pricing.currency,
+    user?.email
+  );
 
   // 5 Target Audience Groups
   const targetAudience = [
@@ -248,7 +259,7 @@ export default async function HomePage() {
               {/* Main Heading */}
               <h1 className="text-3xl sm:text-4xl lg:text-[2.9rem] font-extrabold tracking-tight text-[#0A192F] leading-[1.14]">
                 Speak English with Confidence.{" "}
-                <span className="text-[#15803D] underline decoration-[#15803D]/30 decoration-wavy decoration-2">
+                <span className="text-[#15803D]">
                   Grow Your Future.
                 </span>
               </h1>
@@ -474,7 +485,7 @@ export default async function HomePage() {
                     </span>
                     <Link
                       href="/course"
-                      className="text-[#15803D] font-semibold hover:underline flex items-center gap-0.5"
+                      className="text-[#15803D] font-semibold hover:text-[#166534] transition-colors flex items-center gap-0.5"
                     >
                       <span>Syllabus</span>
                       <ChevronRight className="w-3 h-3" />
@@ -493,6 +504,57 @@ export default async function HomePage() {
               <span>Explore Full 8-Week Syllabus & Learning Objectives</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
+          </div>
+        </section>
+
+        {/* ================================================================= */}
+        {/* COURSE FEE & PRICE BREAKDOWN                                      */}
+        {/* ================================================================= */}
+        <section className="py-14 sm:py-20 bg-[#F5F2EB] border-b border-[#E7E2D6]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-white border border-[#D4CDBC] rounded-3xl p-6 sm:p-10 beige-card-shadow">
+              <div className="lg:col-span-7 space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#15803D] bg-emerald-100 px-3 py-1 rounded-full border border-emerald-200">
+                    {pricing.offerTag || "Course Fee Structure"}
+                  </span>
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#E8E3D7] text-[#44403C]">
+                    One-Time Payment • No Subscriptions
+                  </span>
+                </div>
+
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#1C1917] tracking-tight">
+                  Transparent, All-Inclusive Course Fee
+                </h2>
+
+                <p className="text-sm sm:text-base text-[#57534E] leading-relaxed">
+                  Join our structured 8-week Spoken English Course with simple, transparent pricing. Pay once and receive complete lifetime access to all 8 modules, 8 downloadable PDF workbooks, personalized pronunciation guidance, and direct instructor mentoring via WhatsApp.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  <div className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-[#1C1917]">
+                    <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0" />
+                    <span>Complete 8-Week Curriculum</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-[#1C1917]">
+                    <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0" />
+                    <span>8 Comprehensive PDF Workbooks</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-[#1C1917]">
+                    <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0" />
+                    <span>Direct WhatsApp Instructor Support</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-[#1C1917]">
+                    <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0" />
+                    <span>Official Certificate of Completion</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-5">
+                <PriceBreakdownCard pricing={pricing} userEmail={user?.email} />
+              </div>
+            </div>
           </div>
         </section>
 

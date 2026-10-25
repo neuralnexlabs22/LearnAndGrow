@@ -18,6 +18,7 @@ import { ShieldAlert, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata = {
   title: "Admin Dashboard | 8-Week English Learning Course",

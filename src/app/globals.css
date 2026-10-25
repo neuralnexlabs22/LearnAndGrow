@@ -53,6 +53,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+a {
+  text-decoration: none;
+}
+
 /* Custom scrollbar matching beige aesthetic */
 ::-webkit-scrollbar {
   width: 8px;
