@@ -25,7 +25,7 @@ import {
   CoursePricing,
 } from "@/types";
 import { generateCourseModulePdfBuffer } from "./pdf-generator";
-import { getSupabaseAdminClient, isSupabaseConfigured } from "./supabase";
+import { getSupabaseAdminClient, getSupabaseAnonClient, isSupabaseConfigured } from "./supabase";
 import { buildAssessmentWhatsAppUrl } from "./config";
 import fs from "fs";
 import path from "path";
@@ -2606,7 +2606,8 @@ export async function getAssessmentStats(): Promise<AssessmentStats> {
 export async function getCoursePricing(): Promise<CoursePricing> {
   if (isSupabaseConfigured()) {
     try {
-      const supabase = getSupabaseAdminClient();
+      // Use admin client if available (bypasses RLS), otherwise fall back to anon (public read is allowed)
+      const supabase = getSupabaseAdminClient() || getSupabaseAnonClient();
       if (supabase) {
         const { data, error } = await supabase
           .from("course_pricing")
@@ -2614,12 +2615,15 @@ export async function getCoursePricing(): Promise<CoursePricing> {
           .eq("id", "default")
           .maybeSingle();
 
-        if (data && !error) {
+        if (error) {
+          console.warn("Supabase getCoursePricing error:", error.message);
+        } else if (data) {
           const orig = Number(data.original_price);
           const sell = Number(data.selling_price);
           const discount =
-            data.discount_percent ??
-            (orig > 0 ? Math.max(0, Math.round(((orig - sell) / orig) * 100)) : 0);
+            data.discount_percent != null
+              ? Number(data.discount_percent)
+              : (orig > 0 ? Math.max(0, Math.round(((orig - sell) / orig) * 100)) : 0);
 
           return {
             originalPrice: orig,
@@ -2633,7 +2637,7 @@ export async function getCoursePricing(): Promise<CoursePricing> {
         }
       }
     } catch (err) {
-      console.warn("Supabase getCoursePricing fallback:", err);
+      console.warn("Supabase getCoursePricing exception:", err);
     }
   }
 
@@ -2687,25 +2691,33 @@ export async function updateCoursePricing(
 
   if (isSupabaseConfigured()) {
     try {
-      const supabase = getSupabaseAdminClient();
+      // Use admin client (service role) — bypasses RLS for upsert. Fallback to anon if not configured.
+      const supabase = getSupabaseAdminClient() || getSupabaseAnonClient();
       if (supabase) {
-        const { error } = await supabase.from("course_pricing").upsert({
-          id: "default",
-          original_price: newPricing.originalPrice,
-          selling_price: newPricing.sellingPrice,
-          currency: newPricing.currency,
-          discount_percent: newPricing.discountPercent,
-          offer_tag: newPricing.offerTag,
-          is_offer_active: newPricing.isOfferActive,
-          updated_at: newPricing.updatedAt,
-        });
+        const { error } = await supabase.from("course_pricing").upsert(
+          {
+            id: "default",
+            original_price: newPricing.originalPrice,
+            selling_price: newPricing.sellingPrice,
+            currency: newPricing.currency,
+            discount_percent: newPricing.discountPercent,
+            offer_tag: newPricing.offerTag,
+            is_offer_active: newPricing.isOfferActive,
+            updated_at: newPricing.updatedAt,
+          },
+          { onConflict: "id" }
+        );
 
         if (error) {
-          console.warn("Supabase updateCoursePricing upsert warning:", error);
+          console.error("Supabase updateCoursePricing upsert error:", error.message, error.details);
+        } else {
+          console.log("Supabase course_pricing updated successfully:", newPricing.sellingPrice);
         }
+      } else {
+        console.warn("No Supabase client available for updateCoursePricing — memory/disk only.");
       }
     } catch (err) {
-      console.warn("Supabase updateCoursePricing fallback:", err);
+      console.error("Supabase updateCoursePricing exception:", err);
     }
   }
 
