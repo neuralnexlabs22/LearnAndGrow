@@ -454,6 +454,34 @@ export function AdminDashboardClient({
     }
   };
 
+  const promptDeleteStudent = (student: StudentWithSubscription) => {
+    setConfirmModalConfig({
+      isOpen: true,
+      title: `Delete Student Account?`,
+      description: `Are you sure you want to permanently delete '${student.name}' (${student.email})? This action will remove their access, records, and progress completely.`,
+      confirmLabel: "Delete Account",
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/students/${student.id}`, {
+            method: "DELETE",
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Failed to delete student account");
+
+          const updated = students.filter((s) => s.id !== student.id);
+          setStudents(updated);
+          recomputeStats(weeks, updated, reviews);
+          showToast(`Student '${student.name}' deleted successfully.`, "success");
+        } catch (err: any) {
+          showToast(err.message || "Failed to delete student.", "error");
+        } finally {
+          setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
+        }
+      },
+    });
+  };
+
   const handleCompletionStatus = async (
     studentId: string,
     newStatus: CompletionStatus
@@ -1255,6 +1283,16 @@ export function AdminDashboardClient({
                                 <span>Re-activate</span>
                               </button>
                             )}
+
+                            {/* Delete Student Button */}
+                            <button
+                              onClick={() => promptDeleteStudent(student)}
+                              title={`Delete student ${student.name}`}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-[#DC2626] hover:bg-[#FEF2F2] border border-transparent hover:border-[#FECACA] transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">Delete</span>
+                            </button>
                           </div>
                         </td>
                       </tr>
