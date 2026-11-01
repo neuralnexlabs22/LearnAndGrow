@@ -298,68 +298,52 @@ ON CONFLICT (week_number) DO UPDATE SET
   is_published = EXCLUDED.is_published;
 
 -- =========================================================================
--- 8. SEED DATA: ADMINISTRATOR ONLY
+-- 8. SEED DATA: ADMINISTRATOR & SEED STUDENTS (Safely linked to auth.users)
 -- =========================================================================
 
--- Safe idempotent administrator creation/update (prevents duplicate key errors on id or email)
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM public.profiles WHERE email = 'learnandgrow050518@gmail.com') THEN
-    UPDATE public.profiles
-    SET role = 'admin',
-        password_hash = 'AdminPass123!',
-        name = 'Course Administrator'
-    WHERE email = 'learnandgrow050518@gmail.com';
-  ELSIF EXISTS (SELECT 1 FROM public.profiles WHERE id = '00000000-0000-0000-0000-000000000001'::uuid) THEN
-    UPDATE public.profiles
-    SET email = 'learnandgrow050518@gmail.com',
-        role = 'admin',
-        password_hash = 'AdminPass123!',
-        name = 'Course Administrator'
-    WHERE id = '00000000-0000-0000-0000-000000000001'::uuid;
-  ELSE
-    INSERT INTO public.profiles (id, name, email, role, password_hash, completion_status, public_consent)
-    VALUES (
-      '00000000-0000-0000-0000-000000000001'::uuid,
-      'Course Administrator',
-      'learnandgrow050518@gmail.com',
-      'admin',
-      'AdminPass123!',
-      'completed',
-      false
-    );
-  END IF;
-END $$;
-
--- Safe idempotent student creation/update for sample@gmail.com
 DO $$
 DECLARE
-  v_student_id UUID;
+  v_admin_id UUID;
+  v_sample_id UUID;
+  v_test_id UUID;
 BEGIN
-  IF EXISTS (SELECT 1 FROM public.profiles WHERE email = 'sample@gmail.com') THEN
-    UPDATE public.profiles
-    SET role = 'student',
-        password_hash = '12345678',
-        name = 'sample'
-    WHERE email = 'sample@gmail.com'
-    RETURNING id INTO v_student_id;
-  ELSE
+  -- 1. Course Administrator Account
+  SELECT id INTO v_admin_id FROM auth.users WHERE email = 'learnandgrow050518@gmail.com' LIMIT 1;
+  IF v_admin_id IS NOT NULL THEN
     INSERT INTO public.profiles (id, name, email, role, password_hash, completion_status, public_consent)
-    VALUES (
-      '09a498df-50ea-43bf-9014-ec04f89525f1'::uuid,
-      'sample',
-      'sample@gmail.com',
-      'student',
-      '12345678',
-      'enrolled',
-      true
-    )
-    RETURNING id INTO v_student_id;
+    VALUES (v_admin_id, 'Course Administrator', 'learnandgrow050518@gmail.com', 'admin', 'AdminPass123!', 'completed', false)
+    ON CONFLICT (id) DO UPDATE SET role = 'admin', name = 'Course Administrator';
+  ELSIF EXISTS (SELECT 1 FROM public.profiles WHERE email = 'learnandgrow050518@gmail.com') THEN
+    UPDATE public.profiles SET role = 'admin', name = 'Course Administrator' WHERE email = 'learnandgrow050518@gmail.com';
   END IF;
 
-  INSERT INTO public.subscriptions (student_id, status, notes)
-  VALUES (v_student_id, 'active', 'Active student subscription')
-  ON CONFLICT (student_id) DO UPDATE SET status = 'active';
+  -- 2. Sample Student Account (sample@gmail.com)
+  SELECT id INTO v_sample_id FROM auth.users WHERE email = 'sample@gmail.com' LIMIT 1;
+  IF v_sample_id IS NOT NULL THEN
+    INSERT INTO public.profiles (id, name, email, role, password_hash, completion_status, public_consent)
+    VALUES (v_sample_id, 'sample', 'sample@gmail.com', 'student', '12345678', 'enrolled', true)
+    ON CONFLICT (id) DO UPDATE SET role = 'student';
+
+    INSERT INTO public.subscriptions (student_id, status, notes)
+    VALUES (v_sample_id, 'active', 'Active student subscription')
+    ON CONFLICT (student_id) DO UPDATE SET status = 'active';
+  ELSIF EXISTS (SELECT 1 FROM public.profiles WHERE email = 'sample@gmail.com') THEN
+    UPDATE public.profiles SET role = 'student' WHERE email = 'sample@gmail.com';
+  END IF;
+
+  -- 3. Test Student Account (teststudent@gmail.com)
+  SELECT id INTO v_test_id FROM auth.users WHERE email = 'teststudent@gmail.com' LIMIT 1;
+  IF v_test_id IS NOT NULL THEN
+    INSERT INTO public.profiles (id, name, email, role, password_hash, completion_status, public_consent)
+    VALUES (v_test_id, 'Test Student', 'teststudent@gmail.com', 'student', '12345678', 'enrolled', true)
+    ON CONFLICT (id) DO UPDATE SET role = 'student';
+
+    INSERT INTO public.subscriptions (student_id, status, notes)
+    VALUES (v_test_id, 'active', 'Active student subscription')
+    ON CONFLICT (student_id) DO UPDATE SET status = 'active';
+  ELSIF EXISTS (SELECT 1 FROM public.profiles WHERE email = 'teststudent@gmail.com') THEN
+    UPDATE public.profiles SET role = 'student' WHERE email = 'teststudent@gmail.com';
+  END IF;
 END $$;
 
 -- =========================================================================
