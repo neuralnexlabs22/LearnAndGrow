@@ -1,284 +1,90 @@
 {
   "users": [
     {
-      "id": "admin-001",
+      "id": "00000000-0000-0000-0000-000000000001",
       "name": "Course Administrator",
+      "email": "learnandgrow050518@gmail.com",
+      "role": "admin",
+      "photoUrl": null,
+      "completionStatus": "completed",
+      "publicConsent": false,
+      "passwordHash": "AdminPass123!",
+      "createdAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000002",
+      "name": "Course Administrator (Fallback)",
       "email": "admin@course.edu",
       "role": "admin",
+      "photoUrl": null,
+      "completionStatus": "completed",
+      "publicConsent": false,
       "passwordHash": "AdminPass123!",
-      "createdAt": "2026-09-01T10:00:00.000Z"
+      "createdAt": "2026-08-01T10:00:00.000Z"
     },
     {
-      "id": "student-001",
-      "name": "Alex Rivera",
-      "email": "active.student@example.com",
-      "role": "student",
-      "passwordHash": "StudentPass123!",
-      "createdAt": "2026-09-05T14:30:00.000Z",
-      "completionStatus": "completed",
-      "publicConsent": true
-    },
-    {
-      "id": "student-002",
-      "name": "Samantha Chen",
-      "email": "pending.student@example.com",
-      "role": "student",
-      "passwordHash": "StudentPass123!",
-      "createdAt": "2026-09-12T09:15:00.000Z",
-      "completionStatus": "completed",
-      "publicConsent": true,
-      "completedAt": "2026-10-23T17:05:26.959Z"
-    },
-    {
-      "id": "student-003",
-      "name": "Marcus Vance",
-      "email": "revoked.student@example.com",
-      "role": "student",
-      "passwordHash": "StudentPass123!",
-      "createdAt": "2026-09-02T11:20:00.000Z",
-      "completionStatus": "enrolled",
-      "publicConsent": true
-    },
-    {
-      "id": "user-1792760225696",
-      "name": "David Miller",
-      "email": "david.miller@college.edu",
+      "id": "4cc5c467-c492-4ba6-bfca-6b972c9024bb",
+      "name": "Verify Reg Student",
+      "email": "verify_reg_1793540779791@example.com",
       "role": "student",
       "passwordHash": "Password123!",
-      "createdAt": "2026-10-23T12:57:05.696Z",
+      "photoUrl": null,
       "completionStatus": "enrolled",
-      "publicConsent": true
+      "completedAt": null,
+      "publicConsent": true,
+      "createdAt": "2026-11-01T13:46:21.329258+00:00"
+    },
+    {
+      "id": "3f1fcfb1-850e-4fc9-ad12-85726b992094",
+      "name": "Admin Created Student",
+      "email": "verify_admin_reg_1793540780450@example.com",
+      "role": "student",
+      "passwordHash": "Password123!",
+      "photoUrl": null,
+      "completionStatus": "in_progress",
+      "completedAt": null,
+      "publicConsent": true,
+      "createdAt": "2026-11-01T13:46:21.911035+00:00"
+    },
+    {
+      "id": "ce734e7a-d008-4a34-a76b-f2ba3922657e",
+      "name": "Live Student",
+      "email": "live_test_1793540895261@gmail.com",
+      "role": "student",
+      "passwordHash": "Password123!",
+      "photoUrl": null,
+      "completionStatus": "enrolled",
+      "completedAt": null,
+      "publicConsent": true,
+      "createdAt": "2026-11-01T13:48:16.917298+00:00"
     }
   ],
   "subscriptions": [
     {
-      "id": "sub-001",
-      "studentId": "student-001",
+      "id": "sub-4cc5c467-c492-4ba6-bfca-6b972c9024bb",
+      "studentId": "4cc5c467-c492-4ba6-bfca-6b972c9024bb",
+      "status": "pending",
+      "createdAt": "2026-11-01T13:46:20.183Z",
+      "updatedAt": "2026-11-01T13:46:20.183Z",
+      "notes": "Newly registered student. Pending WhatsApp verification."
+    },
+    {
+      "id": "sub-3f1fcfb1-850e-4fc9-ad12-85726b992094",
+      "studentId": "3f1fcfb1-850e-4fc9-ad12-85726b992094",
       "status": "active",
-      "approvedBy": "admin-001",
-      "approvedAt": "2026-09-06T10:00:00.000Z",
-      "notes": "Payment verified via WhatsApp and approved.",
-      "createdAt": "2026-09-05T14:30:00.000Z",
-      "updatedAt": "2026-09-06T10:00:00.000Z"
+      "createdAt": "2026-11-01T13:46:20.731Z",
+      "updatedAt": "2026-11-01T13:46:20.733Z",
+      "notes": "Newly registered student. Pending WhatsApp verification.",
+      "approvedBy": "00000000-0000-0000-0000-000000000001",
+      "approvedAt": "2026-11-01T13:46:20.733Z"
     },
     {
-      "id": "sub-002",
-      "studentId": "student-002",
-      "status": "active",
-      "notes": "Enquiry received. Waiting for WhatsApp bank transfer confirmation.",
-      "createdAt": "2026-09-12T09:15:00.000Z",
-      "updatedAt": "2026-10-23T12:52:44.352Z",
-      "approvedBy": "admin-001",
-      "approvedAt": "2026-10-23T12:52:44.352Z"
-    },
-    {
-      "id": "sub-003",
-      "studentId": "student-003",
-      "status": "revoked",
-      "approvedBy": "admin-001",
-      "notes": "Access revoked due to policy violation.",
-      "createdAt": "2026-09-02T11:20:00.000Z",
-      "updatedAt": "2026-10-23T13:15:23.122Z"
-    },
-    {
-      "id": "sub-1792760225696",
-      "studentId": "user-1792760225696",
-      "status": "active",
-      "createdAt": "2026-10-23T12:57:05.696Z",
-      "updatedAt": "2026-10-23T12:58:55.918Z",
-      "notes": "Newly registered student. Pending payment and WhatsApp verification.",
-      "approvedBy": "admin-001",
-      "approvedAt": "2026-10-23T12:58:55.918Z"
-    }
-  ],
-  "weeks": [
-    {
-      "id": "week-1",
-      "weekNumber": 1,
-      "title": "English Foundations and Basic Sentence Formation",
-      "description": "Master essential sentence structures (SVO), subject-verb agreement, common auxiliary verbs, and foundational conversational patterns with zero confusion.",
-      "learningObjectives": [
-        "Subject-Verb-Object (SVO) Core Architecture",
-        "Articles (A, An, The) & Demonstrative Pronouns",
-        "Auxiliary Verbs (Be, Do, Have) in Present Simple",
-        "Essential Everyday Greetings & Self-Introductions"
-      ],
-      "pdfFilename": "Week-01-English-Foundations.pdf",
-      "pdfStoragePath": "week-1/Week-01-English-Foundations.pdf",
-      "pdfFilesizeBytes": 24800,
-      "isPublished": true,
-      "createdAt": "2026-10-23T13:16:30.069Z",
-      "updatedAt": "2026-10-23T13:16:30.069Z"
-    },
-    {
-      "id": "week-2",
-      "weekNumber": 2,
-      "title": "Grammar and Tenses Mastery",
-      "description": "Gain complete control over past, present, and future tenses. Learn how native speakers convey timelines, continuous actions, and completed experiences naturally.",
-      "learningObjectives": [
-        "Present Simple vs. Present Continuous in Real Contexts",
-        "Past Simple vs. Present Perfect: Eliminating Common Errors",
-        "Future Projections (Will vs. Going to vs. Present Continuous)",
-        "Time Markers, Prepositions of Time (In, On, At) & Practice Drills"
-      ],
-      "pdfFilename": "Week-02-Grammar-and-Tenses.pdf",
-      "pdfStoragePath": "week-2/Week-02-Grammar-and-Tenses.pdf",
-      "pdfFilesizeBytes": 26100,
-      "isPublished": true,
-      "createdAt": "2026-10-23T13:16:30.069Z",
-      "updatedAt": "2026-10-23T13:16:30.069Z"
-    },
-    {
-      "id": "week-3",
-      "weekNumber": 3,
-      "title": "Vocabulary and Everyday Expressions",
-      "description": "Expand beyond basic vocabulary with 250+ high-frequency collocations, phrasal verbs, idioms, and natural transitions used in daily interactions.",
-      "learningObjectives": [
-        "High-Frequency Phrasal Verbs for Everyday Life",
-        "Collocations & Natural Word Pairings",
-        "Expressing Opinions, Agreement, and Polite Disagreement",
-        "Idiomatic Expressions for Modern Social Conversation"
-      ],
-      "pdfFilename": null,
-      "pdfStoragePath": null,
-      "pdfFilesizeBytes": null,
-      "isPublished": true,
-      "createdAt": "2026-10-23T13:16:30.069Z",
-      "updatedAt": "2026-10-23T13:16:30.069Z"
-    },
-    {
-      "id": "week-4",
-      "weekNumber": 4,
-      "title": "Spoken English and Conversation Practice",
-      "description": "Develop spoken fluency, overcome hesitation, and practice real-time conversational turn-taking, active listening cues, and storytelling techniques.",
-      "learningObjectives": [
-        "Overcoming Hesitation & Fear of Making Mistakes",
-        "Conversational Connectors & Fillers Used Naturally",
-        "Asking Engaging Open-Ended Questions in Dialogue",
-        "Mini-Storytelling: Structuring Short Personal Anecdotes"
-      ],
-      "pdfFilename": null,
-      "pdfStoragePath": null,
-      "pdfFilesizeBytes": null,
-      "isPublished": true,
-      "createdAt": "2026-10-23T13:16:30.069Z",
-      "updatedAt": "2026-10-23T13:16:30.069Z"
-    },
-    {
-      "id": "week-5",
-      "weekNumber": 5,
-      "title": "Pronunciation, Accent Clarity and Listening Skills",
-      "description": "Sharpen your acoustic comprehension and speech clarity. Master vowel distinctions, syllable stress, connected speech, and native intonation rhythms.",
-      "learningObjectives": [
-        "Vowel & Consonant Minimal Pairs Training",
-        "Word Stress, Syllable Timing & Sentence Intonation",
-        "Connected Speech (Linking, Elision & Weak Forms)",
-        "Listening Strategies for Fast-Paced Native Audio"
-      ],
-      "pdfFilename": null,
-      "pdfStoragePath": null,
-      "pdfFilesizeBytes": null,
-      "isPublished": true,
-      "createdAt": "2026-10-23T13:16:30.069Z",
-      "updatedAt": "2026-10-23T13:16:30.069Z"
-    },
-    {
-      "id": "week-6",
-      "weekNumber": 6,
-      "title": "Reading Comprehension and Writing Precision",
-      "description": "Analyze diverse texts, build analytical comprehension, and draft clear, cohesive emails, professional letters, and personal essays.",
-      "learningObjectives": [
-        "Skimming & Scanning Techniques for Articles & Books",
-        "Professional Email Etiquette & Structural Formats",
-        "Paragraph Cohesion, Transitions & Punctuation Precision",
-        "Writing Descriptive & Persuasive Short Texts"
-      ],
-      "pdfFilename": null,
-      "pdfStoragePath": null,
-      "pdfFilesizeBytes": null,
-      "isPublished": true,
-      "createdAt": "2026-10-23T13:16:30.069Z",
-      "updatedAt": "2026-10-23T13:16:30.069Z"
-    },
-    {
-      "id": "week-7",
-      "weekNumber": 7,
-      "title": "Communication Skills and Real-Life Situations",
-      "description": "Apply your English in workplace environments, job interviews, customer service, telephone calls, travel scenarios, and negotiations.",
-      "learningObjectives": [
-        "Interview Preparation & Self-Introduction Mastery",
-        "Workplace Meetings, Summaries & Action Items",
-        "Telephone & Video Call Communication Etiquette",
-        "Travel, Dining, Emergencies & Social Etiquette"
-      ],
-      "pdfFilename": null,
-      "pdfStoragePath": null,
-      "pdfFilesizeBytes": null,
-      "isPublished": true,
-      "createdAt": "2026-10-23T13:16:30.069Z",
-      "updatedAt": "2026-10-23T13:16:30.069Z"
-    },
-    {
-      "id": "week-8",
-      "weekNumber": 8,
-      "title": "Revision, Practical Exercises, and Final Assessment",
-      "description": "Consolidate your 8-week knowledge with practical roleplays, comprehensive grammar & vocabulary review, and your final spoken English evaluation.",
-      "learningObjectives": [
-        "Comprehensive Grammar & Phrasal Verb Synthesis",
-        "Live Roleplay Simulation & Spoken Review",
-        "Self-Assessment Portfolio & Ongoing Study Plan",
-        "Final Spoken Evaluation & Course Completion Award"
-      ],
-      "pdfFilename": null,
-      "pdfStoragePath": null,
-      "pdfFilesizeBytes": null,
-      "isPublished": true,
-      "createdAt": "2026-10-23T13:16:30.069Z",
-      "updatedAt": "2026-10-23T13:16:30.069Z"
-    }
-  ],
-  "reviews": [
-    {
-      "id": "rev-001",
-      "studentId": "student-001",
-      "studentName": "Alex Rivera",
-      "studentEmail": "active.student@example.com",
-      "studentPhotoUrl": null,
-      "rating": 5,
-      "feedback": "The 8-week structured English lessons gave me the confidence I was missing. Breaking down grammar tenses helped me speak fluently in my meetings.",
-      "status": "approved",
-      "isFeatured": true,
-      "isCompletedStudent": true,
-      "createdAt": "2026-10-16T14:00:00.000Z",
-      "updatedAt": "2026-10-23T17:05:25.214Z"
-    },
-    {
-      "id": "rev-002",
-      "studentId": "student-004",
-      "studentName": "David Miller",
-      "studentEmail": "david.miller@college.edu",
-      "studentPhotoUrl": null,
-      "rating": 5,
-      "feedback": "I used to hesitate and translate every word in my head. The pronunciation drills in Week 5 and the real-life communication scenarios completely transformed my speaking rhythm. Highly recommended!",
-      "status": "approved",
-      "isFeatured": true,
-      "isCompletedStudent": true,
-      "createdAt": "2026-10-21T10:30:00.000Z",
-      "updatedAt": "2026-10-21T10:30:00.000Z"
-    },
-    {
-      "id": "rev-003",
-      "studentId": "student-002",
-      "studentName": "Samantha Chen",
-      "studentEmail": "pending.student@example.com",
-      "studentPhotoUrl": null,
-      "rating": 5,
-      "feedback": "The weekly PDF workbooks are clear, practical, and filled with exercises that you can actually use every day. Having direct WhatsApp feedback from the instructor kept me motivated throughout.",
-      "status": "approved",
-      "isFeatured": true,
-      "isCompletedStudent": true,
-      "createdAt": "2026-10-18T09:00:00.000Z",
-      "updatedAt": "2026-10-23T17:05:26.959Z"
+      "id": "sub-ce734e7a-d008-4a34-a76b-f2ba3922657e",
+      "studentId": "ce734e7a-d008-4a34-a76b-f2ba3922657e",
+      "status": "pending",
+      "createdAt": "2026-11-01T13:48:15.801Z",
+      "updatedAt": "2026-11-01T13:48:15.801Z",
+      "notes": "Newly registered student. Pending WhatsApp verification."
     }
   ]
 }

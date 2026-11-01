@@ -11,10 +11,12 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
+    setSuccessMessage("");
     setIsLoading(true);
 
     try {
@@ -30,7 +32,13 @@ export default function RegisterPage() {
         throw new Error(data.error || "Registration failed.");
       }
 
-      window.location.href = "/course";
+      setSuccessMessage(
+        data.message || `Account created successfully for ${name}! Redirecting...`
+      );
+
+      setTimeout(() => {
+        window.location.href = "/course";
+      }, 700);
     } catch (err: any) {
       setErrorMessage(err.message || "Failed to create account.");
       setIsLoading(false);
@@ -88,6 +96,13 @@ export default function RegisterPage() {
           {errorMessage && (
             <div className="p-3.5 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-xs text-[#991B1B] font-medium leading-relaxed">
               {errorMessage}
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="p-3.5 rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] text-xs text-[#065F46] font-semibold flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#059669] animate-ping" />
+              <span>{successMessage}</span>
             </div>
           )}
 

@@ -550,6 +550,37 @@ export const DEFAULT_PRICING: CoursePricing = {
 
 const ASSESSMENT_STORE_PATH = path.join(process.cwd(), "data", "assessment_store.json");
 const PRICING_STORE_PATH = path.join(process.cwd(), "data", "pricing_store.json");
+const COURSE_STORE_PATH = path.join(process.cwd(), "data", "course_store.json");
+
+function loadCourseStoreFromDisk(): {
+  users?: StoredUser[];
+  subscriptions?: Subscription[];
+} | null {
+  try {
+    if (fs.existsSync(COURSE_STORE_PATH)) {
+      const raw = fs.readFileSync(COURSE_STORE_PATH, "utf-8");
+      return JSON.parse(raw);
+    }
+  } catch (err) {
+    console.warn("Could not read course_store.json from disk:", err);
+  }
+  return null;
+}
+
+function saveCourseStoreToDisk(data: {
+  users: StoredUser[];
+  subscriptions: Subscription[];
+}) {
+  try {
+    const dir = path.dirname(COURSE_STORE_PATH);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(COURSE_STORE_PATH, JSON.stringify(data, null, 2), "utf-8");
+  } catch (err) {
+    console.warn("Could not write course_store.json to disk:", err);
+  }
+}
 
 function loadAssessmentStoreFromDisk(): {
   questions: AssessmentQuestion[];
@@ -614,9 +645,10 @@ function savePricingStoreToDisk(pricing: CoursePricing) {
 function createInitialStore(): StoreData {
   const disk = loadAssessmentStoreFromDisk();
   const pricingDisk = loadPricingStoreFromDisk();
+  const courseDisk = loadCourseStoreFromDisk();
   return {
-    users: JSON.parse(JSON.stringify(SEED_USERS)),
-    subscriptions: JSON.parse(JSON.stringify(SEED_SUBSCRIPTIONS)),
+    users: courseDisk?.users?.length ? courseDisk.users : JSON.parse(JSON.stringify(SEED_USERS)),
+    subscriptions: courseDisk?.subscriptions?.length ? courseDisk.subscriptions : JSON.parse(JSON.stringify(SEED_SUBSCRIPTIONS)),
     weeks: JSON.parse(JSON.stringify(SEED_WEEKS)),
     reviews: JSON.parse(JSON.stringify(SEED_REVIEWS)),
     photoBuffers: {},
@@ -961,6 +993,8 @@ export async function getCourseWeekPdfBuffer(
 
 export async function getStudentsWithSubscriptions(): Promise<StudentWithSubscription[]> {
   const supabase = getSupabaseAdminClient();
+  let supabaseStudents: StudentWithSubscription[] | null = null;
+
   if (supabase) {
     try {
       const { data: profiles, error: pError } = await supabase
@@ -973,10 +1007,10 @@ export async function getStudentsWithSubscriptions(): Promise<StudentWithSubscri
         .from("subscriptions")
         .select("*");
 
-      if (!pError && profiles && profiles.length > 0) {
+      if (!pError && profiles) {
         const subsMap = new Map((subs || []).map((s: any) => [s.student_id, s]));
 
-        return profiles.map((p: any) => {
+        supabaseStudents = profiles.map((p: any) => {
           const sub = subsMap.get(p.id) as any;
           return {
             id: p.id,
@@ -1001,26 +1035,32 @@ export async function getStudentsWithSubscriptions(): Promise<StudentWithSubscri
   }
 
   const mem = getMemoryStore();
-  const students = mem.users.filter((u) => u.role === "student");
+  const memStudents = mem.users
+    .filter((u) => u.role === "student")
+    .map((s) => {
+      const sub = mem.subscriptions.find((sub) => sub.studentId === s.id);
+      return {
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        role: s.role,
+        photoUrl: s.photoUrl || null,
+        completionStatus: s.completionStatus || "enrolled",
+        completedAt: s.completedAt || null,
+        publicConsent: s.publicConsent ?? true,
+        createdAt: s.createdAt,
+        subscriptionId: sub ? sub.id : `sub-${s.id}`,
+        subscriptionStatus: sub ? sub.status : "pending",
+        approvedAt: sub?.approvedAt,
+        approvedBy: sub?.approvedBy,
+      };
+    });
 
-  return students.map((s) => {
-    const sub = mem.subscriptions.find((sub) => sub.studentId === s.id);
-    return {
-      id: s.id,
-      name: s.name,
-      email: s.email,
-      role: s.role,
-      photoUrl: s.photoUrl || null,
-      completionStatus: s.completionStatus || "enrolled",
-      completedAt: s.completedAt || null,
-      publicConsent: s.publicConsent ?? true,
-      createdAt: s.createdAt,
-      subscriptionId: sub ? sub.id : `sub-${s.id}`,
-      subscriptionStatus: sub ? sub.status : "pending",
-      approvedAt: sub?.approvedAt,
-      approvedBy: sub?.approvedBy,
-    };
-  });
+  if (supabaseStudents !== null) {
+    return supabaseStudents;
+  }
+
+  return memStudents;
 }
 
 export async function updateStudentSubscription(
@@ -1030,6 +1070,7 @@ export async function updateStudentSubscription(
 ): Promise<Subscription> {
   const now = new Date().toISOString();
   const supabase = getSupabaseAdminClient();
+  let resultSub: Subscription | null = null;
 
   if (supabase) {
     try {
@@ -1057,7 +1098,7 @@ export async function updateStudentSubscription(
         .single();
 
       if (!error && data) {
-        return {
+        resultSub = {
           id: data.id,
           studentId: data.student_id,
           status: data.status,
@@ -1078,7 +1119,7 @@ export async function updateStudentSubscription(
 
   if (!sub) {
     sub = {
-      id: `sub-${Date.now()}`,
+      id: resultSub?.id || `sub-${Date.now()}`,
       studentId,
       status,
       approvedBy: status === "active" ? approvedBy : undefined,
@@ -1098,7 +1139,12 @@ export async function updateStudentSubscription(
     }
   }
 
-  return sub;
+  saveCourseStoreToDisk({
+    users: mem.users,
+    subscriptions: mem.subscriptions,
+  });
+
+  return resultSub || sub;
 }
 
 export async function getUserByEmail(email: string): Promise<StoredUser | null> {
@@ -1148,8 +1194,9 @@ export async function getUserByEmail(email: string): Promise<StoredUser | null> 
 }
 
 export async function getUserById(id: string): Promise<UserProfile | null> {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
   const supabase = getSupabaseAdminClient();
-  if (supabase) {
+  if (supabase && isUuid) {
     try {
       const { data, error } = await supabase
         .from("profiles")
@@ -1190,6 +1237,7 @@ export async function createUser(
 ): Promise<UserProfile> {
   const normalizedEmail = email.toLowerCase().trim();
   const supabase = getSupabaseAdminClient();
+  let createdProfile: UserProfile | null = null;
 
   if (supabase) {
     try {
@@ -1219,14 +1267,15 @@ export async function createUser(
       if (pError) throw pError;
 
       if (role === "student" && profile) {
-        await supabase.from("subscriptions").insert({
+        const { error: sError } = await supabase.from("subscriptions").insert({
           student_id: profile.id,
           status: "pending",
           notes: "Newly registered student. Pending WhatsApp verification.",
         });
+        if (sError) console.warn("Supabase subscription insert warning:", sError);
       }
 
-      return {
+      createdProfile = {
         id: profile.id,
         name: profile.name,
         email: profile.email,
@@ -1243,14 +1292,15 @@ export async function createUser(
     }
   }
 
+  // Always keep in-memory and local disk store in sync
   const mem = getMemoryStore();
-  const existing = mem.users.find((u) => u.email.toLowerCase() === normalizedEmail);
-  if (existing) {
+  const existingInMem = mem.users.find((u) => u.email.toLowerCase() === normalizedEmail);
+  if (!createdProfile && existingInMem) {
     throw new Error("A user with this email address already exists.");
   }
 
-  const newUser: StoredUser = {
-    id: `user-${Date.now()}`,
+  const userRecord: StoredUser = {
+    id: createdProfile?.id || `user-${Date.now()}`,
     name: name.trim(),
     email: normalizedEmail,
     role,
@@ -1259,29 +1309,54 @@ export async function createUser(
     completionStatus: "enrolled",
     completedAt: null,
     publicConsent: true,
-    createdAt: new Date().toISOString(),
+    createdAt: createdProfile?.createdAt || new Date().toISOString(),
   };
 
-  mem.users.push(newUser);
-
-  if (role === "student") {
-    mem.subscriptions.push({
-      id: `sub-${Date.now()}`,
-      studentId: newUser.id,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      notes: "Newly registered student. Pending WhatsApp verification.",
-    });
+  if (!existingInMem) {
+    mem.users.push(userRecord);
+  } else {
+    const idx = mem.users.findIndex((u) => u.email.toLowerCase() === normalizedEmail);
+    if (idx !== -1) mem.users[idx] = userRecord;
   }
 
-  const { passwordHash: _, ...profile } = newUser;
-  return profile;
+  if (role === "student") {
+    const existingSub = mem.subscriptions.find((s) => s.studentId === userRecord.id);
+    if (!existingSub) {
+      mem.subscriptions.push({
+        id: `sub-${userRecord.id}`,
+        studentId: userRecord.id,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        notes: "Newly registered student. Pending WhatsApp verification.",
+      });
+    }
+  }
+
+  saveCourseStoreToDisk({
+    users: mem.users,
+    subscriptions: mem.subscriptions,
+  });
+
+  return (
+    createdProfile || {
+      id: userRecord.id,
+      name: userRecord.name,
+      email: userRecord.email,
+      role: userRecord.role,
+      photoUrl: userRecord.photoUrl,
+      completionStatus: userRecord.completionStatus,
+      completedAt: userRecord.completedAt,
+      publicConsent: userRecord.publicConsent,
+      createdAt: userRecord.createdAt,
+    }
+  );
 }
 
 export async function getStudentSubscription(studentId: string): Promise<Subscription | null> {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(studentId);
   const supabase = getSupabaseAdminClient();
-  if (supabase) {
+  if (supabase && isUuid) {
     try {
       const { data, error } = await supabase
         .from("subscriptions")
@@ -1320,6 +1395,7 @@ export async function updateStudentCompletionStatus(
 ): Promise<UserProfile> {
   const now = new Date().toISOString();
   const completedAt = status === "completed" ? now : null;
+  let resultUser: UserProfile | null = null;
 
   const supabase = getSupabaseAdminClient();
   if (supabase) {
@@ -1345,7 +1421,7 @@ export async function updateStudentCompletionStatus(
           })
           .eq("student_id", studentId);
 
-        return {
+        resultUser = {
           id: data.id,
           name: data.name,
           email: data.email,
@@ -1364,10 +1440,10 @@ export async function updateStudentCompletionStatus(
 
   const mem = getMemoryStore();
   const user = mem.users.find((u) => u.id === studentId);
-  if (!user) throw new Error("Student not found.");
-
-  user.completionStatus = status;
-  user.completedAt = completedAt;
+  if (user) {
+    user.completionStatus = status;
+    user.completedAt = completedAt;
+  }
 
   mem.reviews.forEach((r) => {
     if (r.studentId === studentId) {
@@ -1375,6 +1451,14 @@ export async function updateStudentCompletionStatus(
       r.updatedAt = now;
     }
   });
+
+  saveCourseStoreToDisk({
+    users: mem.users,
+    subscriptions: mem.subscriptions,
+  });
+
+  if (resultUser) return resultUser;
+  if (!user) throw new Error("Student not found.");
 
   const { passwordHash: _, ...profile } = user;
   return profile;
@@ -1934,8 +2018,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
       if (
         !studentsRes.error &&
-        typeof studentsRes.count === "number" &&
-        studentsRes.count > 0
+        typeof studentsRes.count === "number"
       ) {
         const reviews = reviewsRes.data || [];
         const pendingReviews = reviews.filter((r: any) => r.status === "pending").length;

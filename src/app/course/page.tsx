@@ -141,14 +141,16 @@ export default async function CoursePage() {
             <div className="p-4 sm:p-5 rounded-2xl bg-[#FFFBEB] border border-[#FDE68A] flex items-start gap-3.5 text-[#92400E] shadow-xs">
               <Clock className="w-5 h-5 text-[#D97706] shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <h3 className="text-sm font-bold">
-                  Subscription Pending Verification
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold">
+                    Welcome, {user.name}!
+                  </h3>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">
+                    Account Created • Pending Verification
+                  </span>
+                </div>
                 <p className="text-xs text-[#B45309] leading-relaxed">
-                  Your student account ({user.email}) is registered, but your
-                  course enrollment has not been approved yet. Please contact
-                  the administrator via WhatsApp to confirm your payment and
-                  unlock course materials.
+                  Your student account (<strong>{user.email}</strong>) is active. Your weekly course workbooks unlock as soon as the course administrator confirms your enrollment payment via WhatsApp.
                 </p>
                 <div className="pt-1">
                   <a

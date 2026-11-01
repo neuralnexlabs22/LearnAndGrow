@@ -1,9 +1,9 @@
 {
-  "originalPrice": 10500,
-  "sellingPrice": 3500,
+  "originalPrice": 20000,
+  "sellingPrice": 5000,
   "currency": "₹",
-  "discountPercent": 67,
+  "discountPercent": 75,
   "offerTag": "LIMITED TIME OFFER",
   "isOfferActive": true,
-  "updatedAt": "2026-10-25T05:18:23.9264+00:00"
+  "updatedAt": "2026-10-25T05:50:18.827Z"
 }

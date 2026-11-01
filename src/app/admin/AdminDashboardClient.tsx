@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Users,
@@ -27,6 +27,8 @@ import {
   CheckCheck,
   Tag,
   DollarSign,
+  RefreshCw,
+  UserPlus,
 } from "lucide-react";
 import {
   CourseWeek,
@@ -108,6 +110,16 @@ export function AdminDashboardClient({
   const [previewWeek, setPreviewWeek] = useState<CourseWeek | null>(null);
   const [uploadingPhotoStudentId, setUploadingPhotoStudentId] = useState<string | null>(null);
 
+  // Student refresh & direct registration modal
+  const [isRefreshingStudents, setIsRefreshingStudents] = useState(false);
+  const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
+  const [newStudentName, setNewStudentName] = useState("");
+  const [newStudentEmail, setNewStudentEmail] = useState("");
+  const [newStudentPassword, setNewStudentPassword] = useState("");
+  const [newStudentSubStatus, setNewStudentSubStatus] = useState<SubscriptionStatus>("active");
+  const [newStudentCompStatus, setNewStudentCompStatus] = useState<CompletionStatus>("enrolled");
+  const [isSubmittingStudent, setIsSubmittingStudent] = useState(false);
+
   // Confirmation modal state
   const [confirmModalConfig, setConfirmModalConfig] = useState<{
     isOpen: boolean;
@@ -161,6 +173,89 @@ export function AdminDashboardClient({
       averageRating: avgRating,
       totalPdfs,
     });
+  };
+
+  // Sync client state if server props change
+  useEffect(() => {
+    setStudents(initialStudents);
+  }, [initialStudents]);
+
+  useEffect(() => {
+    setStats(initialStats);
+  }, [initialStats]);
+
+  // Fetch latest students from server
+  const fetchStudents = useCallback(async (quiet = false) => {
+    if (!quiet) setIsRefreshingStudents(true);
+    try {
+      const res = await fetch("/api/admin/students");
+      if (!res.ok) throw new Error("Failed to load students.");
+      const data = await res.json();
+      if (Array.isArray(data.students)) {
+        setStudents(data.students);
+        recomputeStats(weeks, data.students, reviews);
+        if (!quiet) showToast("Student list refreshed and up to date!");
+      }
+    } catch (err: any) {
+      if (!quiet) showToast(err.message || "Failed to refresh students.", "error");
+    } finally {
+      if (!quiet) setIsRefreshingStudents(false);
+    }
+  }, [weeks, reviews]);
+
+  // Auto-refresh when opening students tab or every 10 seconds while active
+  useEffect(() => {
+    if (activeTab === "students") {
+      fetchStudents(true);
+      const interval = setInterval(() => {
+        fetchStudents(true);
+      }, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [activeTab, fetchStudents]);
+
+  // Handler to directly register a student from the dashboard
+  const handleAddStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStudentName.trim() || !newStudentEmail.trim() || !newStudentPassword) {
+      showToast("All fields are required.", "error");
+      return;
+    }
+    setIsSubmittingStudent(true);
+    try {
+      const res = await fetch("/api/admin/students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newStudentName.trim(),
+          email: newStudentEmail.trim(),
+          password: newStudentPassword,
+          subscriptionStatus: newStudentSubStatus,
+          completionStatus: newStudentCompStatus,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to create student account.");
+
+      if (Array.isArray(data.students)) {
+        setStudents(data.students);
+        recomputeStats(weeks, data.students, reviews);
+      } else {
+        await fetchStudents(true);
+      }
+
+      setIsAddStudentModalOpen(false);
+      setNewStudentName("");
+      setNewStudentEmail("");
+      setNewStudentPassword("");
+      setNewStudentSubStatus("active");
+      setNewStudentCompStatus("enrolled");
+      showToast(data.message || `Student '${newStudentName}' created successfully!`);
+    } catch (err: any) {
+      showToast(err.message || "Failed to create student account.", "error");
+    } finally {
+      setIsSubmittingStudent(false);
+    }
   };
 
   /* ---------------- 1. PDF & WEEK MANAGEMENT ---------------- */
@@ -671,7 +766,10 @@ export function AdminDashboardClient({
         </button>
 
         <button
-          onClick={() => setActiveTab("students")}
+          onClick={() => {
+            setActiveTab("students");
+            fetchStudents(true);
+          }}
           className={`pb-3 text-sm font-bold tracking-tight transition-all relative shrink-0 flex items-center gap-2 ${
             activeTab === "students"
               ? "text-[#C25E38] border-b-2 border-[#C25E38]"
@@ -679,11 +777,9 @@ export function AdminDashboardClient({
           }`}
         >
           <span>Students & Completion Tracking</span>
-          {stats.pendingReviews > 0 && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] font-bold border border-[#FDE68A]">
-              {stats.totalStudents}
-            </span>
-          )}
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#EFECE4] text-[#1C1917] font-bold border border-[#DCD4C4]">
+            {students.length}
+          </span>
         </button>
 
         <button
@@ -870,23 +966,54 @@ export function AdminDashboardClient({
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
             <div>
-              <h3 className="text-lg font-bold text-[#1C1917]">
-                Students, Photos & Course Completion Verification
-              </h3>
-              <p className="text-xs text-[#78716C]">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-[#1C1917]">
+                  Students, Photos & Course Completion Verification
+                </h3>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
+                  Live Sync
+                </span>
+              </div>
+              <p className="text-xs text-[#78716C] mt-0.5">
                 Manage student profile photos, subscriptions, and verify course completion milestones.
               </p>
             </div>
 
-            <div className="relative w-full sm:w-64">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-[#78716C]" />
-              <input
-                type="text"
-                placeholder="Search name or email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-[#D4CDBC] bg-white text-xs text-[#1C1917] placeholder:text-[#A8A29E] focus:outline-none focus:ring-1 focus:ring-[#C25E38]"
-              />
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="relative w-full sm:w-60">
+                <Search className="w-4 h-4 absolute left-3 top-2.5 text-[#78716C]" />
+                <input
+                  type="text"
+                  placeholder="Search name or email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-[#D4CDBC] bg-white text-xs text-[#1C1917] placeholder:text-[#A8A29E] focus:outline-none focus:ring-1 focus:ring-[#C25E38]"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => fetchStudents(false)}
+                disabled={isRefreshingStudents}
+                title="Refresh student list"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-[#F5F2EB] text-[#57534E] border border-[#D4CDBC] shadow-2xs transition-colors disabled:opacity-60 shrink-0"
+              >
+                <RefreshCw
+                  className={`w-3.5 h-3.5 text-[#57534E] ${
+                    isRefreshingStudents ? "animate-spin" : ""
+                  }`}
+                />
+                <span>{isRefreshingStudents ? "Syncing..." : "Sync List"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsAddStudentModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#C25E38] hover:bg-[#A94E2C] text-white shadow-2xs transition-colors shrink-0"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Register Student</span>
+              </button>
             </div>
           </div>
 
@@ -1574,6 +1701,143 @@ export function AdminDashboardClient({
                   className="px-4 py-2 rounded-lg text-xs font-semibold bg-[#C25E38] hover:bg-[#A94E2C] text-white shadow-xs disabled:opacity-50"
                 >
                   {isUpdatingWeek ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* REGISTER / ADD STUDENT MODAL */}
+      {isAddStudentModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1C1917]/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#FAF8F5] border border-[#D4CDBC] rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E7E2D6]">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-[#C25E38]/10 text-[#C25E38] flex items-center justify-center">
+                  <UserPlus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#1C1917]">
+                    Register New Student
+                  </h3>
+                  <p className="text-[11px] text-[#78716C]">
+                    Create a verified student account directly
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddStudentModalOpen(false)}
+                className="p-1 rounded text-[#78716C] hover:text-[#1C1917]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddStudent} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#78716C] mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. John Doe"
+                  value={newStudentName}
+                  onChange={(e) => setNewStudentName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-[#D4CDBC] bg-white text-xs text-[#1C1917] focus:outline-none focus:ring-1 focus:ring-[#C25E38]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#78716C] mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="e.g. student@example.com"
+                  value={newStudentEmail}
+                  onChange={(e) => setNewStudentEmail(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-[#D4CDBC] bg-white text-xs text-[#1C1917] focus:outline-none focus:ring-1 focus:ring-[#C25E38]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#78716C] mb-1">
+                  Temporary / Initial Password (min 6 chars)
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  placeholder="••••••••"
+                  value={newStudentPassword}
+                  onChange={(e) => setNewStudentPassword(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-[#D4CDBC] bg-white text-xs text-[#1C1917] focus:outline-none focus:ring-1 focus:ring-[#C25E38]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#78716C] mb-1">
+                    Subscription
+                  </label>
+                  <select
+                    value={newStudentSubStatus}
+                    onChange={(e) =>
+                      setNewStudentSubStatus(e.target.value as SubscriptionStatus)
+                    }
+                    className="w-full px-2.5 py-2 rounded-xl border border-[#D4CDBC] bg-white text-xs text-[#1C1917] focus:outline-none focus:ring-1 focus:ring-[#C25E38]"
+                  >
+                    <option value="active">Active (Approved)</option>
+                    <option value="pending">Pending Verification</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#78716C] mb-1">
+                    Course Status
+                  </label>
+                  <select
+                    value={newStudentCompStatus}
+                    onChange={(e) =>
+                      setNewStudentCompStatus(e.target.value as CompletionStatus)
+                    }
+                    className="w-full px-2.5 py-2 rounded-xl border border-[#D4CDBC] bg-white text-xs text-[#1C1917] focus:outline-none focus:ring-1 focus:ring-[#C25E38]"
+                  >
+                    <option value="enrolled">Enrolled</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-[#E7E2D6]">
+                <button
+                  type="button"
+                  onClick={() => setIsAddStudentModalOpen(false)}
+                  className="px-4 py-2 rounded-lg text-xs font-semibold text-[#57534E] hover:bg-[#EFECE4]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingStudent}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-[#C25E38] hover:bg-[#A94E2C] text-white shadow-xs disabled:opacity-50"
+                >
+                  {isSubmittingStudent ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Creating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>Create Account</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
