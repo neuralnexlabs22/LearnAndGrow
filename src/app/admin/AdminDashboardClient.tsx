@@ -1278,9 +1278,10 @@ export function AdminDashboardClient({
                             {student.subscriptionStatus === "revoked" && (
                               <button
                                 onClick={() => handleSubscriptionStatus(student, "active")}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#FAF8F5] hover:bg-[#ECFDF5] text-[#065F46] border border-[#D4CDBC] transition-colors"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#15803D] hover:bg-[#166534] text-white shadow-xs transition-colors"
                               >
-                                <span>Re-activate</span>
+                                <Check className="w-3 h-3" />
+                                <span>Re-activate Access</span>
                               </button>
                             )}
 

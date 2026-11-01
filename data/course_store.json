@@ -43,6 +43,15 @@
       "createdAt": "2026-11-01T14:31:13.568Z",
       "updatedAt": "2026-11-01T14:31:13.568Z",
       "notes": "Newly registered student. Active access granted."
+    },
+    {
+      "id": "da6c35a6-ffce-45ab-b8b3-29bde47658e2",
+      "studentId": "5c72ee02-8802-4334-8036-dca05897c9ca",
+      "status": "active",
+      "approvedBy": "28e59bd5-6acb-448c-82fc-6d67e896a6b8",
+      "approvedAt": "2026-11-01T21:59:28.387Z",
+      "createdAt": "2026-11-01T21:59:28.387Z",
+      "updatedAt": "2026-11-01T21:59:28.387Z"
     }
   ]
 }
