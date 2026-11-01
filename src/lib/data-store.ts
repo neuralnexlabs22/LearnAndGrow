@@ -1084,35 +1084,6 @@ export async function getStudentsWithSubscriptions(): Promise<StudentWithSubscri
     });
 
   if (supabaseStudents !== null) {
-    // Ensure any memory store student not yet in Supabase gets synced to Supabase
-    for (const m of memStudents) {
-      if (!supabaseStudents.some((s) => s.email.toLowerCase() === m.email.toLowerCase())) {
-        if (supabase) {
-          const validId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(m.id)
-            ? m.id
-            : randomUUID();
-          (async () => {
-            try {
-              await supabase.from("profiles").upsert({
-                id: validId,
-                name: m.name,
-                email: m.email.toLowerCase(),
-                role: "student",
-                completion_status: m.completionStatus,
-                public_consent: m.publicConsent,
-              });
-              await supabase.from("subscriptions").upsert({
-                student_id: validId,
-                status: m.subscriptionStatus,
-              });
-            } catch (e: any) {
-              console.warn("Background sync error:", e);
-            }
-          })();
-        }
-        supabaseStudents.push(m);
-      }
-    }
     return supabaseStudents;
   }
 
@@ -1121,33 +1092,51 @@ export async function getStudentsWithSubscriptions(): Promise<StudentWithSubscri
 
 export async function deleteStudent(studentId: string): Promise<boolean> {
   const supabase = getSupabaseAdminClient();
+  let targetEmail: string | null = null;
+
+  const mem = getMemoryStore();
+  const memUser = mem.users.find((u) => u.id === studentId);
+  if (memUser) {
+    targetEmail = memUser.email.toLowerCase();
+  }
+
   let supabaseDeleted = false;
 
   if (supabase) {
     try {
-      // Subscriptions and reviews cascade on profile delete in PostgreSQL,
-      // but explicitly delete subscriptions first for safety:
+      if (!targetEmail) {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", studentId)
+          .maybeSingle();
+        if (prof?.email) targetEmail = prof.email.toLowerCase();
+      }
+
       await supabase.from("subscriptions").delete().eq("student_id", studentId);
       await supabase.from("reviews").delete().eq("student_id", studentId);
-      const { error } = await supabase.from("profiles").delete().eq("id", studentId);
-      if (!error) {
+      const { error: idDelErr } = await supabase.from("profiles").delete().eq("id", studentId);
+
+      if (targetEmail) {
+        await supabase.from("profiles").delete().ilike("email", targetEmail);
+      }
+
+      if (!idDelErr) {
         supabaseDeleted = true;
       } else {
-        console.warn("Supabase delete student error:", error);
+        console.warn("Supabase delete student error:", idDelErr);
       }
     } catch (err) {
       console.warn("Supabase deleteStudent fallback:", err);
     }
   }
 
-  // Remove from in-memory and local disk store
-  const mem = getMemoryStore();
-  const uIdx = mem.users.findIndex((u) => u.id === studentId);
-  let memDeleted = false;
-  if (uIdx !== -1) {
-    mem.users.splice(uIdx, 1);
-    memDeleted = true;
-  }
+  // Remove from in-memory and local disk store by ID and email
+  mem.users = mem.users.filter((u) => {
+    if (u.id === studentId) return false;
+    if (targetEmail && u.email.toLowerCase() === targetEmail) return false;
+    return true;
+  });
 
   mem.subscriptions = mem.subscriptions.filter((s) => s.studentId !== studentId);
   mem.reviews = mem.reviews.filter((r) => r.studentId !== studentId);
@@ -1157,7 +1146,7 @@ export async function deleteStudent(studentId: string): Promise<boolean> {
     subscriptions: mem.subscriptions,
   });
 
-  return supabaseDeleted || memDeleted;
+  return supabaseDeleted;
 }
 
 export async function updateStudentSubscription(
