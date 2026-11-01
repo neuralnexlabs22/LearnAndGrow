@@ -420,10 +420,12 @@ ALTER TABLE public.assessment_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.assessment_submissions ENABLE ROW LEVEL SECURITY;
 
 -- Questions RLS: Anyone can view active questions; service role / admin manages
+DROP POLICY IF EXISTS "Public can view active assessment questions" ON public.assessment_questions;
 CREATE POLICY "Public can view active assessment questions"
   ON public.assessment_questions FOR SELECT
   USING (is_active = true);
 
+DROP POLICY IF EXISTS "Admins have full access to assessment questions" ON public.assessment_questions;
 CREATE POLICY "Admins have full access to assessment questions"
   ON public.assessment_questions FOR ALL
   USING (
@@ -434,10 +436,12 @@ CREATE POLICY "Admins have full access to assessment questions"
   );
 
 -- Settings RLS: Anyone can view settings; admin manages
+DROP POLICY IF EXISTS "Public can view assessment settings" ON public.assessment_settings;
 CREATE POLICY "Public can view assessment settings"
   ON public.assessment_settings FOR SELECT
   USING (true);
 
+DROP POLICY IF EXISTS "Admins can modify assessment settings" ON public.assessment_settings;
 CREATE POLICY "Admins can modify assessment settings"
   ON public.assessment_settings FOR ALL
   USING (
@@ -448,10 +452,12 @@ CREATE POLICY "Admins can modify assessment settings"
   );
 
 -- Submissions RLS: Anyone can insert submissions; admin can view all
+DROP POLICY IF EXISTS "Public can insert assessment submissions" ON public.assessment_submissions;
 CREATE POLICY "Public can insert assessment submissions"
   ON public.assessment_submissions FOR INSERT
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Admins can view assessment submissions" ON public.assessment_submissions;
 CREATE POLICY "Admins can view assessment submissions"
   ON public.assessment_submissions FOR SELECT
   USING (
