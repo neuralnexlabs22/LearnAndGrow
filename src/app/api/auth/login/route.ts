@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getUserByEmail, getStudentSubscription } from "@/lib/data-store";
+import { getUserByEmail, getStudentSubscription, logActivity } from "@/lib/data-store";
 import { setSessionCookie } from "@/lib/auth";
 
 export async function POST(request: Request) {
@@ -16,8 +16,9 @@ export async function POST(request: Request) {
 
     const user = await getUserByEmail(email);
     if (!user) {
+      await logActivity("login_failed", email, undefined, { reason: "account_not_found" });
       return NextResponse.json(
-        { error: "Invalid email or password." },
+        { error: `No account found with '${email}'. Please click 'Create Student Account' below.` },
         { status: 401 }
       );
     }
@@ -31,8 +32,9 @@ export async function POST(request: Request) {
           password === "adminPass123!"));
 
     if (!isPasswordValid) {
+      await logActivity("login_failed", email, user.id, { reason: "incorrect_password" });
       return NextResponse.json(
-        { error: "Invalid email or password." },
+        { error: "Incorrect password. Please verify and try again." },
         { status: 401 }
       );
     }
@@ -50,6 +52,12 @@ export async function POST(request: Request) {
 
     // Attach cookie directly to the response and cookieStore
     await setSessionCookie(user.id, response);
+
+    // Audit log successful sign in
+    await logActivity("login", user.email, user.id, {
+      role: user.role,
+      subscriptionStatus,
+    });
 
     return response;
   } catch (error: any) {

@@ -834,7 +834,8 @@ export async function saveCourseWeekPdf(
         });
 
       if (storageError) {
-        console.warn("Supabase storage upload error:", storageError.message);
+        console.error("Supabase storage upload error:", storageError.message);
+        throw new Error(`Failed to upload file to Supabase storage: ${storageError.message}`);
       }
 
       // 2. Update course_weeks table in Supabase
@@ -850,7 +851,12 @@ export async function saveCourseWeekPdf(
         .select()
         .single();
 
-      if (!dbError && data) {
+      if (dbError) {
+        console.error("Supabase database update error:", dbError.message);
+        throw new Error(`Failed to update week record in Supabase: ${dbError.message}`);
+      }
+
+      if (data) {
         const resultWeek: CourseWeek = {
           id: data.id,
           weekNumber: data.week_number,
@@ -872,8 +878,9 @@ export async function saveCourseWeekPdf(
         mem.pdfBuffers[`week-${weekNumber}`] = buffer.toString("base64");
         return resultWeek;
       }
-    } catch (err) {
-      console.warn("Supabase saveCourseWeekPdf fallback:", err);
+    } catch (err: any) {
+      console.error("Supabase saveCourseWeekPdf error:", err);
+      throw err;
     }
   }
 
@@ -1292,7 +1299,10 @@ export async function createUser(
           status: "active",
           notes: "Newly registered student. Active access granted.",
         });
-        if (sError) console.warn("Supabase subscription insert warning:", sError);
+        if (sError) {
+          console.error("Supabase subscription insert error:", sError);
+          throw new Error(`Failed to initialize subscription in Supabase: ${sError.message}`);
+        }
       }
 
       createdProfile = {
@@ -1308,7 +1318,8 @@ export async function createUser(
       };
     } catch (err: any) {
       if (err.message?.includes("already exists")) throw err;
-      console.warn("Supabase createUser fallback:", err);
+      console.error("Supabase createUser error:", err);
+      throw new Error(`Failed to save account in Supabase: ${err.message || err}`);
     }
   }
 
@@ -1403,6 +1414,38 @@ export async function getStudentSubscription(studentId: string): Promise<Subscri
 
   const mem = getMemoryStore();
   return mem.subscriptions.find((s) => s.studentId === studentId) ?? null;
+}
+
+// =========================================================================
+// ACTIVITY & AUTH AUDIT LOGGING
+// =========================================================================
+
+export async function logActivity(
+  action: string,
+  userEmail?: string,
+  userId?: string,
+  details?: Record<string, any>
+): Promise<void> {
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const validUserId =
+        userId &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)
+          ? userId
+          : null;
+
+      await supabase.from("activity_logs").insert({
+        action,
+        user_email: userEmail || null,
+        user_id: validUserId,
+        details: details || {},
+        created_at: new Date().toISOString(),
+      });
+    } catch {
+      // Graceful fallback if table is still pending creation in Supabase
+    }
+  }
 }
 
 // =========================================================================

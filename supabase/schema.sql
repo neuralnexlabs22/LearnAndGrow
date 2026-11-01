@@ -34,7 +34,7 @@ CREATE INDEX IF NOT EXISTS idx_profiles_completion ON public.profiles(completion
 CREATE TABLE IF NOT EXISTS public.subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'rejected', 'revoked')),
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('pending', 'active', 'rejected', 'revoked')),
   approved_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
   approved_at TIMESTAMPTZ,
   notes TEXT,
@@ -88,11 +88,29 @@ CREATE INDEX IF NOT EXISTS idx_reviews_status ON public.reviews(status);
 CREATE INDEX IF NOT EXISTS idx_reviews_featured ON public.reviews(is_featured);
 
 -- =========================================================================
--- 5. STORAGE BUCKETS SETUP (PDF Materials & Profile Photos)
+-- 5. ACTIVITY & AUDIT LOGS TABLE (Auth, Registrations, Logins & Updates)
+-- =========================================================================
+CREATE TABLE IF NOT EXISTS public.activity_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  action TEXT NOT NULL,
+  user_email TEXT,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  details JSONB DEFAULT '{}'::jsonb,
+  ip_address TEXT,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON public.activity_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_action ON public.activity_logs(action);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_email ON public.activity_logs(user_email);
+
+-- =========================================================================
+-- 6. STORAGE BUCKETS SETUP (PDF & Word Materials, Profile Photos)
 -- =========================================================================
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES 
-  ('course-pdfs', 'course-pdfs', true, 26214400, ARRAY['application/pdf']),
+  ('course-pdfs', 'course-pdfs', true, 26214400, ARRAY['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword']),
   ('student-photos', 'student-photos', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp'])
 ON CONFLICT (id) DO UPDATE SET
   public = EXCLUDED.public,
@@ -100,12 +118,13 @@ ON CONFLICT (id) DO UPDATE SET
   allowed_mime_types = EXCLUDED.allowed_mime_types;
 
 -- =========================================================================
--- 6. ROW LEVEL SECURITY (RLS) POLICIES
+-- 7. ROW LEVEL SECURITY (RLS) POLICIES
 -- =========================================================================
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.course_weeks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read of published course weeks
 DROP POLICY IF EXISTS "Public can view published course weeks" ON public.course_weeks;
@@ -137,6 +156,17 @@ CREATE POLICY "Service role full access course_weeks" ON public.course_weeks FOR
 
 DROP POLICY IF EXISTS "Service role full access reviews" ON public.reviews;
 CREATE POLICY "Service role full access reviews" ON public.reviews FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Service role full access activity_logs" ON public.activity_logs;
+CREATE POLICY "Service role full access activity_logs" ON public.activity_logs FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admins can view activity_logs" ON public.activity_logs;
+CREATE POLICY "Admins can view activity_logs" ON public.activity_logs FOR SELECT TO authenticated USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE profiles.id = auth.uid() AND profiles.role = 'admin'
+  )
+);
 
 -- Allow public/anon operations with fallback for simple client requests
 DROP POLICY IF EXISTS "Allow anon read all course weeks" ON public.course_weeks;
@@ -289,6 +319,37 @@ BEGIN
       false
     );
   END IF;
+END $$;
+
+-- Safe idempotent student creation/update for sample@gmail.com
+DO $$
+DECLARE
+  v_student_id UUID;
+BEGIN
+  IF EXISTS (SELECT 1 FROM public.profiles WHERE email = 'sample@gmail.com') THEN
+    UPDATE public.profiles
+    SET role = 'student',
+        password_hash = '12345678',
+        name = 'sample'
+    WHERE email = 'sample@gmail.com'
+    RETURNING id INTO v_student_id;
+  ELSE
+    INSERT INTO public.profiles (id, name, email, role, password_hash, completion_status, public_consent)
+    VALUES (
+      '09a498df-50ea-43bf-9014-ec04f89525f1'::uuid,
+      'sample',
+      'sample@gmail.com',
+      'student',
+      '12345678',
+      'enrolled',
+      true
+    )
+    RETURNING id INTO v_student_id;
+  END IF;
+
+  INSERT INTO public.subscriptions (student_id, status, notes)
+  VALUES (v_student_id, 'active', 'Active student subscription')
+  ON CONFLICT (student_id) DO UPDATE SET status = 'active';
 END $$;
 
 -- =========================================================================

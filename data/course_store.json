@@ -23,16 +23,76 @@
       "createdAt": "2026-08-01T10:00:00.000Z"
     },
     {
-      "id": "09a498df-50ea-43bf-9014-ec04f89525f1",
-      "name": "sample",
-      "email": "sample@gmail.com",
+      "id": "4cc5c467-c492-4ba6-bfca-6b972c9024bb",
+      "name": "Verify Reg Student",
+      "email": "verify_reg_1793540779791@example.com",
       "role": "student",
-      "passwordHash": "12345678",
+      "passwordHash": "Password123!",
       "photoUrl": null,
       "completionStatus": "enrolled",
       "completedAt": null,
       "publicConsent": true,
-      "createdAt": "2026-11-01T13:37:10.173018+00:00"
+      "createdAt": "2026-11-01T13:46:21.329258+00:00"
+    },
+    {
+      "id": "3f1fcfb1-850e-4fc9-ad12-85726b992094",
+      "name": "Admin Created Student",
+      "email": "verify_admin_reg_1793540780450@example.com",
+      "role": "student",
+      "passwordHash": "Password123!",
+      "photoUrl": null,
+      "completionStatus": "in_progress",
+      "completedAt": null,
+      "publicConsent": true,
+      "createdAt": "2026-11-01T13:46:21.911035+00:00"
+    },
+    {
+      "id": "ce734e7a-d008-4a34-a76b-f2ba3922657e",
+      "name": "Live Student",
+      "email": "live_test_1793540895261@gmail.com",
+      "role": "student",
+      "passwordHash": "Password123!",
+      "photoUrl": null,
+      "completionStatus": "enrolled",
+      "completedAt": null,
+      "publicConsent": true,
+      "createdAt": "2026-11-01T13:48:16.917298+00:00"
+    },
+    {
+      "id": "f6aa9110-6be4-4e5d-8803-690b60ccc8ad",
+      "name": "Test User",
+      "email": "testuser_1793541857557@example.com",
+      "role": "student",
+      "passwordHash": "password123",
+      "photoUrl": null,
+      "completionStatus": "enrolled",
+      "completedAt": null,
+      "publicConsent": true,
+      "createdAt": "2026-11-01T14:04:19.203783+00:00"
+    },
+    {
+      "id": "f6bdeb9f-cc6a-4af8-9d4c-6be6d57d6951",
+      "name": "Lakshman Student",
+      "email": "student_1793542486167@example.com",
+      "role": "student",
+      "passwordHash": "password123",
+      "photoUrl": null,
+      "completionStatus": "enrolled",
+      "completedAt": null,
+      "publicConsent": true,
+      "createdAt": "2026-11-01T14:14:48.870397+00:00"
+    },
+    {
+      "id": "65254f8c-4532-45d4-b46e-4955a45a6b93",
+      "name": "Test Student",
+      "email": "teststudent@gmail.com",
+      "role": "student",
+      "passwordHash": "password123",
+      "photoUrl": null,
+      "completionStatus": "enrolled",
+      "completedAt": null,
+      "publicConsent": true,
+      "createdAt": "2026-11-01T14:31:14.748441+00:00"
     }
   ],
   "subscriptions": [
@@ -79,14 +139,12 @@
       "notes": "Newly registered student. Active access granted."
     },
     {
-      "id": "294612cd-3209-4284-9c87-fc507e878be4",
-      "studentId": "09a498df-50ea-43bf-9014-ec04f89525f1",
+      "id": "sub-65254f8c-4532-45d4-b46e-4955a45a6b93",
+      "studentId": "65254f8c-4532-45d4-b46e-4955a45a6b93",
       "status": "active",
-      "approvedBy": "00000000-0000-0000-0000-000000000001",
-      "approvedAt": "2026-11-01T14:15:55.274Z",
-      "notes": "Newly registered student. Active access granted.",
-      "createdAt": "2026-11-01T13:37:10.249861+00:00",
-      "updatedAt": "2026-11-01T14:15:55.275Z"
+      "createdAt": "2026-11-01T14:31:13.568Z",
+      "updatedAt": "2026-11-01T14:31:13.568Z",
+      "notes": "Newly registered student. Active access granted."
     }
   ]
 }

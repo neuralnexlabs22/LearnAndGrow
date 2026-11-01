@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createUser } from "@/lib/data-store";
+import { createUser, logActivity } from "@/lib/data-store";
 import { setSessionCookie } from "@/lib/auth";
 
 export async function POST(request: Request) {
@@ -39,6 +39,13 @@ export async function POST(request: Request) {
 
     // Attach cookie directly to the response and cookieStore
     await setSessionCookie(newUser.id, response);
+
+    // Audit log account creation
+    await logActivity("register", newUser.email, newUser.id, {
+      name: newUser.name,
+      role: newUser.role,
+      subscriptionStatus: "active",
+    });
 
     return response;
   } catch (error: any) {
