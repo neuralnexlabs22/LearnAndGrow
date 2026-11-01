@@ -209,7 +209,7 @@ const SEED_WEEKS: CourseWeek[] = [
 
 const SEED_USERS: StoredUser[] = [
   {
-    id: "00000000-0000-0000-0000-000000000001",
+    id: "28e59bd5-6acb-448c-82fc-6d67e896a6b8",
     name: "Course Administrator",
     email: "learnandgrow050518@gmail.com",
     role: "admin",
@@ -1175,11 +1175,36 @@ export async function updateStudentSubscription(
         status,
         updated_at: now,
       };
+
       if (status === "active") {
         updatePayload.approved_at = now;
-        if (approvedBy) updatePayload.approved_by = approvedBy;
+        // Verify approvedBy is a valid UUID in public.profiles to prevent foreign key violation
+        let validApprovedBy: string | null = null;
+        if (approvedBy && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(approvedBy)) {
+          const { data: adminExists } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("id", approvedBy)
+            .maybeSingle();
+          if (adminExists?.id) {
+            validApprovedBy = adminExists.id;
+          }
+        }
+        if (!validApprovedBy) {
+          const { data: firstAdmin } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("role", "admin")
+            .limit(1)
+            .maybeSingle();
+          if (firstAdmin?.id) {
+            validApprovedBy = firstAdmin.id;
+          }
+        }
+        updatePayload.approved_by = validApprovedBy;
       } else if (status === "revoked" || status === "rejected") {
         updatePayload.approved_at = null;
+        updatePayload.approved_by = null;
       }
 
       const { data, error } = await supabase
@@ -1194,7 +1219,12 @@ export async function updateStudentSubscription(
         .select()
         .single();
 
-      if (!error && data) {
+      if (error) {
+        console.error("Supabase updateStudentSubscription error:", error);
+        throw new Error(`Failed to update subscription in Supabase: ${error.message}`);
+      }
+
+      if (data) {
         resultSub = {
           id: data.id,
           studentId: data.student_id,
@@ -1206,8 +1236,11 @@ export async function updateStudentSubscription(
           updatedAt: data.updated_at,
         };
       }
-    } catch (err) {
-      console.warn("Supabase updateStudentSubscription fallback:", err);
+    } catch (err: any) {
+      console.error("Supabase updateStudentSubscription failed:", err);
+      if (isSupabaseConfigured()) {
+        throw err;
+      }
     }
   }
 
@@ -1219,7 +1252,7 @@ export async function updateStudentSubscription(
       id: resultSub?.id || `sub-${Date.now()}`,
       studentId,
       status,
-      approvedBy: status === "active" ? approvedBy : undefined,
+      approvedBy: status === "active" ? (resultSub?.approvedBy || approvedBy) : undefined,
       approvedAt: status === "active" ? now : undefined,
       createdAt: now,
       updatedAt: now,
@@ -1229,10 +1262,11 @@ export async function updateStudentSubscription(
     sub.status = status;
     sub.updatedAt = now;
     if (status === "active") {
-      sub.approvedBy = approvedBy || sub.approvedBy;
+      sub.approvedBy = resultSub?.approvedBy || approvedBy || sub.approvedBy;
       sub.approvedAt = now;
     } else if (status === "revoked" || status === "rejected") {
       sub.approvedAt = undefined;
+      sub.approvedBy = undefined;
     }
   }
 

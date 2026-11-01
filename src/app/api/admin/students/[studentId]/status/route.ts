@@ -52,9 +52,10 @@ export async function PATCH(
       message,
     });
   } catch (error: any) {
+    const isAuthError = error?.message?.includes("Unauthorized");
     return NextResponse.json(
       { error: error?.message || "Failed to update subscription status." },
-      { status: 403 }
+      { status: isAuthError ? 403 : 500 }
     );
   }
 }

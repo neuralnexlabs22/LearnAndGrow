@@ -111,6 +111,7 @@ export function AdminDashboardClient({
   const [uploadingPhotoStudentId, setUploadingPhotoStudentId] = useState<string | null>(null);
 
   // Student refresh & direct registration modal
+  const [updatingSubscriptionId, setUpdatingSubscriptionId] = useState<string | null>(null);
   const [isRefreshingStudents, setIsRefreshingStudents] = useState(false);
   const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
   const [newStudentName, setNewStudentName] = useState("");
@@ -186,6 +187,7 @@ export function AdminDashboardClient({
 
   // Fetch latest students from server
   const fetchStudents = useCallback(async (quiet = false) => {
+    if (updatingSubscriptionId) return; // Prevent overwriting while an activation/revocation update is processing
     if (!quiet) setIsRefreshingStudents(true);
     try {
       const res = await fetch("/api/admin/students");
@@ -428,6 +430,8 @@ export function AdminDashboardClient({
     studentId: string,
     newStatus: SubscriptionStatus
   ) => {
+    if (updatingSubscriptionId) return;
+    setUpdatingSubscriptionId(studentId);
     try {
       const res = await fetch(`/api/admin/students/${studentId}/status`, {
         method: "PATCH",
@@ -435,22 +439,27 @@ export function AdminDashboardClient({
         body: JSON.stringify({ status: newStatus }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || "Failed to update subscription status");
+
+      const confirmedStatus: SubscriptionStatus = data.subscription?.status || newStatus;
+      const confirmedApprovedAt = data.subscription?.approvedAt || (newStatus === "active" ? new Date().toISOString() : undefined);
 
       const updated = students.map((s) =>
         s.id === studentId
           ? {
               ...s,
-              subscriptionStatus: newStatus,
-              approvedAt: newStatus === "active" ? new Date().toISOString() : undefined,
+              subscriptionStatus: confirmedStatus,
+              approvedAt: confirmedApprovedAt,
             }
           : s
       );
       setStudents(updated);
       recomputeStats(weeks, updated, reviews);
-      showToast(data.message || `Subscription updated to ${newStatus}.`);
+      showToast(data.message || `Subscription updated to ${newStatus}.`, "success");
     } catch (err: any) {
       showToast(err.message || "Failed to update subscription.", "error");
+    } finally {
+      setUpdatingSubscriptionId(null);
     }
   };
 
@@ -1259,29 +1268,43 @@ export function AdminDashboardClient({
                             {student.subscriptionStatus === "pending" && (
                               <button
                                 onClick={() => handleSubscriptionStatus(student, "active")}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#15803D] hover:bg-[#166534] text-white shadow-xs transition-colors"
+                                disabled={updatingSubscriptionId === student.id}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#15803D] hover:bg-[#166534] text-white shadow-xs transition-colors disabled:opacity-50"
                               >
-                                <Check className="w-3 h-3" />
-                                <span>Approve</span>
+                                {updatingSubscriptionId === student.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Check className="w-3 h-3" />
+                                )}
+                                <span>{updatingSubscriptionId === student.id ? "Updating..." : "Approve"}</span>
                               </button>
                             )}
 
                             {student.subscriptionStatus === "active" && (
                               <button
                                 onClick={() => handleSubscriptionStatus(student, "revoked")}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-[#DC2626] hover:bg-[#FEF2F2] border border-transparent hover:border-[#FECACA] transition-colors"
+                                disabled={updatingSubscriptionId === student.id}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-[#DC2626] hover:bg-[#FEF2F2] border border-transparent hover:border-[#FECACA] transition-colors disabled:opacity-50"
                               >
-                                <span>Revoke Access</span>
+                                {updatingSubscriptionId === student.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : null}
+                                <span>{updatingSubscriptionId === student.id ? "Updating..." : "Revoke Access"}</span>
                               </button>
                             )}
 
                             {student.subscriptionStatus === "revoked" && (
                               <button
                                 onClick={() => handleSubscriptionStatus(student, "active")}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#15803D] hover:bg-[#166534] text-white shadow-xs transition-colors"
+                                disabled={updatingSubscriptionId === student.id}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#15803D] hover:bg-[#166534] text-white shadow-xs transition-colors disabled:opacity-50"
                               >
-                                <Check className="w-3 h-3" />
-                                <span>Re-activate Access</span>
+                                {updatingSubscriptionId === student.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Check className="w-3 h-3" />
+                                )}
+                                <span>{updatingSubscriptionId === student.id ? "Updating..." : "Re-activate Access"}</span>
                               </button>
                             )}
 
