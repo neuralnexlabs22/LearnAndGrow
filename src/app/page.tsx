@@ -42,6 +42,7 @@ import { AssessmentFirstVisitOverlay } from "@/components/AssessmentFirstVisitOv
 import { AssessmentHeroBanner } from "@/components/AssessmentHeroBanner";
 import { AssessmentTriggerLink } from "@/components/AssessmentTriggerLink";
 import { PriceBreakdownCard } from "@/components/PriceBreakdownCard";
+import { CourseSessionSync } from "@/components/CourseSessionSync";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -219,6 +220,7 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF8F5] text-[#1C1917]">
+      <CourseSessionSync initialUser={user} />
       {/* First-Visit Assessment Overlay for New Visitors */}
       <AssessmentFirstVisitOverlay />
 
@@ -448,7 +450,9 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {(weeks.length > 0 ? weeks : defaultEightWeeks).map((weekItem: any) => {
               const weekNum = weekItem.weekNumber;
-              const hasPdf = Boolean(weekItem.pdfStoragePath);
+              const hasDoc = Boolean(weekItem.pdfStoragePath);
+              const lowerFilename = (weekItem.pdfFilename || "").toLowerCase();
+              const isWord = lowerFilename.endsWith(".docx") || lowerFilename.endsWith(".doc");
               return (
                 <div
                   key={weekItem.id || weekNum}
@@ -459,9 +463,14 @@ export default async function HomePage() {
                       <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#EFECE4] text-[#15803D] border border-[#DCD4C4]">
                         Week {String(weekNum).padStart(2, "0")}
                       </span>
-                      {hasPdf ? (
-                        <span className="text-[11px] text-[#15803D] font-semibold flex items-center gap-1">
-                          <FileText className="w-3.5 h-3.5" /> PDF Ready
+                      {hasDoc ? (
+                        <span
+                          className={`text-[11px] font-semibold flex items-center gap-1 ${
+                            isWord ? "text-[#1D4ED8]" : "text-[#15803D]"
+                          }`}
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          {isWord ? "Word Doc Ready" : "PDF Ready"}
                         </span>
                       ) : (
                         <span className="text-[11px] text-[#78716C] font-medium">

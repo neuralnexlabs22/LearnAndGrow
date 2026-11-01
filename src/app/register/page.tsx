@@ -37,8 +37,8 @@ export default function RegisterPage() {
       );
 
       setTimeout(() => {
-        window.location.href = "/course";
-      }, 700);
+        window.location.replace("/course");
+      }, 500);
     } catch (err: any) {
       setErrorMessage(err.message || "Failed to create account.");
       setIsLoading(false);

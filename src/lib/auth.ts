@@ -1,8 +1,9 @@
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 import { UserProfile, SubscriptionStatus, UserRole } from "@/types";
 import { getUserById, getStudentSubscription } from "./data-store";
 
-const SESSION_COOKIE_NAME = "course_session_user_id";
+export const SESSION_COOKIE_NAME = "course_session_user_id";
 
 export interface CurrentSession {
   user: UserProfile | null;
@@ -31,7 +32,7 @@ export async function getCurrentSession(): Promise<CurrentSession> {
     }
 
     const sub = await getStudentSubscription(user.id);
-    const subscriptionStatus = sub ? sub.status : "pending";
+    const subscriptionStatus = sub ? sub.status : "active";
 
     return { user, subscriptionStatus };
   } catch (error) {
@@ -41,25 +42,57 @@ export async function getCurrentSession(): Promise<CurrentSession> {
 }
 
 /**
- * Sets the session cookie on successful login/registration
+ * Sets the session cookie on successful login/registration.
+ * If a NextResponse is passed, directly sets the Set-Cookie header on the response.
  */
-export async function setSessionCookie(userId: string): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, userId, {
+export async function setSessionCookie(
+  userId: string,
+  response?: NextResponse
+): Promise<void> {
+  // Only enforce secure cookies if the app is explicitly running over HTTPS.
+  // Over plain HTTP (such as localhost:3000), secure:true causes browsers to silently drop the cookie.
+  const isHttps = process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ?? false;
+
+  const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isHttps,
+    sameSite: "lax" as const,
     path: "/",
     maxAge: 60 * 60 * 24 * 14, // 14 days
-  });
+  };
+
+  try {
+    const cookieStore = await cookies();
+    cookieStore.set(SESSION_COOKIE_NAME, userId, cookieOptions);
+  } catch (err) {
+    // Non-fatal if called where cookies() is read-only
+  }
+
+  if (response) {
+    response.cookies.set(SESSION_COOKIE_NAME, userId, cookieOptions);
+  }
 }
 
 /**
  * Clears the session cookie on sign out
  */
-export async function clearSessionCookie(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE_NAME);
+export async function clearSessionCookie(response?: NextResponse): Promise<void> {
+  const deleteOptions = {
+    path: "/",
+    maxAge: 0,
+  };
+
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete(SESSION_COOKIE_NAME);
+  } catch (err) {
+    // Non-fatal
+  }
+
+  if (response) {
+    response.cookies.delete(SESSION_COOKIE_NAME);
+    response.cookies.set(SESSION_COOKIE_NAME, "", deleteOptions);
+  }
 }
 
 /**

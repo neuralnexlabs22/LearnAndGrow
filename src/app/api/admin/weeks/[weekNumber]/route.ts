@@ -77,14 +77,20 @@ export async function POST(
       );
     }
 
-    // Validation: Only accept PDF files
+    // Validation: Accept PDF (.pdf) and Word documents (.docx, .doc)
     const filename = file.name || `Week-${weekNum}-Materials.pdf`;
-    const isPdfExt = filename.toLowerCase().endsWith(".pdf");
-    const isPdfMime = file.type === "application/pdf" || file.type === "";
+    const lowerFilename = filename.toLowerCase();
+    const isAllowedExt =
+      lowerFilename.endsWith(".pdf") ||
+      lowerFilename.endsWith(".docx") ||
+      lowerFilename.endsWith(".doc");
 
-    if (!isPdfExt) {
+    if (!isAllowedExt) {
       return NextResponse.json(
-        { error: "Invalid file format. Only official PDF (.pdf) documents are accepted." },
+        {
+          error:
+            "Invalid file format. Only PDF (.pdf) and Word (.docx, .doc) documents are accepted.",
+        },
         { status: 400 }
       );
     }
@@ -107,15 +113,20 @@ export async function POST(
 
     const updatedWeek = await saveCourseWeekPdf(weekNum, filename, buffer);
 
+    const docTypeLabel =
+      lowerFilename.endsWith(".docx") || lowerFilename.endsWith(".doc")
+        ? "Word Document"
+        : "PDF Document";
+
     return NextResponse.json({
       success: true,
       week: updatedWeek,
-      message: `PDF for Week ${weekNum} successfully uploaded and secured.`,
+      message: `${docTypeLabel} (${filename}) for Week ${weekNum} successfully uploaded and secured.`,
     });
   } catch (error: any) {
-    console.error("PDF upload error:", error);
+    console.error("Document upload error:", error);
     return NextResponse.json(
-      { error: error?.message || "Failed to upload PDF." },
+      { error: error?.message || "Failed to upload document." },
       { status: 500 }
     );
   }
@@ -142,7 +153,7 @@ export async function DELETE(
     return NextResponse.json({
       success: true,
       week: updatedWeek,
-      message: `PDF for Week ${weekNum} has been permanently deleted.`,
+      message: `Study material for Week ${weekNum} has been permanently deleted.`,
     });
   } catch (error: any) {
     return NextResponse.json(

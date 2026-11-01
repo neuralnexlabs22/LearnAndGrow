@@ -37,19 +37,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // Set cookie
-    await setSessionCookie(user.id);
-
     const sub = await getStudentSubscription(user.id);
-    const subscriptionStatus = user.role === "admin" ? "active" : sub?.status || "pending";
+    const subscriptionStatus = user.role === "admin" ? "active" : sub?.status || "active";
 
     const { passwordHash: _, ...safeProfile } = user;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user: safeProfile,
       subscriptionStatus,
     });
+
+    // Attach cookie directly to the response and cookieStore
+    await setSessionCookie(user.id, response);
+
+    return response;
   } catch (error: any) {
     console.error("Login error:", error);
     return NextResponse.json(

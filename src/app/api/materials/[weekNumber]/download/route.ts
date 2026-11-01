@@ -26,17 +26,24 @@ export async function GET(
     const pdfData = await getCourseWeekPdfBuffer(weekNum);
     if (!pdfData) {
       return NextResponse.json(
-        { error: `No PDF study material has been published for Week ${weekNum} yet.` },
+        { error: `No study material document has been published for Week ${weekNum} yet.` },
         { status: 404 }
       );
     }
 
     const { buffer, filename } = pdfData;
+    const lowerFilename = filename.toLowerCase();
+
+    const contentType = lowerFilename.endsWith(".docx")
+      ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      : lowerFilename.endsWith(".doc")
+      ? "application/msword"
+      : "application/pdf";
 
     return new NextResponse(new Uint8Array(buffer), {
       status: 200,
       headers: {
-        "Content-Type": "application/pdf",
+        "Content-Type": contentType,
         "Content-Disposition": `attachment; filename="${filename}"`,
         "Content-Length": buffer.length.toString(),
         "Cache-Control": "private, no-cache, no-store, must-revalidate",

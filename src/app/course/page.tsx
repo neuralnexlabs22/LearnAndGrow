@@ -27,6 +27,7 @@ import { Footer } from "@/components/Footer";
 import { CourseModuleList } from "./CourseModuleList";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import { PriceBreakdownCard } from "@/components/PriceBreakdownCard";
+import { CourseSessionSync } from "@/components/CourseSessionSync";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -54,6 +55,7 @@ export default async function CoursePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FBF9F5] text-[#1C1917]">
+      <CourseSessionSync initialUser={user} />
       <Navbar currentUser={user} subscriptionStatus={subscriptionStatus} />
 
       <main className="flex-1 pb-20">

@@ -258,11 +258,20 @@ export function AdminDashboardClient({
     }
   };
 
-  /* ---------------- 1. PDF & WEEK MANAGEMENT ---------------- */
+  /* ---------------- 1. PDF & WORD DOCUMENT MANAGEMENT ---------------- */
 
   const handlePdfUpload = async (weekNumber: number, file: File) => {
-    if (!file.name.toLowerCase().endsWith(".pdf")) {
-      showToast("Invalid file format. Only PDF (.pdf) documents are accepted.", "error");
+    const lowerName = file.name.toLowerCase();
+    const isAllowed =
+      lowerName.endsWith(".pdf") ||
+      lowerName.endsWith(".docx") ||
+      lowerName.endsWith(".doc");
+
+    if (!isAllowed) {
+      showToast(
+        "Invalid file format. Please upload a PDF (.pdf) or Word (.docx, .doc) document.",
+        "error"
+      );
       return;
     }
 
@@ -290,20 +299,27 @@ export function AdminDashboardClient({
       );
       setWeeks(updated);
       recomputeStats(updated, students, reviews);
-      showToast(`PDF for Week ${weekNumber} successfully uploaded and secured!`);
+      const isWord = lowerName.endsWith(".docx") || lowerName.endsWith(".doc");
+      showToast(
+        `${isWord ? "Word document" : "PDF"} for Week ${weekNumber} (${file.name}) successfully uploaded and secured!`
+      );
     } catch (err: any) {
-      showToast(err.message || "Failed to upload PDF.", "error");
+      showToast(err.message || "Failed to upload document.", "error");
     } finally {
       setUploadingWeekNum(null);
     }
   };
 
   const promptDeletePdf = (week: CourseWeek) => {
+    const lowerName = (week.pdfFilename || "").toLowerCase();
+    const isWord = lowerName.endsWith(".docx") || lowerName.endsWith(".doc");
+    const docTypeLabel = isWord ? "Word Document" : "PDF";
+
     setConfirmModalConfig({
       isOpen: true,
-      title: `Delete Week ${week.weekNumber} PDF?`,
+      title: `Delete Week ${week.weekNumber} ${docTypeLabel}?`,
       description: `Are you sure you want to delete the study workbook for "${week.title}"?`,
-      confirmLabel: "Delete PDF",
+      confirmLabel: `Delete ${docTypeLabel}`,
       isDestructive: true,
       onConfirm: async () => {
         try {
@@ -318,9 +334,9 @@ export function AdminDashboardClient({
           );
           setWeeks(updated);
           recomputeStats(updated, students, reviews);
-          showToast(`PDF for Week ${week.weekNumber} was deleted.`);
+          showToast(`${docTypeLabel} for Week ${week.weekNumber} was deleted.`);
         } catch (err: any) {
-          showToast(err.message || "Failed to delete PDF.", "error");
+          showToast(err.message || `Failed to delete ${docTypeLabel}.`, "error");
         } finally {
           setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
         }
@@ -838,125 +854,145 @@ export function AdminDashboardClient({
                 Manage 8 Weekly English Modules & Workbooks
               </h3>
               <p className="text-xs text-[#78716C]">
-                Upload, replace, and delete PDF study guides. Protected PDFs are
+                Upload, replace, and delete PDF or Word (.docx, .doc) study guides. Protected documents are
                 stored in private storage.
               </p>
             </div>
             <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#F5F2EB] text-[#57534E] border border-[#E7E2D6]">
-              Accepted format: PDF only • Max 25MB
+              Accepted formats: PDF & Word (.docx, .doc) • Max 25MB
             </span>
           </div>
 
           <div className="bg-white border border-[#D4CDBC] rounded-2xl overflow-hidden shadow-xs divide-y divide-[#E7E2D6]">
-            {weeks.map((week) => (
-              <div
-                key={week.id}
-                className="p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 hover:bg-[#FAF8F5] transition-colors"
-              >
-                <div className="space-y-1.5 flex-1 max-w-2xl">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-[#292524] text-white">
-                      Week {String(week.weekNumber).padStart(2, "0")}
-                    </span>
+            {weeks.map((week) => {
+              const lowerFilename = (week.pdfFilename || "").toLowerCase();
+              const isWordDoc =
+                lowerFilename.endsWith(".docx") || lowerFilename.endsWith(".doc");
 
-                    {week.pdfStoragePath ? (
-                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0] flex items-center gap-1">
-                        <FileText className="w-3 h-3" />
-                        PDF Uploaded ({week.pdfFilesizeBytes ? `${(week.pdfFilesizeBytes / 1024).toFixed(1)} KB` : ""})
+              return (
+                <div
+                  key={week.id}
+                  className="p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 hover:bg-[#FAF8F5] transition-colors"
+                >
+                  <div className="space-y-1.5 flex-1 max-w-2xl">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded bg-[#292524] text-white">
+                        Week {String(week.weekNumber).padStart(2, "0")}
                       </span>
-                    ) : (
-                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">
-                        Missing PDF
+
+                      {week.pdfStoragePath ? (
+                        <span
+                          className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border flex items-center gap-1 ${
+                            isWordDoc
+                              ? "bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]"
+                              : "bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0]"
+                          }`}
+                        >
+                          <FileText className="w-3 h-3" />
+                          {isWordDoc ? "Word Document" : "PDF"} Uploaded (
+                          {week.pdfFilesizeBytes
+                            ? `${(week.pdfFilesizeBytes / 1024).toFixed(1)} KB`
+                            : ""}
+                          )
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">
+                          Missing Document
+                        </span>
+                      )}
+
+                      <span
+                        className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                          week.isPublished
+                            ? "bg-[#F5F2EB] text-[#57534E] border-[#DCD4C4]"
+                            : "bg-red-50 text-red-700 border-red-200"
+                        }`}
+                      >
+                        {week.isPublished ? "Published" : "Draft (Hidden)"}
                       </span>
+                    </div>
+
+                    <h4 className="text-base font-bold text-[#1C1917]">
+                      {week.title}
+                    </h4>
+                    <p className="text-xs text-[#57534E] line-clamp-2">
+                      {week.description}
+                    </p>
+
+                    {week.pdfFilename && (
+                      <p className="text-[11px] text-[#78716C] font-mono">
+                        File: {week.pdfFilename}
+                      </p>
                     )}
-
-                    <span
-                      className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
-                        week.isPublished
-                          ? "bg-[#F5F2EB] text-[#57534E] border-[#DCD4C4]"
-                          : "bg-red-50 text-red-700 border-red-200"
-                      }`}
-                    >
-                      {week.isPublished ? "Published" : "Draft (Hidden)"}
-                    </span>
                   </div>
 
-                  <h4 className="text-base font-bold text-[#1C1917]">
-                    {week.title}
-                  </h4>
-                  <p className="text-xs text-[#57534E] line-clamp-2">
-                    {week.description}
-                  </p>
-
-                  {week.pdfFilename && (
-                    <p className="text-[11px] text-[#78716C] font-mono">
-                      File: {week.pdfFilename}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-                  {week.pdfStoragePath && (
-                    <button
-                      onClick={() => setPreviewWeek(week)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#FAF8F5] hover:bg-[#EFECE4] text-[#1C1917] border border-[#D4CDBC] transition-colors"
-                      title="Preview PDF"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>Preview</span>
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => setEditWeekModal(week)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#FAF8F5] hover:bg-[#EFECE4] text-[#1C1917] border border-[#D4CDBC] transition-colors"
-                    title="Edit Week Title & Description"
-                  >
-                    <Edit className="w-3.5 h-3.5 text-[#57534E]" />
-                    <span>Edit Info</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleTogglePublish(week)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#FAF8F5] hover:bg-[#EFECE4] text-[#57534E] border border-[#D4CDBC] transition-colors"
-                  >
-                    <span>{week.isPublished ? "Unpublish" : "Publish"}</span>
-                  </button>
-
-                  <label className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#292524] hover:bg-[#1C1917] text-[#FAF8F5] transition-colors cursor-pointer shadow-xs">
-                    {uploadingWeekNum === week.weekNumber ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Upload className="w-3.5 h-3.5" />
+                  <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                    {week.pdfStoragePath && (
+                      <button
+                        onClick={() => setPreviewWeek(week)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#FAF8F5] hover:bg-[#EFECE4] text-[#1C1917] border border-[#D4CDBC] transition-colors"
+                        title={isWordDoc ? "View / Download Word Document" : "Preview PDF"}
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>{isWordDoc ? "View Document" : "Preview"}</span>
+                      </button>
                     )}
-                    <span>
-                      {week.pdfStoragePath ? "Replace PDF" : "Upload PDF"}
-                    </span>
-                    <input
-                      type="file"
-                      accept=".pdf,application/pdf"
-                      className="hidden"
-                      disabled={uploadingWeekNum !== null}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handlePdfUpload(week.weekNumber, file);
-                        e.target.value = "";
-                      }}
-                    />
-                  </label>
 
-                  {week.pdfStoragePath && (
                     <button
-                      onClick={() => promptDeletePdf(week)}
-                      className="p-1.5 rounded-lg text-[#DC2626] hover:bg-[#FEF2F2] border border-transparent hover:border-[#FECACA] transition-colors"
-                      title="Delete uploaded PDF"
+                      onClick={() => setEditWeekModal(week)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#FAF8F5] hover:bg-[#EFECE4] text-[#1C1917] border border-[#D4CDBC] transition-colors"
+                      title="Edit Week Title & Description"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Edit className="w-3.5 h-3.5 text-[#57534E]" />
+                      <span>Edit Info</span>
                     </button>
-                  )}
+
+                    <button
+                      onClick={() => handleTogglePublish(week)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#FAF8F5] hover:bg-[#EFECE4] text-[#57534E] border border-[#D4CDBC] transition-colors"
+                    >
+                      <span>{week.isPublished ? "Unpublish" : "Publish"}</span>
+                    </button>
+
+                    <label className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#292524] hover:bg-[#1C1917] text-[#FAF8F5] transition-colors cursor-pointer shadow-xs">
+                      {uploadingWeekNum === week.weekNumber ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5" />
+                      )}
+                      <span>
+                        {week.pdfStoragePath
+                          ? isWordDoc
+                            ? "Replace Word Doc"
+                            : "Replace PDF"
+                          : "Upload Document"}
+                      </span>
+                      <input
+                        type="file"
+                        accept=".pdf,.docx,.doc,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        className="hidden"
+                        disabled={uploadingWeekNum !== null}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handlePdfUpload(week.weekNumber, file);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+
+                    {week.pdfStoragePath && (
+                      <button
+                        onClick={() => promptDeletePdf(week)}
+                        className="p-1.5 rounded-lg text-[#DC2626] hover:bg-[#FEF2F2] border border-transparent hover:border-[#FECACA] transition-colors"
+                        title="Delete uploaded study material"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

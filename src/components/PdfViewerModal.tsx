@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Download, FileText, ExternalLink, Loader2 } from "lucide-react";
+import { X, Download, FileText, ExternalLink, Loader2, BookOpen, CheckCircle2 } from "lucide-react";
 
 interface PdfViewerModalProps {
   isOpen: boolean;
@@ -19,6 +19,9 @@ export function PdfViewerModal({
   pdfFilename,
 }: PdfViewerModalProps) {
   const [isLoading, setIsLoading] = useState(true);
+
+  const lowerFilename = (pdfFilename || "").toLowerCase();
+  const isWordDoc = lowerFilename.endsWith(".docx") || lowerFilename.endsWith(".doc");
 
   useEffect(() => {
     if (isOpen) {
@@ -47,16 +50,32 @@ export function PdfViewerModal({
         {/* Modal Header */}
         <div className="px-6 py-4 bg-[#F5F2EB] border-b border-[#E7E2D6] flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#C25E38]/10 text-[#C25E38] flex items-center justify-center">
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                isWordDoc
+                  ? "bg-[#2563EB]/10 text-[#2563EB]"
+                  : "bg-[#C25E38]/10 text-[#C25E38]"
+              }`}
+            >
               <FileText className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#C25E38] tracking-wider uppercase">
+                <span
+                  className={`text-xs font-bold tracking-wider uppercase ${
+                    isWordDoc ? "text-[#2563EB]" : "text-[#C25E38]"
+                  }`}
+                >
                   Week {weekNumber} Study Material
                 </span>
-                <span className="text-[11px] px-2 py-0.5 rounded bg-[#EFECE4] text-[#57534E] font-medium border border-[#DCD4C4]">
-                  Official PDF
+                <span
+                  className={`text-[11px] px-2 py-0.5 rounded font-medium border ${
+                    isWordDoc
+                      ? "bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]"
+                      : "bg-[#EFECE4] text-[#57534E] border-[#DCD4C4]"
+                  }`}
+                >
+                  {isWordDoc ? "Word Document (.docx)" : "Official PDF"}
                 </span>
               </div>
               <h3 className="text-base font-semibold text-[#1C1917] truncate max-w-md sm:max-w-xl">
@@ -68,11 +87,17 @@ export function PdfViewerModal({
           <div className="flex items-center gap-2">
             <a
               href={downloadUrl}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#292524] hover:bg-[#1C1917] text-[#FAF8F5] transition-colors shadow-sm"
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[#FAF8F5] transition-colors shadow-sm ${
+                isWordDoc
+                  ? "bg-[#1D4ED8] hover:bg-[#1E40AF]"
+                  : "bg-[#292524] hover:bg-[#1C1917]"
+              }`}
               download
             >
               <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Download PDF</span>
+              <span className="hidden sm:inline">
+                {isWordDoc ? "Download Word Doc" : "Download PDF"}
+              </span>
             </a>
 
             <a
@@ -80,7 +105,7 @@ export function PdfViewerModal({
               target="_blank"
               rel="noopener noreferrer"
               className="p-1.5 rounded-lg text-[#57534E] hover:text-[#1C1917] hover:bg-[#EFECE4] transition-colors"
-              title="Open in new window"
+              title="Open stream in new tab"
             >
               <ExternalLink className="w-4 h-4" />
             </a>
@@ -88,36 +113,87 @@ export function PdfViewerModal({
             <button
               onClick={onClose}
               className="p-1.5 rounded-lg text-[#57534E] hover:text-[#1C1917] hover:bg-[#EFECE4] transition-colors ml-1"
-              aria-label="Close PDF Viewer"
+              aria-label="Close Document Viewer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Modal Body / PDF Frame */}
-        <div className="relative flex-1 bg-[#EAE5DA] flex items-center justify-center overflow-hidden">
-          {isLoading && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#FAF8F5] z-10">
-              <Loader2 className="w-8 h-8 text-[#C25E38] animate-spin mb-3" />
-              <p className="text-sm font-medium text-[#57534E]">
-                Verifying active subscription and decrypting study material...
-              </p>
-            </div>
-          )}
+        {/* Modal Body: Word Doc Interactive Preview vs Native PDF Viewer */}
+        {isWordDoc ? (
+          <div className="relative flex-1 bg-gradient-to-b from-[#F8FAFC] to-[#F1F5F9] flex flex-col items-center justify-center p-6 text-center overflow-y-auto">
+            <div className="bg-white border border-[#CBD5E1] rounded-2xl p-8 max-w-lg w-full shadow-lg space-y-6">
+              <div className="w-16 h-16 rounded-2xl bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE] mx-auto flex items-center justify-center shadow-inner">
+                <FileText className="w-8 h-8 text-[#1D4ED8]" />
+              </div>
 
-          <iframe
-            src={viewUrl}
-            title={`Week ${weekNumber} Course PDF Viewer`}
-            className="w-full h-full border-none"
-            onLoad={() => setIsLoading(false)}
-          />
-        </div>
+              <div className="space-y-2">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-[#DBEAFE] text-[#1E40AF]">
+                  <BookOpen className="w-3.5 h-3.5" />
+                  Week {weekNumber} Curriculum Document
+                </span>
+                <h4 className="text-lg font-bold text-[#0F172A]">{title}</h4>
+                <p className="text-xs text-[#64748B] font-mono break-all bg-[#F8FAFC] p-2 rounded-lg border border-[#E2E8F0]">
+                  {pdfFilename || `Week-${weekNumber}-Materials.docx`}
+                </p>
+              </div>
+
+              <div className="bg-[#F8FAFC] rounded-xl p-4 border border-[#E2E8F0] text-left text-xs text-[#334155] space-y-2">
+                <div className="flex items-center gap-2 text-[#0F172A] font-semibold">
+                  <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
+                  <span>Ready for Download & Study</span>
+                </div>
+                <p className="text-[#64748B] leading-relaxed">
+                  This weekly study workbook is provided in Microsoft Word format. You can download and edit it locally with Microsoft Word, Google Docs, or LibreOffice.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <a
+                  href={downloadUrl}
+                  download
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-md transition-all active:scale-[0.98]"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download Document</span>
+                </a>
+                <a
+                  href={viewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl text-sm font-semibold bg-white hover:bg-[#F1F5F9] text-[#334155] border border-[#CBD5E1] transition-all"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>Open Directly</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="relative flex-1 bg-[#EAE5DA] flex items-center justify-center overflow-hidden">
+            {isLoading && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#FAF8F5] z-10">
+                <Loader2 className="w-8 h-8 text-[#C25E38] animate-spin mb-3" />
+                <p className="text-sm font-medium text-[#57534E]">
+                  Verifying active subscription and decrypting study material...
+                </p>
+              </div>
+            )}
+
+            <iframe
+              src={viewUrl}
+              title={`Week ${weekNumber} Course PDF Viewer`}
+              className="w-full h-full border-none"
+              onLoad={() => setIsLoading(false)}
+            />
+          </div>
+        )}
 
         {/* Modal Footer */}
         <div className="px-6 py-2.5 bg-[#FAF8F5] border-t border-[#E7E2D6] text-xs text-[#78716C] flex items-center justify-between">
           <p className="truncate">
-            Document: {pdfFilename || `Week-${weekNumber}-Materials.pdf`}
+            Document: {pdfFilename || `Week-${weekNumber}-Materials.${isWordDoc ? "docx" : "pdf"}`}
           </p>
           <p className="hidden sm:block text-[11px] text-[#A8A29E]">
             Private verified student transmission • Cache-restricted

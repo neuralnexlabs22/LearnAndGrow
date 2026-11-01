@@ -29,7 +29,10 @@ export function WeeklyModuleCard({
   subscriptionStatus,
   onViewPdf,
 }: WeeklyModuleCardProps) {
-  const isPdfAvailable = !!week.pdfStoragePath;
+  const isMaterialAvailable = !!week.pdfStoragePath;
+  const lowerFilename = (week.pdfFilename || "").toLowerCase();
+  const isWordDoc = lowerFilename.endsWith(".docx") || lowerFilename.endsWith(".doc");
+
   const whatsAppInquiryUrl = getWeekInquiryWhatsAppUrl(
     week.weekNumber,
     week.title
@@ -129,27 +132,46 @@ export function WeeklyModuleCard({
         <div className="pt-4 border-t border-[#F0EBE0]">
           {hasAccess ? (
             /* UNLOCKED STATE */
-            isPdfAvailable ? (
+            isMaterialAvailable ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-xs text-[#78716C]">
-                  <span className="flex items-center gap-1.5 font-medium text-[#1C1917]">
-                    <FileText className="w-4 h-4 text-[#C25E38]" />
-                    {week.pdfFilename}
+                  <span className="flex items-center gap-1.5 font-medium text-[#1C1917] truncate max-w-[220px]">
+                    <FileText
+                      className={`w-4 h-4 shrink-0 ${
+                        isWordDoc ? "text-[#2563EB]" : "text-[#C25E38]"
+                      }`}
+                    />
+                    <span className="truncate">{week.pdfFilename}</span>
                   </span>
-                  {formattedSize && (
-                    <span className="text-[11px] px-2 py-0.5 rounded bg-[#F5F2EB] text-[#78716C]">
-                      {formattedSize}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span
+                      className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
+                        isWordDoc
+                          ? "bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]"
+                          : "bg-[#F5F2EB] text-[#78716C] border-[#E7E2D6]"
+                      }`}
+                    >
+                      {isWordDoc ? "Word Doc" : "PDF"}
                     </span>
-                  )}
+                    {formattedSize && (
+                      <span className="text-[11px] px-2 py-0.5 rounded bg-[#F5F2EB] text-[#78716C]">
+                        {formattedSize}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2.5">
                   <button
                     onClick={() => onViewPdf(week)}
-                    className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-[#292524] hover:bg-[#1C1917] text-[#FAF8F5] transition-all shadow-sm active:scale-[0.99]"
+                    className={`w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-[#FAF8F5] transition-all shadow-sm active:scale-[0.99] ${
+                      isWordDoc
+                        ? "bg-[#1D4ED8] hover:bg-[#1E40AF]"
+                        : "bg-[#292524] hover:bg-[#1C1917]"
+                    }`}
                   >
                     <Eye className="w-3.5 h-3.5" />
-                    <span>View PDF</span>
+                    <span>{isWordDoc ? "View Document" : "View PDF"}</span>
                   </button>
 
                   <a
@@ -185,7 +207,7 @@ export function WeeklyModuleCard({
                     Protected Student Study Materials
                   </span>
                   <span className="text-[#78716C] text-[11px]">
-                    PDF compendiums and exercises unlock after your WhatsApp
+                    Curriculum workbooks, Word docs, and PDF guides unlock after your WhatsApp
                     enrollment verification.
                   </span>
                 </div>

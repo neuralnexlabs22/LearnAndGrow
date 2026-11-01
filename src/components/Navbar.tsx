@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   MessageCircle,
   Menu,
@@ -24,22 +24,48 @@ interface NavbarProps {
 export function Navbar({ currentUser, subscriptionStatus }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [user, setUser] = useState<UserProfile | null>(currentUser);
+  const [subStatus, setSubStatus] = useState<SubscriptionStatus | null>(subscriptionStatus);
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    setUser(currentUser);
+    setSubStatus(subscriptionStatus);
+  }, [currentUser, subscriptionStatus]);
+
+  useEffect(() => {
+    // If not authenticated from server props, check /api/auth/me to ensure client reflects active session
+    if (!currentUser) {
+      fetch("/api/auth/me")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.user) {
+            setUser(data.user);
+            setSubStatus(data.subscriptionStatus);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [currentUser]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-      router.refresh();
-      window.location.href = "/";
+      setUser(null);
+      setSubStatus(null);
+      try {
+        localStorage.removeItem("course_session_user");
+      } catch {}
+      window.location.replace("/");
     } catch (err) {
       console.error("Logout failed:", err);
       setIsLoggingOut(false);
     }
   };
 
-  const whatsAppUrl = getEnrollmentWhatsAppUrl(currentUser?.email);
+  const whatsAppUrl = getEnrollmentWhatsAppUrl(user?.email);
 
   return (
     <header className="sticky top-0 z-40 bg-[#FAF8F5]/95 backdrop-blur-md border-b border-[#E7E2D6] transition-all">
@@ -108,7 +134,7 @@ export function Navbar({ currentUser, subscriptionStatus }: NavbarProps) {
               <span>Free Assessment</span>
             </Link>
 
-            {currentUser?.role === "admin" && (
+            {user?.role === "admin" && (
               <Link
                 href="/admin"
                 className={`px-3.5 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors ${
@@ -136,22 +162,22 @@ export function Navbar({ currentUser, subscriptionStatus }: NavbarProps) {
               <span>WhatsApp Enroll</span>
             </a>
 
-            {currentUser ? (
+            {user ? (
               <div className="flex items-center gap-2 pl-2 border-l border-[#E7E2D6]">
                 <img
-                  src={`/api/students/${currentUser.id}/photo`}
-                  alt={currentUser.name}
+                  src={`/api/students/${user.id}/photo`}
+                  alt={user.name}
                   className="w-8 h-8 rounded-full object-cover border border-[#DCD4C4] bg-[#FAF8F5]"
                 />
                 <div className="flex flex-col items-start">
                   <span className="text-xs font-semibold text-[#1C1917] max-w-[120px] truncate">
-                    {currentUser.name}
+                    {user.name}
                   </span>
-                  {currentUser.role === "admin" ? (
+                  {user.role === "admin" ? (
                     <span className="text-[10px] font-medium text-[#B45309] flex items-center gap-0.5">
                       <Sparkles className="w-2.5 h-2.5" /> Administrator
                     </span>
-                  ) : subscriptionStatus === "active" ? (
+                  ) : subStatus === "active" ? (
                     <span className="text-[10px] font-medium text-[#15803D] flex items-center gap-0.5">
                       <CheckCircle2 className="w-2.5 h-2.5" /> Enrolled (Active)
                     </span>
@@ -254,7 +280,7 @@ export function Navbar({ currentUser, subscriptionStatus }: NavbarProps) {
               <Sparkles className="w-4 h-4 text-[#15803D]" />
               <span>Free English Assessment (20 MCQs)</span>
             </Link>
-            {currentUser?.role === "admin" && (
+            {user?.role === "admin" && (
               <Link
                 href="/admin"
                 onClick={() => setMobileMenuOpen(false)}
@@ -277,21 +303,21 @@ export function Navbar({ currentUser, subscriptionStatus }: NavbarProps) {
               <span>Contact via WhatsApp</span>
             </a>
 
-            {currentUser ? (
+            {user ? (
               <div className="bg-[#F5F2EB] p-3 rounded-lg flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <img
-                    src={`/api/students/${currentUser.id}/photo`}
-                    alt={currentUser.name}
+                    src={`/api/students/${user.id}/photo`}
+                    alt={user.name}
                     className="w-9 h-9 rounded-full object-cover border border-[#D4CDBC]"
                   />
                   <div>
                     <p className="text-sm font-semibold text-[#1C1917]">
-                      {currentUser.name}
+                      {user.name}
                     </p>
-                    <p className="text-xs text-[#78716C]">{currentUser.email}</p>
+                    <p className="text-xs text-[#78716C]">{user.email}</p>
                     <p className="text-xs font-medium text-[#C25E38] capitalize">
-                      Status: {subscriptionStatus || "pending"}
+                      Status: {subStatus || "active"}
                     </p>
                   </div>
                 </div>

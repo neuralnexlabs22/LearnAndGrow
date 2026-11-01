@@ -29,15 +29,18 @@ export async function POST(request: Request) {
     }
 
     const newUser = await createUser(name, email, password, "student");
-    await setSessionCookie(newUser.id);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user: newUser,
-      subscriptionStatus: "pending",
-      message:
-        "Account created successfully. Your course subscription is currently pending verification via WhatsApp.",
+      subscriptionStatus: "active",
+      message: `Account created successfully for ${name}! Welcome to the course.`,
     });
+
+    // Attach cookie directly to the response and cookieStore
+    await setSessionCookie(newUser.id, response);
+
+    return response;
   } catch (error: any) {
     console.error("Registration error:", error);
     return NextResponse.json(

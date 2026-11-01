@@ -32,9 +32,9 @@ export default function LoginPage() {
       }
 
       if (data.user?.role === "admin") {
-        window.location.href = "/admin";
+        window.location.replace("/admin");
       } else {
-        window.location.href = "/course";
+        window.location.replace("/course");
       }
     } catch (err: any) {
       setErrorMessage(err.message || "Invalid credentials.");

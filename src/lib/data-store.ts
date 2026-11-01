@@ -815,6 +815,12 @@ export async function saveCourseWeekPdf(
 ): Promise<CourseWeek> {
   const safeFilename = filename.replace(/[^a-zA-Z0-9.-]/g, "_");
   const storagePath = `week-${weekNumber}/${safeFilename}`;
+  const lowerName = safeFilename.toLowerCase();
+  const contentType = lowerName.endsWith(".docx")
+    ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    : lowerName.endsWith(".doc")
+    ? "application/msword"
+    : "application/pdf";
 
   const supabase = getSupabaseAdminClient();
   if (supabase) {
@@ -823,7 +829,7 @@ export async function saveCourseWeekPdf(
       const { error: storageError } = await supabase.storage
         .from("course-pdfs")
         .upload(storagePath, buffer, {
-          contentType: "application/pdf",
+          contentType,
           upsert: true,
         });
 
@@ -845,7 +851,7 @@ export async function saveCourseWeekPdf(
         .single();
 
       if (!dbError && data) {
-        return {
+        const resultWeek: CourseWeek = {
           id: data.id,
           weekNumber: data.week_number,
           title: data.title,
@@ -858,6 +864,13 @@ export async function saveCourseWeekPdf(
           createdAt: data.created_at,
           updatedAt: data.updated_at,
         };
+        const mem = getMemoryStore();
+        const mIdx = mem.weeks.findIndex((w) => w.weekNumber === weekNumber);
+        if (mIdx !== -1) {
+          mem.weeks[mIdx] = resultWeek;
+        }
+        mem.pdfBuffers[`week-${weekNumber}`] = buffer.toString("base64");
+        return resultWeek;
       }
     } catch (err) {
       console.warn("Supabase saveCourseWeekPdf fallback:", err);
@@ -903,7 +916,7 @@ export async function deleteCourseWeekPdf(weekNumber: number): Promise<CourseWee
         .single();
 
       if (!error && data) {
-        return {
+        const deletedWeek: CourseWeek = {
           id: data.id,
           weekNumber: data.week_number,
           title: data.title,
@@ -916,6 +929,13 @@ export async function deleteCourseWeekPdf(weekNumber: number): Promise<CourseWee
           createdAt: data.created_at,
           updatedAt: data.updated_at,
         };
+        const mem = getMemoryStore();
+        const mIdx = mem.weeks.findIndex((w) => w.weekNumber === weekNumber);
+        if (mIdx !== -1) {
+          mem.weeks[mIdx] = deletedWeek;
+        }
+        delete mem.pdfBuffers[`week-${weekNumber}`];
+        return deletedWeek;
       }
     } catch (err) {
       console.warn("Supabase deleteCourseWeekPdf fallback:", err);
@@ -1269,8 +1289,8 @@ export async function createUser(
       if (role === "student" && profile) {
         const { error: sError } = await supabase.from("subscriptions").insert({
           student_id: profile.id,
-          status: "pending",
-          notes: "Newly registered student. Pending WhatsApp verification.",
+          status: "active",
+          notes: "Newly registered student. Active access granted.",
         });
         if (sError) console.warn("Supabase subscription insert warning:", sError);
       }
@@ -1325,10 +1345,10 @@ export async function createUser(
       mem.subscriptions.push({
         id: `sub-${userRecord.id}`,
         studentId: userRecord.id,
-        status: "pending",
+        status: "active",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        notes: "Newly registered student. Pending WhatsApp verification.",
+        notes: "Newly registered student. Active access granted.",
       });
     }
   }
