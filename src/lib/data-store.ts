@@ -1113,10 +1113,21 @@ export async function deleteStudent(studentId: string): Promise<boolean> {
         if (prof?.email) targetEmail = prof.email.toLowerCase();
       }
 
+      // 1. Delete dependent database records
       await supabase.from("subscriptions").delete().eq("student_id", studentId);
       await supabase.from("reviews").delete().eq("student_id", studentId);
+
+      // 2. Delete student profile
       const { error: idDelErr } = await supabase.from("profiles").delete().eq("id", studentId);
 
+      // 3. Delete Supabase Auth user (auth.users)
+      try {
+        await supabase.auth.admin.deleteUser(studentId);
+      } catch (authDelErr) {
+        console.warn("Supabase auth deleteUser notice:", authDelErr);
+      }
+
+      // If email known, also delete by email to prevent ghost records
       if (targetEmail) {
         await supabase.from("profiles").delete().ilike("email", targetEmail);
       }
@@ -1337,9 +1348,42 @@ export async function createUser(
         throw new Error("A user with this email address already exists.");
       }
 
+      // 1. Create or sync Auth user in Supabase Auth (auth.users)
+      let authUserId: string | null = null;
+      try {
+        const { data: authResult, error: authError } = await supabase.auth.admin.createUser({
+          email: normalizedEmail,
+          password: passwordHash,
+          email_confirm: true,
+          user_metadata: { name: name.trim(), role },
+        });
+
+        if (authError) {
+          if (
+            authError.message?.toLowerCase().includes("already registered") ||
+            authError.message?.toLowerCase().includes("already exists")
+          ) {
+            const { data: userList } = await supabase.auth.admin.listUsers();
+            const found = userList?.users?.find(
+              (u) => u.email?.toLowerCase() === normalizedEmail
+            );
+            if (found) authUserId = found.id;
+          } else {
+            console.warn("Supabase Auth admin createUser notice:", authError.message);
+          }
+        } else if (authResult?.user) {
+          authUserId = authResult.user.id;
+        }
+      } catch (authEx) {
+        console.warn("Supabase Auth admin createUser exception:", authEx);
+      }
+
+      const profileId = authUserId || randomUUID();
+
       const { data: profile, error: pError } = await supabase
         .from("profiles")
-        .insert({
+        .upsert({
+          id: profileId,
           name: name.trim(),
           email: normalizedEmail,
           role,
@@ -1353,11 +1397,13 @@ export async function createUser(
       if (pError) throw pError;
 
       if (role === "student" && profile) {
-        const { error: sError } = await supabase.from("subscriptions").insert({
-          student_id: profile.id,
-          status: "active",
-          notes: "Newly registered student. Active access granted.",
-        });
+        const { error: sError } = await supabase
+          .from("subscriptions")
+          .upsert({
+            student_id: profile.id,
+            status: "active",
+            notes: "Newly registered student. Active access granted.",
+          }, { onConflict: "student_id" });
         if (sError) {
           console.error("Supabase subscription insert error:", sError);
           throw new Error(`Failed to initialize subscription in Supabase: ${sError.message}`);

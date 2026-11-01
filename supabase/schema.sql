@@ -8,10 +8,10 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- =========================================================================
--- 1. PROFILES TABLE (Students & Administrators)
+-- 1. PROFILES TABLE (Students & Administrators linked to auth.users)
 -- =========================================================================
 CREATE TABLE IF NOT EXISTS public.profiles (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
   role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'admin')),
@@ -138,11 +138,21 @@ CREATE POLICY "Public can view approved reviews"
 ON public.reviews FOR SELECT 
 USING (status = 'approved');
 
--- Allow public read of graduate profiles with consent
-DROP POLICY IF EXISTS "Public can view graduate consent profiles" ON public.profiles;
-CREATE POLICY "Public can view graduate consent profiles"
-ON public.profiles FOR SELECT
-USING (public_consent = true);
+-- Authenticated users can view their own profile
+DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
+CREATE POLICY "Users can view own profile" ON public.profiles
+FOR SELECT TO authenticated
+USING (id = auth.uid());
+
+-- Administrators can view all profiles
+DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
+CREATE POLICY "Admins can view all profiles" ON public.profiles
+FOR SELECT TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
+  )
+);
 
 -- Allow full access to service_role (used by Next.js server API routes)
 DROP POLICY IF EXISTS "Service role full access profiles" ON public.profiles;
@@ -569,9 +579,17 @@ CREATE POLICY "Public can view pricing"
 -- The service_role key bypasses RLS entirely, so this policy is a safety net for anon fallback.
 DROP POLICY IF EXISTS "Admins can update pricing" ON public.course_pricing;
 CREATE POLICY "Admins can update pricing"
-  ON public.course_pricing FOR ALL
-  USING (true)
-  WITH CHECK (true);
+  ON public.course_pricing FOR ALL TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
 
 -- Seed default pricing row
 INSERT INTO public.course_pricing (id, original_price, selling_price, currency, discount_percent, offer_tag, is_offer_active, updated_at)

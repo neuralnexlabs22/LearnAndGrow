@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { getUserByEmail, getStudentSubscription, logActivity } from "@/lib/data-store";
+import { getUserByEmail, getUserById, getStudentSubscription, logActivity } from "@/lib/data-store";
 import { setSessionCookie } from "@/lib/auth";
+import { getSupabaseAnonClient } from "@/lib/supabase";
 
 export async function POST(request: Request) {
   try {
@@ -14,35 +15,69 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = await getUserByEmail(email);
-    if (!user) {
-      await logActivity("login_failed", email, undefined, { reason: "account_not_found" });
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // 1. Verify via Supabase Auth client if available
+    let authUserSucceeded = false;
+    let authUserId: string | null = null;
+    const supabaseAnon = getSupabaseAnonClient();
+    if (supabaseAnon) {
+      try {
+        const { data: authResult, error: authError } = await supabaseAnon.auth.signInWithPassword({
+          email: normalizedEmail,
+          password,
+        });
+        if (!authError && authResult?.user) {
+          authUserSucceeded = true;
+          authUserId = authResult.user.id;
+        }
+      } catch (_) {
+        // Fallback to database check
+      }
+    }
+
+    // 2. Fetch student profile from Supabase profiles
+    const user = await getUserByEmail(normalizedEmail);
+    if (!user && !authUserSucceeded) {
+      await logActivity("login_failed", normalizedEmail, undefined, { reason: "account_not_found" });
       return NextResponse.json(
         { error: `No account found with '${email}'. Please click 'Create Student Account' below.` },
         { status: 401 }
       );
     }
 
+    // If profile is found, check password validity (either via Supabase Auth success OR profile passwordHash)
     const isPasswordValid =
-      user.passwordHash === password ||
-      (user.role === "admin" &&
+      authUserSucceeded ||
+      (user && user.passwordHash === password) ||
+      (user?.role === "admin" &&
         (password === "AdminPass123!" ||
           password === "admin" ||
           password === "admin123" ||
           password === "adminPass123!"));
 
     if (!isPasswordValid) {
-      await logActivity("login_failed", email, user.id, { reason: "incorrect_password" });
+      await logActivity("login_failed", normalizedEmail, user?.id, { reason: "incorrect_password" });
       return NextResponse.json(
         { error: "Incorrect password. Please verify and try again." },
         { status: 401 }
       );
     }
 
-    const sub = await getStudentSubscription(user.id);
-    const subscriptionStatus = user.role === "admin" ? "active" : sub?.status || "active";
+    // Resolve final user profile object
+    const finalUser = user || (authUserId ? await getUserById(authUserId) : null);
+    if (!finalUser) {
+      return NextResponse.json(
+        { error: `No profile record found with '${email}'. Please register your account.` },
+        { status: 401 }
+      );
+    }
 
-    const { passwordHash: _, ...safeProfile } = user;
+    const sub = await getStudentSubscription(finalUser.id);
+    const subscriptionStatus = finalUser.role === "admin" ? "active" : sub?.status || "active";
+
+    // Strip passwordHash if present
+    const { passwordHash: _, ...safeProfile } = finalUser as any;
 
     const response = NextResponse.json({
       success: true,
@@ -51,11 +86,11 @@ export async function POST(request: Request) {
     });
 
     // Attach cookie directly to the response and cookieStore
-    await setSessionCookie(user.id, response);
+    await setSessionCookie(finalUser.id, response);
 
     // Audit log successful sign in
-    await logActivity("login", user.email, user.id, {
-      role: user.role,
+    await logActivity("login", finalUser.email, finalUser.id, {
+      role: finalUser.role,
       subscriptionStatus,
     });
 

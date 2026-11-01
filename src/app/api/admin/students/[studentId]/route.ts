@@ -31,6 +31,12 @@ export async function DELETE(
         if (pErr) {
           console.error("Direct Supabase delete profile error:", pErr);
         }
+        // Securely delete from Supabase Auth (auth.users)
+        try {
+          await supabase.auth.admin.deleteUser(studentId);
+        } catch (authDelErr) {
+          console.warn("Direct Supabase auth deleteUser notice:", authDelErr);
+        }
       } catch (dbErr) {
         console.error("Direct Supabase delete exception:", dbErr);
       }
