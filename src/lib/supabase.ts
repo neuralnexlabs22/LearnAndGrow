@@ -58,7 +58,8 @@ export function getSupabaseAnonClient(): SupabaseClient | null {
   if (!cachedAnonClient) {
     cachedAnonClient = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
-        persistSession: true,
+        persistSession: false,
+        autoRefreshToken: false,
       },
     });
   }

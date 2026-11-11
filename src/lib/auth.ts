@@ -37,7 +37,7 @@ export async function getCurrentSession(): Promise<CurrentSession> {
     }
 
     const sub = await getStudentSubscription(user.id);
-    const subscriptionStatus = sub ? sub.status : "active";
+    const subscriptionStatus = sub ? sub.status : "pending";
     const hasCompleteCourseAccessVal = await hasStudentCompleteCourseAccess(user.id);
 
     return {
@@ -53,15 +53,15 @@ export async function getCurrentSession(): Promise<CurrentSession> {
 
 /**
  * Sets the session cookie on successful login/registration.
- * If a NextResponse is passed, directly sets the Set-Cookie header on the response.
+ * If a NextResponse is passed, sets the Set-Cookie header on the response.
  */
 export async function setSessionCookie(
   userId: string,
   response?: NextResponse
 ): Promise<void> {
-  // Only enforce secure cookies if the app is explicitly running over HTTPS.
-  // Over plain HTTP (such as localhost:3000), secure:true causes browsers to silently drop the cookie.
-  const isHttps = process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ?? false;
+  const isHttps =
+    process.env.NODE_ENV === "production" ||
+    (process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ?? false);
 
   const cookieOptions = {
     httpOnly: true,
@@ -71,15 +71,15 @@ export async function setSessionCookie(
     maxAge: 60 * 60 * 24 * 14, // 14 days
   };
 
-  try {
-    const cookieStore = await cookies();
-    cookieStore.set(SESSION_COOKIE_NAME, userId, cookieOptions);
-  } catch (err) {
-    // Non-fatal if called where cookies() is read-only
-  }
-
   if (response) {
     response.cookies.set(SESSION_COOKIE_NAME, userId, cookieOptions);
+  } else {
+    try {
+      const cookieStore = await cookies();
+      cookieStore.set(SESSION_COOKIE_NAME, userId, cookieOptions);
+    } catch (err) {
+      // Non-fatal if called where cookies() is read-only
+    }
   }
 }
 
@@ -87,21 +87,27 @@ export async function setSessionCookie(
  * Clears the session cookie on sign out
  */
 export async function clearSessionCookie(response?: NextResponse): Promise<void> {
+  const isHttps =
+    process.env.NODE_ENV === "production" ||
+    (process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ?? false);
+
   const deleteOptions = {
+    httpOnly: true,
+    secure: isHttps,
+    sameSite: "lax" as const,
     path: "/",
     maxAge: 0,
   };
 
-  try {
-    const cookieStore = await cookies();
-    cookieStore.delete(SESSION_COOKIE_NAME);
-  } catch (err) {
-    // Non-fatal
-  }
-
   if (response) {
-    response.cookies.delete(SESSION_COOKIE_NAME);
     response.cookies.set(SESSION_COOKIE_NAME, "", deleteOptions);
+  } else {
+    try {
+      const cookieStore = await cookies();
+      cookieStore.set(SESSION_COOKIE_NAME, "", deleteOptions);
+    } catch (err) {
+      // Non-fatal
+    }
   }
 }
 

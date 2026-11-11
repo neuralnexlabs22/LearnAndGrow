@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserByEmail, getUserById, getStudentSubscription, logActivity } from "@/lib/data-store";
 import { setSessionCookie } from "@/lib/auth";
-import { getSupabaseAnonClient } from "@/lib/supabase";
+import { getSupabaseAnonClient, getSupabaseAdminClient } from "@/lib/supabase";
 
 export async function POST(request: Request) {
   try {
@@ -16,6 +16,7 @@ export async function POST(request: Request) {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
+    const trimmedPassword = typeof password === "string" ? password.trim() : password;
 
     // 1. Verify via Supabase Auth client if available
     let authUserSucceeded = false;
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
       try {
         const { data: authResult, error: authError } = await supabaseAnon.auth.signInWithPassword({
           email: normalizedEmail,
-          password,
+          password: trimmedPassword,
         });
         if (!authError && authResult?.user) {
           authUserSucceeded = true;
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
     // If profile is found, check password validity (either via Supabase Auth success OR profile passwordHash)
     const isPasswordValid =
       authUserSucceeded ||
-      (user && user.passwordHash === password) ||
+      (user && (user.passwordHash === password || user.passwordHash === trimmedPassword)) ||
       (user?.role === "admin" &&
         (password === "AdminPass123!" ||
           password === "admin" ||
@@ -73,8 +74,25 @@ export async function POST(request: Request) {
       );
     }
 
+    // Self-heal credential synchronization between Supabase Auth and database profiles
+    const supabaseAdmin = getSupabaseAdminClient();
+    if (supabaseAdmin && finalUser.id) {
+      try {
+        if (authUserSucceeded && user && user.passwordHash !== trimmedPassword) {
+          await supabaseAdmin.from("profiles").update({ password_hash: trimmedPassword }).eq("id", finalUser.id);
+        } else if (!authUserSucceeded && user) {
+          await supabaseAdmin.auth.admin.updateUserById(finalUser.id, {
+            password: trimmedPassword,
+            email_confirm: true,
+          });
+        }
+      } catch (_) {
+        // Non-blocking self-healing
+      }
+    }
+
     const sub = await getStudentSubscription(finalUser.id);
-    const subscriptionStatus = finalUser.role === "admin" ? "active" : sub?.status || "active";
+    const subscriptionStatus = finalUser.role === "admin" ? "active" : sub?.status || "pending";
 
     // Strip passwordHash if present
     const { passwordHash: _, ...safeProfile } = finalUser as any;

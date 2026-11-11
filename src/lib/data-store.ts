@@ -1242,8 +1242,17 @@ export async function deleteStudent(studentId: string): Promise<boolean> {
         console.warn("Supabase auth deleteUser notice:", authDelErr);
       }
 
-      // If email known, also delete by email to prevent ghost records
+      // If email known, also delete from auth and profiles by email to prevent ghost records
       if (targetEmail) {
+        try {
+          const { data: userList } = await supabase.auth.admin.listUsers();
+          const foundAuth = userList?.users?.find(
+            (u) => u.email?.toLowerCase() === targetEmail
+          );
+          if (foundAuth && foundAuth.id !== studentId) {
+            await supabase.auth.admin.deleteUser(foundAuth.id);
+          }
+        } catch (_) {}
         await supabase.from("profiles").delete().ilike("email", targetEmail);
       }
 
@@ -1525,7 +1534,16 @@ export async function createUser(
             const found = userList?.users?.find(
               (u) => u.email?.toLowerCase() === normalizedEmail
             );
-            if (found) authUserId = found.id;
+            if (found) {
+              authUserId = found.id;
+              try {
+                await supabase.auth.admin.updateUserById(found.id, {
+                  password: passwordHash,
+                  email_confirm: true,
+                  user_metadata: { name: name.trim(), role },
+                });
+              } catch (_) {}
+            }
           } else {
             console.warn("Supabase Auth admin createUser notice:", authError.message);
           }
@@ -1559,8 +1577,8 @@ export async function createUser(
           .from("subscriptions")
           .upsert({
             student_id: profile.id,
-            status: "active",
-            notes: "Newly registered student. Active access granted.",
+            status: "pending",
+            notes: "Newly registered student. Pending WhatsApp verification.",
           }, { onConflict: "student_id" });
         if (sError) {
           console.error("Supabase subscription insert error:", sError);
@@ -1619,10 +1637,10 @@ export async function createUser(
       mem.subscriptions.push({
         id: `sub-${userRecord.id}`,
         studentId: userRecord.id,
-        status: "active",
+        status: "pending",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        notes: "Newly registered student. Active access granted.",
+        notes: "Newly registered student. Pending WhatsApp verification.",
       });
     }
   }

@@ -33,6 +33,18 @@
       "completedAt": null,
       "publicConsent": true,
       "createdAt": "2026-11-01T14:31:14.748441+00:00"
+    },
+    {
+      "id": "9a2ec100-cd2a-48d0-9228-cabd9c12aed1",
+      "name": "sample",
+      "email": "sample@gmail.com",
+      "role": "student",
+      "passwordHash": "sample",
+      "photoUrl": null,
+      "completionStatus": "enrolled",
+      "completedAt": null,
+      "publicConsent": true,
+      "createdAt": "2026-11-11T08:33:19.638568+00:00"
     }
   ],
   "subscriptions": [
@@ -52,6 +64,14 @@
       "approvedAt": "2026-11-01T22:12:44.653Z",
       "createdAt": "2026-11-01T21:59:28.387Z",
       "updatedAt": "2026-11-01T22:12:44.653Z"
+    },
+    {
+      "id": "sub-9a2ec100-cd2a-48d0-9228-cabd9c12aed1",
+      "studentId": "9a2ec100-cd2a-48d0-9228-cabd9c12aed1",
+      "status": "active",
+      "createdAt": "2026-11-11T08:33:19.485Z",
+      "updatedAt": "2026-11-11T08:33:19.485Z",
+      "notes": "Newly registered student. Active access granted."
     }
   ]
 }

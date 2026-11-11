@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     const response = NextResponse.json({
       success: true,
       user: newUser,
-      subscriptionStatus: "active",
+      subscriptionStatus: "pending",
       message: `Account created successfully for ${name}! Welcome to the course.`,
     });
 
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     await logActivity("register", newUser.email, newUser.id, {
       name: newUser.name,
       role: newUser.role,
-      subscriptionStatus: "active",
+      subscriptionStatus: "pending",
     });
 
     return response;
