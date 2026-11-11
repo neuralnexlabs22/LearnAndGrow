@@ -20,11 +20,15 @@ import {
   getApprovedReviews,
   getStudentReview,
   getCoursePricing,
+  getCompleteCourseSettings,
+  getCompleteCourseResources,
+  hasStudentCompleteCourseAccess,
 } from "@/lib/data-store";
 import { COURSE_CONFIG, getEnrollmentWhatsAppUrl } from "@/lib/config";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { CourseModuleList } from "./CourseModuleList";
+import { CompleteCourseSection } from "@/components/CompleteCourseSection";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import { PriceBreakdownCard } from "@/components/PriceBreakdownCard";
 import { CourseSessionSync } from "@/components/CourseSessionSync";
@@ -40,12 +44,22 @@ export const metadata = {
 
 export default async function CoursePage() {
   const { user, subscriptionStatus } = await getCurrentSession();
-  const [weeks, approvedReviews, pricing] = await Promise.all([
+  const [weeks, approvedReviews, pricing, completeSettings, userHasCompleteCourse] = await Promise.all([
     getCourseWeeks(),
     getApprovedReviews(),
     getCoursePricing(),
+    getCompleteCourseSettings(),
+    user?.role === "admin"
+      ? Promise.resolve(true)
+      : user
+      ? hasStudentCompleteCourseAccess(user.id)
+      : Promise.resolve(false),
   ]);
   const hasAccess = user?.role === "admin" || subscriptionStatus === "active";
+  const hasCompleteAccess = user?.role === "admin" || Boolean(userHasCompleteCourse);
+  const completeResources = hasCompleteAccess
+    ? await getCompleteCourseResources(false)
+    : [];
   const whatsAppUrl = getEnrollmentWhatsAppUrl(user?.email);
 
   let userReview = null;
@@ -361,6 +375,16 @@ export default async function CoursePage() {
             hasAccess={hasAccess}
             userRole={user?.role || null}
             subscriptionStatus={subscriptionStatus}
+          />
+        </div>
+
+        {/* SEPARATE COMPLETE COURSE SECTION */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <CompleteCourseSection
+            settings={completeSettings}
+            resources={completeResources}
+            hasCompleteCourseAccess={hasCompleteAccess}
+            currentUser={user}
           />
         </div>
 

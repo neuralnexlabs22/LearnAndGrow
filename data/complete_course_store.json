@@ -1,0 +1,56 @@
+{
+  "settings": {
+    "id": "default",
+    "title": "Complete Course",
+    "description": "Get access to the complete English learning course, including all learning materials and additional resources provided by Learn and Grow.",
+    "coverImageUrl": "/complete-course-cover.png",
+    "isPublished": true,
+    "updatedAt": "2026-11-01T10:00:00.000Z"
+  },
+  "resources": [
+    {
+      "id": "res-01",
+      "title": "English Grammar Complete Guide",
+      "description": "Comprehensive reference handbook containing all foundational grammar structures, tense mastery tables, and everyday spoken exercises.",
+      "resourceType": "pdf",
+      "fileName": "English Grammar Complete Guide.pdf",
+      "fileStoragePath": "complete-course/English-Grammar-Complete-Guide.pdf",
+      "fileSizeBytes": 184500,
+      "externalUrl": null,
+      "orderIndex": 1,
+      "isPublished": true,
+      "createdAt": "2026-11-01T10:00:00.000Z",
+      "updatedAt": "2026-11-01T10:00:00.000Z"
+    },
+    {
+      "id": "res-02",
+      "title": "Spoken English Learning Materials",
+      "description": "Interactive dialogue templates, daily practice drills, and vocabulary worksheets in editable Microsoft Word format.",
+      "resourceType": "doc",
+      "fileName": "Spoken English Learning Materials.docx",
+      "fileStoragePath": "complete-course/Spoken-English-Learning-Materials.docx",
+      "fileSizeBytes": 96200,
+      "externalUrl": null,
+      "orderIndex": 2,
+      "isPublished": true,
+      "createdAt": "2026-11-01T10:00:00.000Z",
+      "updatedAt": "2026-11-01T10:00:00.000Z"
+    },
+    {
+      "id": "res-03",
+      "title": "Pronunciation Practice — Audio & Video Portal",
+      "description": "Interactive pronunciation lab with audio exercises, mouth position guides, and phonetics practice.",
+      "resourceType": "link",
+      "fileName": null,
+      "fileStoragePath": null,
+      "fileSizeBytes": null,
+      "externalUrl": "https://learnandgrow050518.wixsite.com/learn-and-grow",
+      "orderIndex": 3,
+      "isPublished": true,
+      "createdAt": "2026-11-01T10:00:00.000Z",
+      "updatedAt": "2026-11-01T10:00:00.000Z"
+    }
+  ],
+  "access": [],
+  "logs": []
+}

@@ -83,6 +83,20 @@ export function getEnrollmentWhatsAppUrl(email?: string): string {
 }
 
 /**
+ * Pre-filled message for Learn and Grow Complete Course inquiries
+ */
+export function getCompleteCourseWhatsAppUrl(email?: string): string {
+  let message =
+    "Hello Learn and Grow! I am interested in getting access to the Complete English Course. Please share the course details, fee, and enrollment procedure.";
+
+  if (email) {
+    message += ` (Registered Email: ${email})`;
+  }
+
+  return buildWhatsAppUrl(message);
+}
+
+/**
  * Pre-filled message with specific offer pricing details
  */
 export function getPriceOfferWhatsAppUrl(

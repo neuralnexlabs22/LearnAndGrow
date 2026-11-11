@@ -23,6 +23,13 @@ import {
   AssessmentStats,
   AssessmentEvaluationResult,
   CoursePricing,
+  CompleteCourseResource,
+  CompleteCourseResourceType,
+  CompleteCourseSettings,
+  CompleteCourseAccess,
+  CompleteCourseAccessStatus,
+  CompleteCourseAccessLog,
+  StudentWithCompleteCourseAccess,
 } from "@/types";
 import { generateCourseModulePdfBuffer } from "./pdf-generator";
 import { getSupabaseAdminClient, getSupabaseAnonClient, isSupabaseConfigured } from "./supabase";
@@ -46,6 +53,11 @@ interface StoreData {
   assessmentSettings: AssessmentSettings;
   assessmentSubmissions: AssessmentSubmission[];
   pricing: CoursePricing;
+  completeCourseSettings: CompleteCourseSettings;
+  completeCourseResources: CompleteCourseResource[];
+  completeCourseAccess: CompleteCourseAccess[];
+  completeCourseAccessLogs: CompleteCourseAccessLog[];
+  completeCourseFiles: Record<string, { buffer: string; contentType: string; filename: string }>;
 }
 
 // =========================================================================
@@ -548,9 +560,102 @@ export const DEFAULT_PRICING: CoursePricing = {
   updatedAt: "2026-10-25T10:00:00.000Z",
 };
 
+export const DEFAULT_COMPLETE_COURSE_SETTINGS: CompleteCourseSettings = {
+  id: "default",
+  title: "Complete Course",
+  description:
+    "Get access to the complete English learning course, including all learning materials and additional resources provided by Learn and Grow.",
+  coverImageUrl: "/complete-course-cover.png",
+  isPublished: true,
+  updatedAt: "2026-11-01T10:00:00.000Z",
+};
+
+export const SEED_COMPLETE_COURSE_RESOURCES: CompleteCourseResource[] = [
+  {
+    id: "res-01",
+    title: "English Grammar Complete Guide",
+    description:
+      "Comprehensive reference handbook containing all foundational grammar structures, tense mastery tables, and everyday spoken exercises.",
+    resourceType: "pdf",
+    fileName: "English Grammar Complete Guide.pdf",
+    fileStoragePath: "complete-course/English-Grammar-Complete-Guide.pdf",
+    fileSizeBytes: 184500,
+    externalUrl: null,
+    orderIndex: 1,
+    isPublished: true,
+    createdAt: "2026-11-01T10:00:00.000Z",
+    updatedAt: "2026-11-01T10:00:00.000Z",
+  },
+  {
+    id: "res-02",
+    title: "Spoken English Learning Materials",
+    description:
+      "Interactive dialogue templates, daily practice drills, and vocabulary worksheets in editable Microsoft Word format.",
+    resourceType: "doc",
+    fileName: "Spoken English Learning Materials.docx",
+    fileStoragePath: "complete-course/Spoken-English-Learning-Materials.docx",
+    fileSizeBytes: 96200,
+    externalUrl: null,
+    orderIndex: 2,
+    isPublished: true,
+    createdAt: "2026-11-01T10:00:00.000Z",
+    updatedAt: "2026-11-01T10:00:00.000Z",
+  },
+  {
+    id: "res-03",
+    title: "Pronunciation Practice — Audio & Video Portal",
+    description:
+      "Interactive pronunciation lab with audio exercises, mouth position guides, and phonetics practice.",
+    resourceType: "link",
+    fileName: null,
+    fileStoragePath: null,
+    fileSizeBytes: null,
+    externalUrl: "https://learnandgrow050518.wixsite.com/learn-and-grow",
+    orderIndex: 3,
+    isPublished: true,
+    createdAt: "2026-11-01T10:00:00.000Z",
+    updatedAt: "2026-11-01T10:00:00.000Z",
+  },
+];
+
 const ASSESSMENT_STORE_PATH = path.join(process.cwd(), "data", "assessment_store.json");
 const PRICING_STORE_PATH = path.join(process.cwd(), "data", "pricing_store.json");
 const COURSE_STORE_PATH = path.join(process.cwd(), "data", "course_store.json");
+const COMPLETE_COURSE_STORE_PATH = path.join(process.cwd(), "data", "complete_course_store.json");
+
+function loadCompleteCourseStoreFromDisk(): {
+  settings?: CompleteCourseSettings;
+  resources?: CompleteCourseResource[];
+  access?: CompleteCourseAccess[];
+  logs?: CompleteCourseAccessLog[];
+} | null {
+  try {
+    if (fs.existsSync(COMPLETE_COURSE_STORE_PATH)) {
+      const raw = fs.readFileSync(COMPLETE_COURSE_STORE_PATH, "utf-8");
+      return JSON.parse(raw);
+    }
+  } catch (err) {
+    console.warn("Could not read complete_course_store.json from disk:", err);
+  }
+  return null;
+}
+
+function saveCompleteCourseStoreToDisk(data: {
+  settings: CompleteCourseSettings;
+  resources: CompleteCourseResource[];
+  access: CompleteCourseAccess[];
+  logs: CompleteCourseAccessLog[];
+}) {
+  try {
+    const dir = path.dirname(COMPLETE_COURSE_STORE_PATH);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(COMPLETE_COURSE_STORE_PATH, JSON.stringify(data, null, 2), "utf-8");
+  } catch (err) {
+    console.warn("Could not write complete_course_store.json to disk:", err);
+  }
+}
 
 function loadCourseStoreFromDisk(): {
   users?: StoredUser[];
@@ -646,6 +751,7 @@ function createInitialStore(): StoreData {
   const disk = loadAssessmentStoreFromDisk();
   const pricingDisk = loadPricingStoreFromDisk();
   const courseDisk = loadCourseStoreFromDisk();
+  const completeDisk = loadCompleteCourseStoreFromDisk();
   return {
     users: courseDisk?.users?.length ? courseDisk.users : JSON.parse(JSON.stringify(SEED_USERS)),
     subscriptions: courseDisk?.subscriptions?.length ? courseDisk.subscriptions : JSON.parse(JSON.stringify(SEED_SUBSCRIPTIONS)),
@@ -657,6 +763,13 @@ function createInitialStore(): StoreData {
     assessmentSettings: disk?.settings || JSON.parse(JSON.stringify(SEED_ASSESSMENT_SETTINGS)),
     assessmentSubmissions: disk?.submissions || [],
     pricing: pricingDisk || { ...DEFAULT_PRICING },
+    completeCourseSettings: completeDisk?.settings || { ...DEFAULT_COMPLETE_COURSE_SETTINGS },
+    completeCourseResources: completeDisk?.resources?.length
+      ? completeDisk.resources
+      : JSON.parse(JSON.stringify(SEED_COMPLETE_COURSE_RESOURCES)),
+    completeCourseAccess: completeDisk?.access || [],
+    completeCourseAccessLogs: completeDisk?.logs || [],
+    completeCourseFiles: {},
   };
 }
 
@@ -1115,6 +1228,8 @@ export async function deleteStudent(studentId: string): Promise<boolean> {
 
       // 1. Delete dependent database records
       await supabase.from("subscriptions").delete().eq("student_id", studentId);
+      await supabase.from("complete_course_access").delete().eq("student_id", studentId);
+      await supabase.from("complete_course_access_logs").delete().eq("student_id", studentId);
       await supabase.from("reviews").delete().eq("student_id", studentId);
 
       // 2. Delete student profile
@@ -1150,11 +1265,20 @@ export async function deleteStudent(studentId: string): Promise<boolean> {
   });
 
   mem.subscriptions = mem.subscriptions.filter((s) => s.studentId !== studentId);
+  mem.completeCourseAccess = mem.completeCourseAccess.filter((a) => a.studentId !== studentId);
+  mem.completeCourseAccessLogs = mem.completeCourseAccessLogs.filter((l) => l.studentId !== studentId);
   mem.reviews = mem.reviews.filter((r) => r.studentId !== studentId);
 
   saveCourseStoreToDisk({
     users: mem.users,
     subscriptions: mem.subscriptions,
+  });
+
+  saveCompleteCourseStoreToDisk({
+    settings: mem.completeCourseSettings,
+    resources: mem.completeCourseResources,
+    access: mem.completeCourseAccess,
+    logs: mem.completeCourseAccessLogs,
   });
 
   return supabaseDeleted;
@@ -3007,6 +3131,810 @@ export async function updateCoursePricing(
   }
 
   return newPricing;
+}
+
+// =========================================================================
+// COMPLETE COURSE MANAGEMENT & INDEPENDENT ACCESS
+// =========================================================================
+
+/**
+ * Retrieves the Complete Course settings (title, description, cover image, published status).
+ */
+export async function getCompleteCourseSettings(): Promise<CompleteCourseSettings> {
+  const supabase = getSupabaseAdminClient() || getSupabaseAnonClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("complete_course_settings")
+        .select("*")
+        .eq("id", "default")
+        .maybeSingle();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          title: data.title,
+          description: data.description,
+          coverImageUrl: data.cover_image_url || null,
+          isPublished: data.is_published ?? true,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase getCompleteCourseSettings fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  return { ...mem.completeCourseSettings };
+}
+
+/**
+ * Updates Complete Course settings.
+ */
+export async function updateCompleteCourseSettings(
+  updates: Partial<CompleteCourseSettings>
+): Promise<CompleteCourseSettings> {
+  const mem = getMemoryStore();
+  const current = mem.completeCourseSettings;
+
+  const updatedSettings: CompleteCourseSettings = {
+    id: "default",
+    title: updates.title !== undefined ? updates.title.trim() : current.title,
+    description: updates.description !== undefined ? updates.description.trim() : current.description,
+    coverImageUrl: updates.coverImageUrl !== undefined ? updates.coverImageUrl : current.coverImageUrl,
+    isPublished: updates.isPublished !== undefined ? Boolean(updates.isPublished) : current.isPublished,
+    updatedAt: new Date().toISOString(),
+  };
+
+  mem.completeCourseSettings = updatedSettings;
+  saveCompleteCourseStoreToDisk({
+    settings: mem.completeCourseSettings,
+    resources: mem.completeCourseResources,
+    access: mem.completeCourseAccess,
+    logs: mem.completeCourseAccessLogs,
+  });
+
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { error } = await supabase.from("complete_course_settings").upsert(
+        {
+          id: "default",
+          title: updatedSettings.title,
+          description: updatedSettings.description,
+          cover_image_url: updatedSettings.coverImageUrl,
+          is_published: updatedSettings.isPublished,
+          updated_at: updatedSettings.updatedAt,
+        },
+        { onConflict: "id" }
+      );
+      if (error) {
+        console.warn("Supabase updateCompleteCourseSettings error:", error.message);
+      }
+    } catch (err) {
+      console.warn("Supabase updateCompleteCourseSettings exception:", err);
+    }
+  }
+
+  return updatedSettings;
+}
+
+/**
+ * Retrieves all Complete Course resources (ordered by orderIndex).
+ */
+export async function getCompleteCourseResources(
+  includeUnpublished: boolean = false
+): Promise<CompleteCourseResource[]> {
+  const supabase = getSupabaseAdminClient() || getSupabaseAnonClient();
+  if (supabase) {
+    try {
+      let query = supabase
+        .from("complete_course_resources")
+        .select("*")
+        .order("order_index", { ascending: true });
+
+      if (!includeUnpublished) {
+        query = query.eq("is_published", true);
+      }
+
+      const { data, error } = await query;
+      if (!error && Array.isArray(data)) {
+        return data.map((d: any) => ({
+          id: d.id,
+          title: d.title,
+          description: d.description || null,
+          resourceType: d.resource_type,
+          fileName: d.file_name || null,
+          fileStoragePath: d.file_storage_path || null,
+          fileSizeBytes: d.file_size_bytes != null ? Number(d.file_size_bytes) : null,
+          externalUrl: d.external_url || null,
+          orderIndex: Number(d.order_index) || 0,
+          isPublished: d.is_published ?? true,
+          createdAt: d.created_at,
+          updatedAt: d.updated_at,
+        }));
+      }
+    } catch (err) {
+      console.warn("Supabase getCompleteCourseResources fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  const list = includeUnpublished
+    ? mem.completeCourseResources
+    : mem.completeCourseResources.filter((r) => r.isPublished);
+
+  return [...list].sort((a, b) => a.orderIndex - b.orderIndex);
+}
+
+/**
+ * Retrieves a single Complete Course resource by ID.
+ */
+export async function getCompleteCourseResourceById(
+  id: string
+): Promise<CompleteCourseResource | null> {
+  const supabase = getSupabaseAdminClient() || getSupabaseAnonClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("complete_course_resources")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          title: data.title,
+          description: data.description || null,
+          resourceType: data.resource_type,
+          fileName: data.file_name || null,
+          fileStoragePath: data.file_storage_path || null,
+          fileSizeBytes: data.file_size_bytes != null ? Number(data.file_size_bytes) : null,
+          externalUrl: data.external_url || null,
+          orderIndex: Number(data.order_index) || 0,
+          isPublished: data.is_published ?? true,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase getCompleteCourseResourceById fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  return mem.completeCourseResources.find((r) => r.id === id) || null;
+}
+
+/**
+ * Creates a new Complete Course resource.
+ */
+export async function createCompleteCourseResource(data: {
+  title: string;
+  description?: string | null;
+  resourceType: CompleteCourseResourceType;
+  fileName?: string | null;
+  fileStoragePath?: string | null;
+  fileSizeBytes?: number | null;
+  externalUrl?: string | null;
+  isPublished?: boolean;
+}): Promise<CompleteCourseResource> {
+  const mem = getMemoryStore();
+  const id = `res-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const now = new Date().toISOString();
+  const maxOrder = mem.completeCourseResources.reduce(
+    (max, r) => Math.max(max, r.orderIndex),
+    0
+  );
+
+  const resource: CompleteCourseResource = {
+    id,
+    title: data.title.trim(),
+    description: data.description?.trim() || null,
+    resourceType: data.resourceType,
+    fileName: data.fileName || null,
+    fileStoragePath: data.fileStoragePath || null,
+    fileSizeBytes: data.fileSizeBytes || null,
+    externalUrl: data.externalUrl?.trim() || null,
+    orderIndex: maxOrder + 1,
+    isPublished: data.isPublished !== undefined ? Boolean(data.isPublished) : true,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  mem.completeCourseResources.push(resource);
+  saveCompleteCourseStoreToDisk({
+    settings: mem.completeCourseSettings,
+    resources: mem.completeCourseResources,
+    access: mem.completeCourseAccess,
+    logs: mem.completeCourseAccessLogs,
+  });
+
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      await supabase.from("complete_course_resources").insert({
+        id: resource.id,
+        title: resource.title,
+        description: resource.description,
+        resource_type: resource.resourceType,
+        file_name: resource.fileName,
+        file_storage_path: resource.fileStoragePath,
+        file_size_bytes: resource.fileSizeBytes,
+        external_url: resource.externalUrl,
+        order_index: resource.orderIndex,
+        is_published: resource.isPublished,
+        created_at: resource.createdAt,
+        updated_at: resource.updatedAt,
+      });
+    } catch (err) {
+      console.warn("Supabase createCompleteCourseResource fallback:", err);
+    }
+  }
+
+  return resource;
+}
+
+/**
+ * Updates an existing Complete Course resource.
+ */
+export async function updateCompleteCourseResource(
+  id: string,
+  updates: Partial<CompleteCourseResource>
+): Promise<CompleteCourseResource | null> {
+  const mem = getMemoryStore();
+  const resource = mem.completeCourseResources.find((r) => r.id === id);
+  if (!resource) return null;
+
+  const now = new Date().toISOString();
+  if (updates.title !== undefined) resource.title = updates.title.trim();
+  if (updates.description !== undefined) resource.description = updates.description?.trim() || null;
+  if (updates.resourceType !== undefined) resource.resourceType = updates.resourceType;
+  if (updates.fileName !== undefined) resource.fileName = updates.fileName;
+  if (updates.fileStoragePath !== undefined) resource.fileStoragePath = updates.fileStoragePath;
+  if (updates.fileSizeBytes !== undefined) resource.fileSizeBytes = updates.fileSizeBytes;
+  if (updates.externalUrl !== undefined) resource.externalUrl = updates.externalUrl?.trim() || null;
+  if (updates.orderIndex !== undefined) resource.orderIndex = updates.orderIndex;
+  if (updates.isPublished !== undefined) resource.isPublished = Boolean(updates.isPublished);
+  resource.updatedAt = now;
+
+  saveCompleteCourseStoreToDisk({
+    settings: mem.completeCourseSettings,
+    resources: mem.completeCourseResources,
+    access: mem.completeCourseAccess,
+    logs: mem.completeCourseAccessLogs,
+  });
+
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      await supabase
+        .from("complete_course_resources")
+        .update({
+          title: resource.title,
+          description: resource.description,
+          resource_type: resource.resourceType,
+          file_name: resource.fileName,
+          file_storage_path: resource.fileStoragePath,
+          file_size_bytes: resource.fileSizeBytes,
+          external_url: resource.externalUrl,
+          order_index: resource.orderIndex,
+          is_published: resource.isPublished,
+          updated_at: resource.updatedAt,
+        })
+        .eq("id", id);
+    } catch (err) {
+      console.warn("Supabase updateCompleteCourseResource fallback:", err);
+    }
+  }
+
+  return resource;
+}
+
+/**
+ * Deletes a Complete Course resource and removes its storage file.
+ */
+export async function deleteCompleteCourseResource(id: string): Promise<boolean> {
+  const mem = getMemoryStore();
+  const resource = mem.completeCourseResources.find((r) => r.id === id);
+  if (!resource) return false;
+
+  const storagePath = resource.fileStoragePath;
+  mem.completeCourseResources = mem.completeCourseResources.filter((r) => r.id !== id);
+
+  if (storagePath && mem.completeCourseFiles[storagePath]) {
+    delete mem.completeCourseFiles[storagePath];
+  }
+
+  saveCompleteCourseStoreToDisk({
+    settings: mem.completeCourseSettings,
+    resources: mem.completeCourseResources,
+    access: mem.completeCourseAccess,
+    logs: mem.completeCourseAccessLogs,
+  });
+
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      await supabase.from("complete_course_resources").delete().eq("id", id);
+      if (storagePath) {
+        await supabase.storage.from("complete-course-files").remove([storagePath]);
+      }
+    } catch (err) {
+      console.warn("Supabase deleteCompleteCourseResource fallback:", err);
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Reorders Complete Course resources.
+ */
+export async function reorderCompleteCourseResources(
+  orderedIds: string[]
+): Promise<boolean> {
+  const mem = getMemoryStore();
+  const idMap = new Map(orderedIds.map((id, index) => [id, index + 1]));
+
+  for (const r of mem.completeCourseResources) {
+    if (idMap.has(r.id)) {
+      r.orderIndex = idMap.get(r.id)!;
+      r.updatedAt = new Date().toISOString();
+    }
+  }
+
+  mem.completeCourseResources.sort((a, b) => a.orderIndex - b.orderIndex);
+
+  saveCompleteCourseStoreToDisk({
+    settings: mem.completeCourseSettings,
+    resources: mem.completeCourseResources,
+    access: mem.completeCourseAccess,
+    logs: mem.completeCourseAccessLogs,
+  });
+
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      for (const [id, orderIndex] of idMap.entries()) {
+        await supabase
+          .from("complete_course_resources")
+          .update({ order_index: orderIndex, updated_at: new Date().toISOString() })
+          .eq("id", id);
+      }
+    } catch (err) {
+      console.warn("Supabase reorderCompleteCourseResources fallback:", err);
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Saves an uploaded Complete Course document (PDF or Word document).
+ */
+export async function saveCompleteCourseFile(
+  fileName: string,
+  buffer: Buffer
+): Promise<{ storagePath: string; fileSizeBytes: number }> {
+  const ext = path.extname(fileName).toLowerCase();
+  const base = path.basename(fileName, ext).replace(/[^a-zA-Z0-9_-]/g, "_");
+  const uniqueName = `${Date.now()}_${base}${ext}`;
+  const storagePath = `complete-course/${uniqueName}`;
+
+  const contentType =
+    ext === ".docx"
+      ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      : ext === ".doc"
+      ? "application/msword"
+      : ext === ".pdf"
+      ? "application/pdf"
+      : "application/octet-stream";
+
+  const mem = getMemoryStore();
+  mem.completeCourseFiles[storagePath] = {
+    buffer: buffer.toString("base64"),
+    contentType,
+    filename: fileName,
+  };
+
+  // Local filesystem persistence
+  try {
+    const localDir = path.join(process.cwd(), "data", "complete_course_files");
+    if (!fs.existsSync(localDir)) {
+      fs.mkdirSync(localDir, { recursive: true });
+    }
+    fs.writeFileSync(path.join(localDir, uniqueName), buffer);
+  } catch (err) {
+    console.warn("Local disk write complete_course_files fallback:", err);
+  }
+
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { error } = await supabase.storage
+        .from("complete-course-files")
+        .upload(storagePath, buffer, {
+          contentType,
+          upsert: true,
+        });
+
+      if (error) {
+        console.warn("Supabase storage complete-course-files upload error:", error.message);
+      }
+    } catch (err) {
+      console.warn("Supabase storage complete-course-files exception:", err);
+    }
+  }
+
+  return { storagePath, fileSizeBytes: buffer.length };
+}
+
+/**
+ * Retrieves the document buffer and metadata for a Complete Course resource.
+ */
+export async function getCompleteCourseResourceBuffer(
+  id: string
+): Promise<{ buffer: Buffer; filename: string; contentType: string } | null> {
+  const resource = await getCompleteCourseResourceById(id);
+  if (!resource || !resource.fileStoragePath) return null;
+
+  const filename = resource.fileName || `${resource.title}.pdf`;
+  const ext = path.extname(filename).toLowerCase();
+  const contentType =
+    ext === ".docx"
+      ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      : ext === ".doc"
+      ? "application/msword"
+      : "application/pdf";
+
+  // 1. Try Supabase storage download
+  const supabase = getSupabaseAdminClient();
+  if (supabase && resource.fileStoragePath) {
+    try {
+      const { data, error } = await supabase.storage
+        .from("complete-course-files")
+        .download(resource.fileStoragePath);
+
+      if (!error && data) {
+        const arrayBuffer = await data.arrayBuffer();
+        return {
+          buffer: Buffer.from(arrayBuffer),
+          filename,
+          contentType,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase storage complete-course download fallback:", err);
+    }
+  }
+
+  // 2. Try in-memory buffer
+  const mem = getMemoryStore();
+  if (mem.completeCourseFiles[resource.fileStoragePath]) {
+    const item = mem.completeCourseFiles[resource.fileStoragePath];
+    return {
+      buffer: Buffer.from(item.buffer, "base64"),
+      filename,
+      contentType: item.contentType || contentType,
+    };
+  }
+
+  // 3. Try local disk
+  try {
+    const baseName = path.basename(resource.fileStoragePath);
+    const localPath = path.join(process.cwd(), "data", "complete_course_files", baseName);
+    if (fs.existsSync(localPath)) {
+      const buf = fs.readFileSync(localPath);
+      return { buffer: buf, filename, contentType };
+    }
+  } catch (err) {
+    console.warn("Local complete course file read fallback:", err);
+  }
+
+  // 4. Fallback generator for initial seed documents
+  if (resource.resourceType === "pdf") {
+    const pdfBuf = generateCourseModulePdfBuffer(
+      9,
+      resource.title,
+      resource.description || "Official Complete Course study material provided by Learn and Grow.",
+      [
+        "Foundational Grammar Structures & Sentence Architecture",
+        "Comprehensive Tenses & Real-World Dialogues",
+        "Modern Spoken English Expressions & Collocations",
+        "Pronunciation Drills, Phonetics & Accent Clarity",
+      ]
+    );
+    return { buffer: pdfBuf, filename, contentType: "application/pdf" };
+  } else if (resource.resourceType === "doc") {
+    const docText = `LEARN AND GROW — COMPLETE ENGLISH COURSE\n\nTitle: ${resource.title}\nDescription: ${resource.description || "Complete Course Study Guide"}\n\nThis is an official practice document provided by Learn and Grow.\nAuthorized student access only.`;
+    return {
+      buffer: Buffer.from(docText, "utf-8"),
+      filename,
+      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    };
+  }
+
+  return null;
+}
+
+// =========================================================================
+// STUDENT COMPLETE COURSE ACCESS & PERMISSIONS
+// =========================================================================
+
+/**
+ * Checks if a student has active Complete Course access.
+ */
+export async function hasStudentCompleteCourseAccess(
+  studentId: string
+): Promise<boolean> {
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("complete_course_access")
+        .select("status")
+        .eq("student_id", studentId)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (!error && data?.status === "active") {
+        return true;
+      }
+      if (!error && data?.status === "revoked") {
+        return false;
+      }
+    } catch (err) {
+      console.warn("Supabase hasStudentCompleteCourseAccess fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  const record = mem.completeCourseAccess.find((a) => a.studentId === studentId);
+  return record ? record.status === "active" : false;
+}
+
+/**
+ * Retrieves a student's Complete Course access record.
+ */
+export async function getStudentCompleteCourseAccess(
+  studentId: string
+): Promise<CompleteCourseAccess | null> {
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("complete_course_access")
+        .select("*")
+        .eq("student_id", studentId)
+        .maybeSingle();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          studentId: data.student_id,
+          status: data.status,
+          approvedBy: data.approved_by,
+          approvedAt: data.approved_at,
+          revokedAt: data.revoked_at,
+          notes: data.notes,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+    } catch (err) {
+      console.warn("Supabase getStudentCompleteCourseAccess fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  return mem.completeCourseAccess.find((a) => a.studentId === studentId) || null;
+}
+
+/**
+ * Updates a student's Complete Course access (grant or revoke).
+ */
+export async function updateStudentCompleteCourseAccess(
+  studentId: string,
+  status: CompleteCourseAccessStatus,
+  approvedBy?: string,
+  notes?: string
+): Promise<CompleteCourseAccess> {
+  const now = new Date().toISOString();
+  const mem = getMemoryStore();
+
+  let existing = mem.completeCourseAccess.find((a) => a.studentId === studentId);
+  if (!existing) {
+    existing = {
+      id: `cc-acc-${Date.now()}`,
+      studentId,
+      status,
+      approvedBy: status === "active" ? approvedBy : null,
+      approvedAt: status === "active" ? now : null,
+      revokedAt: status === "revoked" ? now : null,
+      notes: notes || null,
+      createdAt: now,
+      updatedAt: now,
+    };
+    mem.completeCourseAccess.push(existing);
+  } else {
+    existing.status = status;
+    existing.updatedAt = now;
+    if (status === "active") {
+      existing.approvedBy = approvedBy || existing.approvedBy;
+      existing.approvedAt = now;
+      existing.revokedAt = null;
+    } else {
+      existing.revokedAt = now;
+    }
+    if (notes) existing.notes = notes;
+  }
+
+  // Record audit log
+  const log: CompleteCourseAccessLog = {
+    id: `log-${Date.now()}`,
+    studentId,
+    action: status === "active" ? "granted" : "revoked",
+    performedBy: approvedBy || null,
+    notes: notes || null,
+    createdAt: now,
+  };
+  mem.completeCourseAccessLogs.unshift(log);
+
+  saveCompleteCourseStoreToDisk({
+    settings: mem.completeCourseSettings,
+    resources: mem.completeCourseResources,
+    access: mem.completeCourseAccess,
+    logs: mem.completeCourseAccessLogs,
+  });
+
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      let validApprovedBy: string | null = null;
+      if (approvedBy && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(approvedBy)) {
+        const { data: adminExists } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("id", approvedBy)
+          .maybeSingle();
+        if (adminExists?.id) validApprovedBy = adminExists.id;
+      }
+      if (!validApprovedBy) {
+        const { data: firstAdmin } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("role", "admin")
+          .limit(1)
+          .maybeSingle();
+        if (firstAdmin?.id) validApprovedBy = firstAdmin.id;
+      }
+
+      const { data, error } = await supabase
+        .from("complete_course_access")
+        .upsert(
+          {
+            student_id: studentId,
+            status,
+            approved_by: validApprovedBy,
+            approved_at: status === "active" ? now : null,
+            revoked_at: status === "revoked" ? now : null,
+            notes: notes || null,
+            updated_at: now,
+          },
+          { onConflict: "student_id" }
+        )
+        .select()
+        .single();
+
+      if (!error && data) {
+        existing = {
+          id: data.id,
+          studentId: data.student_id,
+          status: data.status,
+          approvedBy: data.approved_by,
+          approvedAt: data.approved_at,
+          revokedAt: data.revoked_at,
+          notes: data.notes,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      }
+
+      await supabase.from("complete_course_access_logs").insert({
+        student_id: studentId,
+        action: status === "active" ? "granted" : "revoked",
+        performed_by: validApprovedBy,
+        notes: notes || null,
+        created_at: now,
+      });
+    } catch (err) {
+      console.warn("Supabase updateStudentCompleteCourseAccess fallback:", err);
+    }
+  }
+
+  return existing;
+}
+
+/**
+ * Retrieves all students with their 8-week access and Complete Course access.
+ */
+export async function getStudentsWithCompleteCourseAccess(): Promise<
+  StudentWithCompleteCourseAccess[]
+> {
+  const students = await getStudentsWithSubscriptions();
+  const mem = getMemoryStore();
+
+  const supabase = getSupabaseAdminClient();
+  let ccAccessMap = new Map<string, any>();
+
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from("complete_course_access").select("*");
+      if (!error && Array.isArray(data)) {
+        ccAccessMap = new Map(data.map((a: any) => [a.student_id, a]));
+      }
+    } catch (err) {
+      console.warn("Supabase getStudentsWithCompleteCourseAccess fallback:", err);
+    }
+  }
+
+  return students.map((s) => {
+    const dbAccess = ccAccessMap.get(s.id);
+    const memAccess = mem.completeCourseAccess.find((a) => a.studentId === s.id);
+    const access = dbAccess || memAccess;
+
+    return {
+      id: s.id,
+      name: s.name,
+      email: s.email,
+      role: s.role,
+      photoUrl: s.photoUrl || null,
+      eightWeekAccess: s.subscriptionStatus,
+      completeCourseAccess: access ? access.status : "none",
+      completeCourseApprovedAt: access?.approved_at || access?.approvedAt || null,
+      completeCourseRevokedAt: access?.revoked_at || access?.revokedAt || null,
+      createdAt: s.createdAt,
+    };
+  });
+}
+
+/**
+ * Retrieves access history logs for a student.
+ */
+export async function getStudentCompleteCourseAccessLogs(
+  studentId: string
+): Promise<CompleteCourseAccessLog[]> {
+  const supabase = getSupabaseAdminClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("complete_course_access_logs")
+        .select("*")
+        .eq("student_id", studentId)
+        .order("created_at", { ascending: false });
+
+      if (!error && Array.isArray(data)) {
+        return data.map((d: any) => ({
+          id: d.id,
+          studentId: d.student_id,
+          action: d.action,
+          performedBy: d.performed_by,
+          notes: d.notes,
+          createdAt: d.created_at,
+        }));
+      }
+    } catch (err) {
+      console.warn("Supabase getStudentCompleteCourseAccessLogs fallback:", err);
+    }
+  }
+
+  const mem = getMemoryStore();
+  return mem.completeCourseAccessLogs
+    .filter((l) => l.studentId === studentId)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 

@@ -1,13 +1,18 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { UserProfile, SubscriptionStatus, UserRole } from "@/types";
-import { getUserById, getStudentSubscription } from "./data-store";
+import {
+  getUserById,
+  getStudentSubscription,
+  hasStudentCompleteCourseAccess,
+} from "./data-store";
 
 export const SESSION_COOKIE_NAME = "course_session_user_id";
 
 export interface CurrentSession {
   user: UserProfile | null;
   subscriptionStatus: SubscriptionStatus | null;
+  hasCompleteCourseAccess: boolean;
 }
 
 /**
@@ -19,25 +24,30 @@ export async function getCurrentSession(): Promise<CurrentSession> {
     const sessionUserId = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
     if (!sessionUserId) {
-      return { user: null, subscriptionStatus: null };
+      return { user: null, subscriptionStatus: null, hasCompleteCourseAccess: false };
     }
 
     const user = await getUserById(sessionUserId);
     if (!user) {
-      return { user: null, subscriptionStatus: null };
+      return { user: null, subscriptionStatus: null, hasCompleteCourseAccess: false };
     }
 
     if (user.role === "admin") {
-      return { user, subscriptionStatus: "active" };
+      return { user, subscriptionStatus: "active", hasCompleteCourseAccess: true };
     }
 
     const sub = await getStudentSubscription(user.id);
     const subscriptionStatus = sub ? sub.status : "active";
+    const hasCompleteCourseAccessVal = await hasStudentCompleteCourseAccess(user.id);
 
-    return { user, subscriptionStatus };
+    return {
+      user,
+      subscriptionStatus,
+      hasCompleteCourseAccess: hasCompleteCourseAccessVal,
+    };
   } catch (error) {
     console.error("Error reading current session:", error);
-    return { user: null, subscriptionStatus: null };
+    return { user: null, subscriptionStatus: null, hasCompleteCourseAccess: false };
   }
 }
 
@@ -135,4 +145,35 @@ export async function requireActiveAccess(): Promise<{
   }
 
   return { user, role: "student", subscriptionStatus: "active" };
+}
+
+/**
+ * Requires the caller to be either an admin OR a student with approved Complete Course access
+ */
+export async function requireCompleteCourseAccess(): Promise<{
+  user: UserProfile;
+  role: UserRole;
+  hasCompleteCourseAccess: boolean;
+}> {
+  const { user, hasCompleteCourseAccess } = await getCurrentSession();
+
+  if (!user) {
+    const err = new Error("Authentication required to access Complete Course materials.");
+    (err as any).statusCode = 401;
+    throw err;
+  }
+
+  if (user.role === "admin") {
+    return { user, role: "admin", hasCompleteCourseAccess: true };
+  }
+
+  if (!hasCompleteCourseAccess) {
+    const err = new Error(
+      "Access restricted: Complete Course access has not been granted for this account. Please contact the administrator."
+    );
+    (err as any).statusCode = 403;
+    throw err;
+  }
+
+  return { user, role: "student", hasCompleteCourseAccess: true };
 }

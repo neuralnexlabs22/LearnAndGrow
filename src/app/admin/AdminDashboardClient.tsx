@@ -29,6 +29,7 @@ import {
   DollarSign,
   RefreshCw,
   UserPlus,
+  BookOpen,
 } from "lucide-react";
 import {
   CourseWeek,
@@ -43,10 +44,14 @@ import {
   AssessmentSubmission,
   AssessmentStats,
   CoursePricing,
+  CompleteCourseSettings,
+  CompleteCourseResource,
+  StudentWithCompleteCourseAccess,
 } from "@/types";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { PdfViewerModal } from "@/components/PdfViewerModal";
 import { AssessmentAdminSection } from "@/components/AssessmentAdminSection";
+import { CompleteCourseAdminSection } from "@/components/CompleteCourseAdminSection";
 import { PriceBreakdownCard } from "@/components/PriceBreakdownCard";
 import { formatDisplayDate } from "@/lib/config";
 
@@ -60,6 +65,9 @@ interface AdminDashboardClientProps {
   initialAssessmentSubmissions: AssessmentSubmission[];
   initialAssessmentStats: AssessmentStats;
   initialPricing?: CoursePricing;
+  initialCompleteCourseSettings?: CompleteCourseSettings;
+  initialCompleteCourseResources?: CompleteCourseResource[];
+  initialCompleteCourseStudents?: StudentWithCompleteCourseAccess[];
 }
 
 export function AdminDashboardClient({
@@ -72,9 +80,12 @@ export function AdminDashboardClient({
   initialAssessmentSubmissions,
   initialAssessmentStats,
   initialPricing,
+  initialCompleteCourseSettings,
+  initialCompleteCourseResources,
+  initialCompleteCourseStudents,
 }: AdminDashboardClientProps) {
   const [activeTab, setActiveTab] = useState<
-    "weeks" | "students" | "reviews" | "assessment" | "pricing"
+    "weeks" | "complete-course" | "students" | "reviews" | "assessment" | "pricing"
   >("weeks");
   const [weeks, setWeeks] = useState<CourseWeek[]>(initialWeeks);
   const [students, setStudents] = useState<StudentWithSubscription[]>(initialStudents);
@@ -819,6 +830,21 @@ export function AdminDashboardClient({
         </button>
 
         <button
+          onClick={() => setActiveTab("complete-course")}
+          className={`pb-3 text-sm font-bold tracking-tight transition-all relative shrink-0 flex items-center gap-2 ${
+            activeTab === "complete-course"
+              ? "text-[#C25E38] border-b-2 border-[#C25E38]"
+              : "text-[#78716C] hover:text-[#1C1917]"
+          }`}
+        >
+          <BookOpen className="w-4 h-4 text-[#C25E38]" />
+          <span>Complete Course Management</span>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-100 text-[#C25E38] font-bold border border-orange-200">
+            Separate
+          </span>
+        </button>
+
+        <button
           onClick={() => {
             setActiveTab("students");
             fetchStudents(true);
@@ -1032,6 +1058,39 @@ export function AdminDashboardClient({
             })}
           </div>
         </div>
+      )}
+
+      {/* TAB: COMPLETE COURSE MANAGEMENT & ACCESS CONTROL */}
+      {activeTab === "complete-course" && (
+        <CompleteCourseAdminSection
+          initialSettings={
+            initialCompleteCourseSettings || {
+              id: "default",
+              title: "Complete Course",
+              description:
+                "Get access to the complete English learning course, including all learning materials and additional resources provided by Learn and Grow.",
+              coverImageUrl: "/complete-course-cover.png",
+              isPublished: true,
+              updatedAt: new Date().toISOString(),
+            }
+          }
+          initialResources={initialCompleteCourseResources || []}
+          initialStudents={initialCompleteCourseStudents || []}
+          showToast={showToast}
+          onConfirmRequest={(config) =>
+            setConfirmModalConfig({
+              isOpen: true,
+              title: config.title,
+              description: config.description,
+              confirmLabel: config.confirmLabel,
+              isDestructive: config.isDestructive,
+              onConfirm: async () => {
+                await config.onConfirm();
+                setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
+              },
+            })
+          }
+        />
       )}
 
       {/* TAB 2: STUDENT MANAGEMENT & COMPLETION TRACKING */}

@@ -183,3 +183,67 @@ export interface CoursePricing {
   updatedAt?: string;
 }
 
+export type CompleteCourseResourceType = 'pdf' | 'doc' | 'link';
+
+export interface CompleteCourseResource {
+  id: string;
+  title: string;
+  description?: string | null;
+  resourceType: CompleteCourseResourceType;
+  fileName?: string | null;
+  fileStoragePath?: string | null;
+  fileSizeBytes?: number | null;
+  externalUrl?: string | null;
+  orderIndex: number;
+  isPublished: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CompleteCourseSettings {
+  id: string;
+  title: string;
+  description: string;
+  coverImageUrl?: string | null;
+  totalResources?: number;
+  isPublished: boolean;
+  updatedAt: string;
+}
+
+export type CompleteCourseAccessStatus = 'active' | 'revoked';
+
+export interface CompleteCourseAccess {
+  id: string;
+  studentId: string;
+  status: CompleteCourseAccessStatus;
+  approvedBy?: string | null;
+  approvedAt?: string | null;
+  revokedAt?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CompleteCourseAccessLog {
+  id: string;
+  studentId: string;
+  action: 'granted' | 'revoked';
+  performedBy?: string | null;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface StudentWithCompleteCourseAccess {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  photoUrl?: string | null;
+  eightWeekAccess: SubscriptionStatus;
+  completeCourseAccess: CompleteCourseAccessStatus | 'none';
+  completeCourseApprovedAt?: string | null;
+  completeCourseRevokedAt?: string | null;
+  createdAt: string;
+}
+
+
