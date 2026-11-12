@@ -562,11 +562,17 @@ export const DEFAULT_PRICING: CoursePricing = {
 
 export const DEFAULT_COMPLETE_COURSE_SETTINGS: CompleteCourseSettings = {
   id: "default",
-  title: "Complete Course",
+  title: "Complete Spoken English Course",
   description:
-    "Get access to the complete English learning course, including all learning materials and additional resources provided by Learn and Grow.",
+    "Get access to the complete English learning course, including all learning materials, complete grammar handbooks, Word study documents, and additional resources provided by Learn and Grow.",
   coverImageUrl: "/complete-course-cover.png",
   isPublished: true,
+  originalPrice: 14999,
+  sellingPrice: 4999,
+  currency: "₹",
+  discountPercent: 67,
+  offerTag: "COMPLETE MASTERY PACK",
+  isOfferActive: true,
   updatedAt: "2026-11-01T10:00:00.000Z",
 };
 
@@ -3169,12 +3175,22 @@ export async function getCompleteCourseSettings(): Promise<CompleteCourseSetting
         .maybeSingle();
 
       if (!error && data) {
+        const orig = data.original_price != null ? Number(data.original_price) : DEFAULT_COMPLETE_COURSE_SETTINGS.originalPrice;
+        const sell = data.selling_price != null ? Number(data.selling_price) : DEFAULT_COMPLETE_COURSE_SETTINGS.sellingPrice;
+        const disc = orig && sell && orig > sell ? Math.round(((orig - sell) / orig) * 100) : 0;
         return {
           id: data.id,
-          title: data.title,
-          description: data.description,
+          title: data.title || DEFAULT_COMPLETE_COURSE_SETTINGS.title,
+          description: data.description || DEFAULT_COMPLETE_COURSE_SETTINGS.description,
           coverImageUrl: data.cover_image_url || null,
+          totalResources: data.total_resources != null ? Number(data.total_resources) : undefined,
           isPublished: data.is_published ?? true,
+          originalPrice: orig,
+          sellingPrice: sell,
+          currency: data.currency || "₹",
+          discountPercent: data.discount_percent != null ? Number(data.discount_percent) : disc,
+          offerTag: data.offer_tag || "COMPLETE MASTERY PACK",
+          isOfferActive: data.is_offer_active ?? true,
           updatedAt: data.updated_at,
         };
       }
@@ -3196,12 +3212,22 @@ export async function updateCompleteCourseSettings(
   const mem = getMemoryStore();
   const current = mem.completeCourseSettings;
 
+  const origPrice = updates.originalPrice !== undefined ? Number(updates.originalPrice) : (current.originalPrice ?? 14999);
+  const sellPrice = updates.sellingPrice !== undefined ? Number(updates.sellingPrice) : (current.sellingPrice ?? 4999);
+  const discCalc = origPrice > sellPrice ? Math.round(((origPrice - sellPrice) / origPrice) * 100) : 0;
+
   const updatedSettings: CompleteCourseSettings = {
     id: "default",
     title: updates.title !== undefined ? updates.title.trim() : current.title,
     description: updates.description !== undefined ? updates.description.trim() : current.description,
     coverImageUrl: updates.coverImageUrl !== undefined ? updates.coverImageUrl : current.coverImageUrl,
     isPublished: updates.isPublished !== undefined ? Boolean(updates.isPublished) : current.isPublished,
+    originalPrice: origPrice,
+    sellingPrice: sellPrice,
+    currency: updates.currency !== undefined ? updates.currency.trim() : (current.currency || "₹"),
+    discountPercent: updates.discountPercent !== undefined ? Number(updates.discountPercent) : discCalc,
+    offerTag: updates.offerTag !== undefined ? updates.offerTag.trim() : (current.offerTag || "COMPLETE MASTERY PACK"),
+    isOfferActive: updates.isOfferActive !== undefined ? Boolean(updates.isOfferActive) : (current.isOfferActive ?? true),
     updatedAt: new Date().toISOString(),
   };
 
@@ -3223,6 +3249,12 @@ export async function updateCompleteCourseSettings(
           description: updatedSettings.description,
           cover_image_url: updatedSettings.coverImageUrl,
           is_published: updatedSettings.isPublished,
+          original_price: updatedSettings.originalPrice,
+          selling_price: updatedSettings.sellingPrice,
+          currency: updatedSettings.currency,
+          discount_percent: updatedSettings.discountPercent,
+          offer_tag: updatedSettings.offerTag,
+          is_offer_active: updatedSettings.isOfferActive,
           updated_at: updatedSettings.updatedAt,
         },
         { onConflict: "id" }

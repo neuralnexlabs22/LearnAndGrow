@@ -587,10 +587,16 @@ ON CONFLICT (id) DO NOTHING;
 -- Complete Course Settings
 CREATE TABLE IF NOT EXISTS public.complete_course_settings (
   id TEXT PRIMARY KEY DEFAULT 'default',
-  title TEXT NOT NULL DEFAULT 'Complete English Course',
+  title TEXT NOT NULL DEFAULT 'Complete Spoken English Course',
   description TEXT NOT NULL DEFAULT 'Get access to the complete English learning course, including all learning materials and additional resources provided by Learn and Grow.',
   cover_image_url TEXT,
   total_resources INT NOT NULL DEFAULT 0,
+  original_price NUMERIC NOT NULL DEFAULT 14999,
+  selling_price NUMERIC NOT NULL DEFAULT 4999,
+  currency TEXT NOT NULL DEFAULT '₹',
+  discount_percent INT DEFAULT 67,
+  offer_tag TEXT DEFAULT 'COMPLETE MASTERY PACK',
+  is_offer_active BOOLEAN NOT NULL DEFAULT true,
   is_published BOOLEAN NOT NULL DEFAULT true,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
@@ -728,18 +734,34 @@ DROP POLICY IF EXISTS "Service role full access complete_course_access_logs" ON 
 CREATE POLICY "Service role full access complete_course_access_logs" ON public.complete_course_access_logs FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- Seed default Complete Course settings and initial learning resources
-INSERT INTO public.complete_course_settings (id, title, description, cover_image_url, is_published, updated_at)
+INSERT INTO public.complete_course_settings (
+  id, title, description, cover_image_url, 
+  original_price, selling_price, currency, discount_percent, offer_tag, is_offer_active,
+  is_published, updated_at
+)
 VALUES (
   'default',
-  'Complete Course',
+  'Complete Spoken English Course',
   'Get access to the complete English learning course, including all learning materials and additional resources provided by Learn and Grow.',
   '/complete-course-cover.png',
+  14999,
+  4999,
+  '₹',
+  67,
+  'COMPLETE MASTERY PACK',
+  true,
   true,
   NOW()
 )
 ON CONFLICT (id) DO UPDATE SET
   title = EXCLUDED.title,
-  description = EXCLUDED.description;
+  description = EXCLUDED.description,
+  original_price = EXCLUDED.original_price,
+  selling_price = EXCLUDED.selling_price,
+  currency = EXCLUDED.currency,
+  discount_percent = EXCLUDED.discount_percent,
+  offer_tag = EXCLUDED.offer_tag,
+  is_offer_active = EXCLUDED.is_offer_active;
 
 INSERT INTO public.complete_course_resources (id, title, description, resource_type, file_name, file_storage_path, file_size_bytes, external_url, order_index, is_published)
 VALUES

@@ -24,19 +24,36 @@ export async function PATCH(request: Request) {
   try {
     await requireAdmin();
     const body = await request.json();
-    const { title, description, coverImageUrl, isPublished } = body;
+    const {
+      title,
+      description,
+      coverImageUrl,
+      isPublished,
+      originalPrice,
+      sellingPrice,
+      currency,
+      discountPercent,
+      offerTag,
+      isOfferActive,
+    } = body;
 
     const updated = await updateCompleteCourseSettings({
       title,
       description,
       coverImageUrl,
       isPublished,
+      originalPrice,
+      sellingPrice,
+      currency,
+      discountPercent,
+      offerTag,
+      isOfferActive,
     });
 
     return NextResponse.json({
       success: true,
       settings: updated,
-      message: "Complete Course details updated successfully.",
+      message: "Complete Course details & pricing updated successfully.",
     });
   } catch (error: any) {
     return NextResponse.json(

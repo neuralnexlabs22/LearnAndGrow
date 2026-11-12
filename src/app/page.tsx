@@ -32,8 +32,9 @@ import {
   getStudentReview,
   getDashboardStats,
   getCoursePricing,
+  getCompleteCourseSettings,
 } from "@/lib/data-store";
-import { COURSE_CONFIG, getEnrollmentWhatsAppUrl, getPriceOfferWhatsAppUrl } from "@/lib/config";
+import { COURSE_CONFIG, getEnrollmentWhatsAppUrl, getPriceOfferWhatsAppUrl, getCompleteCourseWhatsAppUrl } from "@/lib/config";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { CourseCompletionCounter } from "@/components/CourseCompletionCounter";
@@ -42,6 +43,7 @@ import { AssessmentFirstVisitOverlay } from "@/components/AssessmentFirstVisitOv
 import { AssessmentHeroBanner } from "@/components/AssessmentHeroBanner";
 import { AssessmentTriggerLink } from "@/components/AssessmentTriggerLink";
 import { PriceBreakdownCard } from "@/components/PriceBreakdownCard";
+import { CompleteCoursePriceCard } from "@/components/CompleteCoursePriceCard";
 import { CourseSessionSync } from "@/components/CourseSessionSync";
 
 export const dynamic = "force-dynamic";
@@ -49,11 +51,12 @@ export const revalidate = 0;
 
 export default async function HomePage() {
   const { user, subscriptionStatus } = await getCurrentSession();
-  const [weeks, approvedReviews, stats, pricing] = await Promise.all([
+  const [weeks, approvedReviews, stats, pricing, completeSettings] = await Promise.all([
     getCourseWeeks(),
     getApprovedReviews(),
     getDashboardStats(),
     getCoursePricing(),
+    getCompleteCourseSettings(),
   ]);
 
   let userReview = null;
@@ -505,7 +508,70 @@ export default async function HomePage() {
             })}
           </div>
 
-          <div className="mt-10 text-center">
+          {/* COMPLETE SPOKEN ENGLISH COURSE CARD (Prominently near 8-Week Course) */}
+          <div className="mt-8 bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3ECE0] border-2 border-[#D4CDBC] rounded-3xl p-6 sm:p-8 shadow-sm">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+              <div className="lg:col-span-8 space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#C25E38] bg-[#C25E38]/10 px-2.5 py-0.5 rounded-full border border-[#C25E38]/20">
+                    Separate Comprehensive Track
+                  </span>
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white text-[#44403C] border border-[#D4CDBC]">
+                    Independent Access
+                  </span>
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#15803D] border border-emerald-200">
+                    All Materials Included
+                  </span>
+                </div>
+
+                <h3 className="text-2xl sm:text-3xl font-extrabold text-[#1C1917] tracking-tight">
+                  {completeSettings.title || "Complete Spoken English Course"}
+                </h3>
+
+                <p className="text-sm text-[#57534E] leading-relaxed max-w-3xl">
+                  {completeSettings.description ||
+                    "Get access to the complete English learning course, including all learning materials, complete grammar handbooks, Word study documents, and additional resources provided by Learn and Grow."}
+                </p>
+
+                <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-[#44403C]">
+                  <span className="flex items-center gap-1.5 font-semibold">
+                    <FileText className="w-4 h-4 text-[#C25E38]" />
+                    Full Grammar Handbooks (.pdf)
+                  </span>
+                  <span className="flex items-center gap-1.5 font-semibold">
+                    <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
+                    Interactive Word Drills (.docx)
+                  </span>
+                  <span className="flex items-center gap-1.5 font-semibold">
+                    <Sparkles className="w-4 h-4 text-[#D97706]" />
+                    Multimedia Pronunciation Portal
+                  </span>
+                </div>
+              </div>
+
+              <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-2.5 justify-center">
+                <a
+                  href={getCompleteCourseWhatsAppUrl(user?.email)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold bg-[#15803D] hover:bg-[#166534] text-white shadow-sm transition-all hover:shadow text-center"
+                >
+                  <MessageCircle className="w-4 h-4 fill-white" />
+                  <span>Enquire Complete Course via WhatsApp</span>
+                </a>
+                <Link
+                  href="/course"
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs font-semibold bg-white hover:bg-[#F5F2EB] text-[#1C1917] border border-[#D4CDBC] shadow-2xs transition-colors text-center"
+                >
+                  <BookOpen className="w-3.5 h-3.5 text-[#0F2D59]" />
+                  <span>View Details on Course Page</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 text-center">
             <Link
               href="/course"
               className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-sm font-bold bg-[#0F2D59] text-white hover:bg-[#0A1F3D] transition-all shadow-md hover:shadow-lg"
@@ -517,51 +583,34 @@ export default async function HomePage() {
         </section>
 
         {/* ================================================================= */}
-        {/* COURSE FEE & PRICE BREAKDOWN                                      */}
+        {/* COURSE FEE & DUAL PRICING SHOWCASE                                */}
         {/* ================================================================= */}
         <section className="py-14 sm:py-20 bg-[#F5F2EB] border-b border-[#E7E2D6]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-white border border-[#D4CDBC] rounded-3xl p-6 sm:p-10 beige-card-shadow">
-              <div className="lg:col-span-7 space-y-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#15803D] bg-emerald-100 px-3 py-1 rounded-full border border-emerald-200">
-                    {pricing.offerTag || "Course Fee Structure"}
-                  </span>
-                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#E8E3D7] text-[#44403C]">
-                    One-Time Payment • No Subscriptions
-                  </span>
-                </div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+            {/* Header */}
+            <div className="text-center max-w-3xl mx-auto space-y-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-[#15803D] bg-emerald-100 border border-emerald-200">
+                <Sparkles className="w-3.5 h-3.5 text-[#15803D]" />
+                <span>CHOOSE YOUR LEARNING PATH</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#1C1917] tracking-tight">
+                Transparent Course Pricing & Options
+              </h2>
+              <p className="text-sm sm:text-base text-[#57534E] leading-relaxed">
+                Choose the learning path that matches your goals. Enroll in the structured 8-week guided syllabus with weekly workbooks, or unlock the separate Complete Spoken English Course for unrestricted, self-paced mastery with all materials.
+              </p>
+            </div>
 
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#1C1917] tracking-tight">
-                  Transparent, All-Inclusive Course Fee
-                </h2>
-
-                <p className="text-sm sm:text-base text-[#57534E] leading-relaxed">
-                  Join our structured 8-week Spoken English Course with simple, transparent pricing. Pay once and receive complete lifetime access to all 8 modules, 8 downloadable PDF workbooks, personalized pronunciation guidance, and direct instructor mentoring via WhatsApp.
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  <div className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-[#1C1917]">
-                    <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0" />
-                    <span>Complete 8-Week Curriculum</span>
-                  </div>
-                  <div className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-[#1C1917]">
-                    <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0" />
-                    <span>8 Comprehensive PDF Workbooks</span>
-                  </div>
-                  <div className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-[#1C1917]">
-                    <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0" />
-                    <span>Direct WhatsApp Instructor Support</span>
-                  </div>
-                  <div className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-[#1C1917]">
-                    <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0" />
-                    <span>Official Certificate of Completion</span>
-                  </div>
-                </div>
+            {/* Dual Cards Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+              {/* CARD 1: 8-Week Course Pricing */}
+              <div className="flex flex-col justify-between h-full">
+                <PriceBreakdownCard pricing={pricing} userEmail={user?.email} className="h-full" />
               </div>
 
-              <div className="lg:col-span-5">
-                <PriceBreakdownCard pricing={pricing} userEmail={user?.email} />
+              {/* CARD 2: Complete Spoken English Course Pricing */}
+              <div className="flex flex-col justify-between h-full">
+                <CompleteCoursePriceCard settings={completeSettings} userEmail={user?.email} className="h-full" />
               </div>
             </div>
           </div>

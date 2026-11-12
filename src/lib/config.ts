@@ -87,12 +87,28 @@ export function getEnrollmentWhatsAppUrl(email?: string): string {
  */
 export function getCompleteCourseWhatsAppUrl(email?: string): string {
   let message =
-    "Hello Learn and Grow! I am interested in getting access to the Complete English Course. Please share the course details, fee, and enrollment procedure.";
+    "Hello Learn and Grow! I am interested in getting access to the Complete Spoken English Course. Please share the course details, fee, and enrollment procedure.";
 
   if (email) {
     message += ` (Registered Email: ${email})`;
   }
 
+  return buildWhatsAppUrl(message);
+}
+
+/**
+ * Pre-filled message for Complete Spoken English Course offer pricing
+ */
+export function getCompleteCoursePriceOfferWhatsAppUrl(
+  originalPrice: number,
+  sellingPrice: number,
+  currency: string = "₹",
+  email?: string
+): string {
+  let message = `Hello Learn and Grow! I am interested in enrolling in the Complete Spoken English Course at the offer price of ${currency}${sellingPrice} (Original: ${currency}${originalPrice}). Please share the complete course materials details, fee payment, and activation procedure.`;
+  if (email) {
+    message += ` (Registered Email: ${email})`;
+  }
   return buildWhatsAppUrl(message);
 }
 

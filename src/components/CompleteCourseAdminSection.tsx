@@ -64,8 +64,11 @@ export function CompleteCourseAdminSection({
   // Settings state
   const [settings, setSettings] = useState<CompleteCourseSettings>(initialSettings);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
-  const [titleInput, setTitleInput] = useState(initialSettings.title);
-  const [descInput, setDescInput] = useState(initialSettings.description);
+  const [titleInput, setTitleInput] = useState(initialSettings.title || "Complete Spoken English Course");
+  const [descInput, setDescInput] = useState(initialSettings.description || "");
+  const [origPriceInput, setOrigPriceInput] = useState<number>(initialSettings.originalPrice || 14999);
+  const [sellPriceInput, setSellPriceInput] = useState<number>(initialSettings.sellingPrice || 4999);
+  const [offerTagInput, setOfferTagInput] = useState<string>(initialSettings.offerTag || "COMPLETE MASTERY PACK");
 
   // Resources state
   const [resources, setResources] = useState<CompleteCourseResource[]>(initialResources);
@@ -110,13 +113,21 @@ export function CompleteCourseAdminSection({
         body: JSON.stringify({
           title: titleInput.trim(),
           description: descInput.trim(),
+          originalPrice: Number(origPriceInput) || 14999,
+          sellingPrice: Number(sellPriceInput) || 4999,
+          offerTag: offerTagInput.trim() || "COMPLETE MASTERY PACK",
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
       setSettings(data.settings);
-      showToast("Complete Course settings updated successfully!");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("complete-course-pricing-updated", { detail: { settings: data.settings } })
+        );
+      }
+      showToast("Complete Course settings & pricing updated successfully!");
     } catch (err: any) {
       showToast(err.message || "Failed to update settings.", "error");
     } finally {
@@ -526,7 +537,7 @@ export function CompleteCourseAdminSection({
                     type="text"
                     value={titleInput}
                     onChange={(e) => setTitleInput(e.target.value)}
-                    placeholder="e.g. Complete Course"
+                    placeholder="e.g. Complete Spoken English Course"
                     className="w-full px-3.5 py-2 rounded-xl text-xs bg-[#FAF8F5] border border-[#D4CDBC] focus:outline-hidden focus:ring-2 focus:ring-[#C25E38]"
                     required
                   />
@@ -541,6 +552,52 @@ export function CompleteCourseAdminSection({
                     value={descInput}
                     onChange={(e) => setDescInput(e.target.value)}
                     placeholder="Brief description shown to students..."
+                    className="w-full px-3.5 py-2 rounded-xl text-xs bg-[#FAF8F5] border border-[#D4CDBC] focus:outline-hidden focus:ring-2 focus:ring-[#C25E38]"
+                  />
+                </div>
+              </div>
+
+              {/* Complete Course Pricing Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1 border-t border-[#F0EBE0]">
+                <div>
+                  <label className="block text-xs font-bold text-[#1C1917] mb-1">
+                    Original Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={origPriceInput}
+                    onChange={(e) => setOrigPriceInput(Number(e.target.value))}
+                    placeholder="14999"
+                    className="w-full px-3.5 py-2 rounded-xl text-xs bg-[#FAF8F5] border border-[#D4CDBC] focus:outline-hidden focus:ring-2 focus:ring-[#C25E38]"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#1C1917] mb-1">
+                    Selling / Offer Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={sellPriceInput}
+                    onChange={(e) => setSellPriceInput(Number(e.target.value))}
+                    placeholder="4999"
+                    className="w-full px-3.5 py-2 rounded-xl text-xs bg-[#FAF8F5] border border-[#D4CDBC] focus:outline-hidden focus:ring-2 focus:ring-[#C25E38]"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#1C1917] mb-1">
+                    Offer Badge / Tagline
+                  </label>
+                  <input
+                    type="text"
+                    value={offerTagInput}
+                    onChange={(e) => setOfferTagInput(e.target.value)}
+                    placeholder="e.g. COMPLETE MASTERY PACK"
                     className="w-full px-3.5 py-2 rounded-xl text-xs bg-[#FAF8F5] border border-[#D4CDBC] focus:outline-hidden focus:ring-2 focus:ring-[#C25E38]"
                   />
                 </div>

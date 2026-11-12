@@ -207,6 +207,12 @@ export interface CompleteCourseSettings {
   coverImageUrl?: string | null;
   totalResources?: number;
   isPublished: boolean;
+  originalPrice?: number;
+  sellingPrice?: number;
+  currency?: string;
+  discountPercent?: number;
+  offerTag?: string;
+  isOfferActive?: boolean;
   updatedAt: string;
 }
 

@@ -53,6 +53,7 @@ import { PdfViewerModal } from "@/components/PdfViewerModal";
 import { AssessmentAdminSection } from "@/components/AssessmentAdminSection";
 import { CompleteCourseAdminSection } from "@/components/CompleteCourseAdminSection";
 import { PriceBreakdownCard } from "@/components/PriceBreakdownCard";
+import { CompleteCoursePriceCard } from "@/components/CompleteCoursePriceCard";
 import { formatDisplayDate } from "@/lib/config";
 
 interface AdminDashboardClientProps {
@@ -102,6 +103,26 @@ export function AdminDashboardClient({
     }
   );
   const [isSavingPricing, setIsSavingPricing] = useState(false);
+
+  // Complete Spoken English Course Pricing State
+  const [pricingCourseTab, setPricingCourseTab] = useState<"8-week" | "complete-course">("8-week");
+  const [completeCoursePricing, setCompleteCoursePricing] = useState<CompleteCourseSettings>(
+    initialCompleteCourseSettings || {
+      id: "default",
+      title: "Complete Spoken English Course",
+      description:
+        "Get access to the complete English learning course, including all learning materials and additional resources provided by Learn and Grow.",
+      originalPrice: 14999,
+      sellingPrice: 4999,
+      currency: "₹",
+      discountPercent: 67,
+      offerTag: "COMPLETE MASTERY PACK",
+      isOfferActive: true,
+      isPublished: true,
+      updatedAt: new Date().toISOString(),
+    }
+  );
+  const [isSavingCompletePricing, setIsSavingCompletePricing] = useState(false);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -703,6 +724,44 @@ export function AdminDashboardClient({
       showToast(err.message || "Failed to save pricing.", "error");
     } finally {
       setIsSavingPricing(false);
+    }
+  };
+
+  const handleSaveCompletePricing = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingCompletePricing(true);
+    try {
+      const res = await fetch("/api/admin/complete-course/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: completeCoursePricing.title,
+          description: completeCoursePricing.description,
+          originalPrice: completeCoursePricing.originalPrice,
+          sellingPrice: completeCoursePricing.sellingPrice,
+          currency: completeCoursePricing.currency,
+          discountPercent: completeCoursePricing.discountPercent,
+          offerTag: completeCoursePricing.offerTag,
+          isOfferActive: completeCoursePricing.isOfferActive,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      setCompleteCoursePricing(data.settings);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("complete-course-pricing-updated", {
+            detail: { settings: data.settings },
+          })
+        );
+      }
+      router.refresh();
+      showToast("Complete Spoken English Course pricing updated successfully!");
+    } catch (err: any) {
+      showToast(err.message || "Failed to save Complete Course pricing.", "error");
+    } finally {
+      setIsSavingCompletePricing(false);
     }
   };
 
@@ -1583,214 +1642,483 @@ export function AdminDashboardClient({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* PRICING FORM */}
-            <div className="lg:col-span-7 bg-white border border-[#D4CDBC] rounded-2xl p-6 sm:p-8 space-y-6 beige-card-shadow">
-              <form onSubmit={handleSavePricing} className="space-y-5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Original Price */}
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#78716C] mb-1.5">
-                      Original Strikethrough Price
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[#78716C]">
-                        {pricing.currency}
-                      </span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        required
-                        value={pricing.originalPrice}
-                        onChange={(e) => {
-                          const orig = Number(e.target.value);
-                          const sell = pricing.sellingPrice;
-                          const discount =
-                            orig > 0
-                              ? Math.max(0, Math.round(((orig - sell) / orig) * 100))
-                              : 0;
-                          setPricing({
-                            ...pricing,
-                            originalPrice: orig,
-                            discountPercent: discount,
-                          });
-                        }}
-                        className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-[#D4CDBC] bg-[#FAF8F5] text-base font-bold text-[#1C1917] focus:outline-none focus:ring-2 focus:ring-[#C25E38]"
-                        placeholder="1199"
-                      />
+          {/* COURSE SELECTOR SUB-TABS */}
+          <div className="flex flex-wrap items-center gap-2 p-1.5 bg-[#E7E2D6]/60 rounded-2xl w-fit">
+            <button
+              type="button"
+              onClick={() => setPricingCourseTab("8-week")}
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                pricingCourseTab === "8-week"
+                  ? "bg-white text-[#1C1917] shadow-sm"
+                  : "text-[#78716C] hover:text-[#1C1917]"
+              }`}
+            >
+              8-Week Spoken English Course
+            </button>
+            <button
+              type="button"
+              onClick={() => setPricingCourseTab("complete-course")}
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 ${
+                pricingCourseTab === "complete-course"
+                  ? "bg-[#C25E38] text-white shadow-sm"
+                  : "text-[#78716C] hover:text-[#1C1917]"
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              Complete Spoken English Course
+            </button>
+          </div>
+
+          {pricingCourseTab === "8-week" ? (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              {/* PRICING FORM */}
+              <div className="lg:col-span-7 bg-white border border-[#D4CDBC] rounded-2xl p-6 sm:p-8 space-y-6 beige-card-shadow">
+                <form onSubmit={handleSavePricing} className="space-y-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Original Price */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#78716C] mb-1.5">
+                        Original Strikethrough Price
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[#78716C]">
+                          {pricing.currency}
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          required
+                          value={pricing.originalPrice}
+                          onChange={(e) => {
+                            const orig = Number(e.target.value);
+                            const sell = pricing.sellingPrice;
+                            const discount =
+                              orig > 0
+                                ? Math.max(0, Math.round(((orig - sell) / orig) * 100))
+                                : 0;
+                            setPricing({
+                              ...pricing,
+                              originalPrice: orig,
+                              discountPercent: discount,
+                            });
+                          }}
+                          className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-[#D4CDBC] bg-[#FAF8F5] text-base font-bold text-[#1C1917] focus:outline-none focus:ring-2 focus:ring-[#C25E38]"
+                          placeholder="1199"
+                        />
+                      </div>
+                      <p className="text-[11px] text-[#78716C] mt-1">
+                        Displayed crossed out (e.g. Original: ₹1,199)
+                      </p>
                     </div>
-                    <p className="text-[11px] text-[#78716C] mt-1">
-                      Displayed crossed out (e.g. Original: ₹1,199)
-                    </p>
+
+                    {/* Selling Price */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#15803D] mb-1.5">
+                        Selling Price (Active Fee)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[#15803D]">
+                          {pricing.currency}
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          required
+                          value={pricing.sellingPrice}
+                          onChange={(e) => {
+                            const sell = Number(e.target.value);
+                            const orig = pricing.originalPrice;
+                            const discount =
+                              orig > 0
+                                ? Math.max(0, Math.round(((orig - sell) / orig) * 100))
+                                : 0;
+                            setPricing({
+                              ...pricing,
+                              sellingPrice: sell,
+                              discountPercent: discount,
+                            });
+                          }}
+                          className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-[#A7F3D0] bg-[#F0FDF4] text-base font-extrabold text-[#15803D] focus:outline-none focus:ring-2 focus:ring-[#15803D]"
+                          placeholder="999"
+                        />
+                      </div>
+                      <p className="text-[11px] text-[#15803D] mt-1">
+                        Prominently highlighted in bright neon lime (e.g. Selling: ₹999)
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Selling Price */}
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#15803D] mb-1.5">
-                      Selling Price (Active Fee)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[#15803D]">
-                        {pricing.currency}
-                      </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Currency Symbol */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#78716C] mb-1.5">
+                        Currency Symbol
+                      </label>
                       <input
-                        type="number"
-                        min="0"
-                        step="1"
+                        type="text"
                         required
-                        value={pricing.sellingPrice}
-                        onChange={(e) => {
-                          const sell = Number(e.target.value);
-                          const orig = pricing.originalPrice;
-                          const discount =
-                            orig > 0
-                              ? Math.max(0, Math.round(((orig - sell) / orig) * 100))
-                              : 0;
-                          setPricing({
-                            ...pricing,
-                            sellingPrice: sell,
-                            discountPercent: discount,
-                          });
-                        }}
-                        className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-[#A7F3D0] bg-[#F0FDF4] text-base font-extrabold text-[#15803D] focus:outline-none focus:ring-2 focus:ring-[#15803D]"
-                        placeholder="999"
+                        value={pricing.currency}
+                        onChange={(e) =>
+                          setPricing({ ...pricing, currency: e.target.value })
+                        }
+                        className="w-full px-4 py-2.5 rounded-xl border border-[#D4CDBC] bg-[#FAF8F5] text-sm font-semibold text-[#1C1917] focus:outline-none focus:ring-2 focus:ring-[#C25E38]"
+                        placeholder="₹"
                       />
                     </div>
-                    <p className="text-[11px] text-[#15803D] mt-1">
-                      Prominently highlighted in bright neon lime (e.g. Selling: ₹999)
-                    </p>
+
+                    {/* Offer Tag */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#78716C] mb-1.5">
+                        Offer Badge / Tagline
+                      </label>
+                      <input
+                        type="text"
+                        value={pricing.offerTag || ""}
+                        onChange={(e) =>
+                          setPricing({ ...pricing, offerTag: e.target.value })
+                        }
+                        className="w-full px-4 py-2.5 rounded-xl border border-[#D4CDBC] bg-[#FAF8F5] text-sm font-semibold text-[#1C1917] focus:outline-none focus:ring-2 focus:ring-[#C25E38]"
+                        placeholder="LIMITED TIME OFFER"
+                      />
+                    </div>
                   </div>
+
+                  {/* Offer Active Switch */}
+                  <div className="p-4 rounded-xl bg-[#F5F2EB] border border-[#E7E2D6] flex items-center justify-between">
+                    <div>
+                      <span className="text-sm font-bold text-[#1C1917] block">
+                        Promotional Discount Active
+                      </span>
+                      <span className="text-xs text-[#78716C]">
+                        Toggle whether to display the discount savings badge and strikethrough price.
+                      </span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={pricing.isOfferActive}
+                        onChange={(e) =>
+                          setPricing({ ...pricing, isOfferActive: e.target.checked })
+                        }
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-[#D4CDBC] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#15803D]" />
+                    </label>
+                  </div>
+
+                  {/* Computed Savings Overview */}
+                  {(() => {
+                    const orig = Number(pricing.originalPrice) || 0;
+                    const sell = Number(pricing.sellingPrice) || 0;
+                    const savings = Math.max(0, orig - sell);
+                    const discount =
+                      orig > 0 ? Math.round((savings / orig) * 100) : 0;
+                    return (
+                      <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 flex items-center justify-between text-xs">
+                        <div>
+                          <span className="font-bold text-[#92400E] block">
+                            Calculated Savings
+                          </span>
+                          <span className="text-[#B45309]">
+                            Students save {pricing.currency || "₹"}
+                            {savings.toLocaleString("en-IN")} per enrollment
+                          </span>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full bg-amber-200 text-[#78350F] font-extrabold text-xs">
+                          {discount}% OFF
+                        </span>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Submit button */}
+                  <div className="pt-2 flex items-center justify-end">
+                    <button
+                      type="submit"
+                      disabled={isSavingPricing}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-[#C25E38] hover:bg-[#A94E2C] text-white shadow-sm transition-all hover:shadow disabled:opacity-50"
+                    >
+                      {isSavingPricing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Saving Changes...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span>Save Pricing Changes</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* LIVE PREVIEW OF CARD */}
+              <div className="lg:col-span-5 space-y-4">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#78716C]">
+                    Live Student View Preview
+                  </span>
+                  <span className="text-[11px] font-semibold text-[#15803D] bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
+                    Matches Course Page
+                  </span>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Currency Symbol */}
+                <PriceBreakdownCard pricing={pricing} showEnrollButton={false} />
+                <div className="p-4 rounded-xl bg-white border border-[#E7E2D6] text-xs text-[#78716C] space-y-1">
+                  <div className="font-bold text-[#1C1917] flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
+                    <span>Instant Public Sync</span>
+                  </div>
+                  <p>
+                    Saving here updates the 8-Week Course fee cards immediately on the course page and pre-fills WhatsApp enrollment messages with <strong>{pricing.currency}{pricing.sellingPrice}</strong>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              {/* COMPLETE COURSE PRICING FORM */}
+              <div className="lg:col-span-7 bg-white border border-[#D4CDBC] rounded-2xl p-6 sm:p-8 space-y-6 beige-card-shadow">
+                <form onSubmit={handleSaveCompletePricing} className="space-y-5">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-[#78716C] mb-1.5">
-                      Currency Symbol
+                      Complete Course Title
                     </label>
                     <input
                       type="text"
                       required
-                      value={pricing.currency}
+                      value={completeCoursePricing.title}
                       onChange={(e) =>
-                        setPricing({ ...pricing, currency: e.target.value })
+                        setCompleteCoursePricing({
+                          ...completeCoursePricing,
+                          title: e.target.value,
+                        })
                       }
-                      className="w-full px-4 py-2.5 rounded-xl border border-[#D4CDBC] bg-[#FAF8F5] text-sm font-semibold text-[#1C1917] focus:outline-none focus:ring-2 focus:ring-[#C25E38]"
-                      placeholder="₹"
+                      className="w-full px-4 py-2.5 rounded-xl border border-[#D4CDBC] bg-[#FAF8F5] text-sm font-bold text-[#1C1917] focus:outline-none focus:ring-2 focus:ring-[#C25E38]"
+                      placeholder="Complete Spoken English Course"
                     />
                   </div>
 
-                  {/* Offer Tag */}
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#78716C] mb-1.5">
-                      Offer Badge / Tagline
-                    </label>
-                    <input
-                      type="text"
-                      value={pricing.offerTag || ""}
-                      onChange={(e) =>
-                        setPricing({ ...pricing, offerTag: e.target.value })
-                      }
-                      className="w-full px-4 py-2.5 rounded-xl border border-[#D4CDBC] bg-[#FAF8F5] text-sm font-semibold text-[#1C1917] focus:outline-none focus:ring-2 focus:ring-[#C25E38]"
-                      placeholder="LIMITED TIME OFFER"
-                    />
-                  </div>
-                </div>
-
-                {/* Offer Active Switch */}
-                <div className="p-4 rounded-xl bg-[#F5F2EB] border border-[#E7E2D6] flex items-center justify-between">
-                  <div>
-                    <span className="text-sm font-bold text-[#1C1917] block">
-                      Promotional Discount Active
-                    </span>
-                    <span className="text-xs text-[#78716C]">
-                      Toggle whether to display the discount savings badge and strikethrough price.
-                    </span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={pricing.isOfferActive}
-                      onChange={(e) =>
-                        setPricing({ ...pricing, isOfferActive: e.target.checked })
-                      }
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-[#D4CDBC] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#15803D]" />
-                  </label>
-                </div>
-
-                {/* Computed Savings Overview */}
-                {(() => {
-                  const orig = Number(pricing.originalPrice) || 0;
-                  const sell = Number(pricing.sellingPrice) || 0;
-                  const savings = Math.max(0, orig - sell);
-                  const discount =
-                    orig > 0 ? Math.round((savings / orig) * 100) : 0;
-                  return (
-                    <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 flex items-center justify-between text-xs">
-                      <div>
-                        <span className="font-bold text-[#92400E] block">
-                          Calculated Savings
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Original Price */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#78716C] mb-1.5">
+                        Original Strikethrough Price
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[#78716C]">
+                          {completeCoursePricing.currency || "₹"}
                         </span>
-                        <span className="text-[#B45309]">
-                          Students save {pricing.currency || "₹"}
-                          {savings.toLocaleString("en-IN")} per enrollment
-                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          required
+                          value={completeCoursePricing.originalPrice || 14999}
+                          onChange={(e) => {
+                            const orig = Number(e.target.value);
+                            const sell = completeCoursePricing.sellingPrice || 4999;
+                            const discount =
+                              orig > 0
+                                ? Math.max(0, Math.round(((orig - sell) / orig) * 100))
+                                : 0;
+                            setCompleteCoursePricing({
+                              ...completeCoursePricing,
+                              originalPrice: orig,
+                              discountPercent: discount,
+                            });
+                          }}
+                          className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-[#D4CDBC] bg-[#FAF8F5] text-base font-bold text-[#1C1917] focus:outline-none focus:ring-2 focus:ring-[#C25E38]"
+                          placeholder="14999"
+                        />
                       </div>
-                      <span className="px-2.5 py-1 rounded-full bg-amber-200 text-[#78350F] font-extrabold text-xs">
-                        {discount}% OFF
+                      <p className="text-[11px] text-[#78716C] mt-1">
+                        Crossed out (e.g. Original: ₹14,999)
+                      </p>
+                    </div>
+
+                    {/* Selling Price */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#15803D] mb-1.5">
+                        Selling Price (Active Fee)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[#15803D]">
+                          {completeCoursePricing.currency || "₹"}
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          required
+                          value={completeCoursePricing.sellingPrice || 4999}
+                          onChange={(e) => {
+                            const sell = Number(e.target.value);
+                            const orig = completeCoursePricing.originalPrice || 14999;
+                            const discount =
+                              orig > 0
+                                ? Math.max(0, Math.round(((orig - sell) / orig) * 100))
+                                : 0;
+                            setCompleteCoursePricing({
+                              ...completeCoursePricing,
+                              sellingPrice: sell,
+                              discountPercent: discount,
+                            });
+                          }}
+                          className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-[#A7F3D0] bg-[#F0FDF4] text-base font-extrabold text-[#15803D] focus:outline-none focus:ring-2 focus:ring-[#15803D]"
+                          placeholder="4999"
+                        />
+                      </div>
+                      <p className="text-[11px] text-[#15803D] mt-1">
+                        Prominently highlighted (e.g. Selling: ₹4,999)
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Currency Symbol */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#78716C] mb-1.5">
+                        Currency Symbol
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={completeCoursePricing.currency || "₹"}
+                        onChange={(e) =>
+                          setCompleteCoursePricing({
+                            ...completeCoursePricing,
+                            currency: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-2.5 rounded-xl border border-[#D4CDBC] bg-[#FAF8F5] text-sm font-semibold text-[#1C1917] focus:outline-none focus:ring-2 focus:ring-[#C25E38]"
+                        placeholder="₹"
+                      />
+                    </div>
+
+                    {/* Offer Tag */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#78716C] mb-1.5">
+                        Offer Badge / Tagline
+                      </label>
+                      <input
+                        type="text"
+                        value={completeCoursePricing.offerTag || ""}
+                        onChange={(e) =>
+                          setCompleteCoursePricing({
+                            ...completeCoursePricing,
+                            offerTag: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-2.5 rounded-xl border border-[#D4CDBC] bg-[#FAF8F5] text-sm font-semibold text-[#1C1917] focus:outline-none focus:ring-2 focus:ring-[#C25E38]"
+                        placeholder="COMPLETE MASTERY PACK"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Offer Active Switch */}
+                  <div className="p-4 rounded-xl bg-[#F5F2EB] border border-[#E7E2D6] flex items-center justify-between">
+                    <div>
+                      <span className="text-sm font-bold text-[#1C1917] block">
+                        Promotional Discount Active
+                      </span>
+                      <span className="text-xs text-[#78716C]">
+                        Display the strikethrough price, savings banner, and discount percentage badge.
                       </span>
                     </div>
-                  );
-                })()}
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={completeCoursePricing.isOfferActive ?? true}
+                        onChange={(e) =>
+                          setCompleteCoursePricing({
+                            ...completeCoursePricing,
+                            isOfferActive: e.target.checked,
+                          })
+                        }
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-[#D4CDBC] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#15803D]" />
+                    </label>
+                  </div>
 
-                {/* Submit button */}
-                <div className="pt-2 flex items-center justify-end">
-                  <button
-                    type="submit"
-                    disabled={isSavingPricing}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-[#C25E38] hover:bg-[#A94E2C] text-white shadow-sm transition-all hover:shadow disabled:opacity-50"
-                  >
-                    {isSavingPricing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Saving Changes...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-4 h-4" />
-                        <span>Save Pricing Changes</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
+                  {/* Computed Savings Overview */}
+                  {(() => {
+                    const orig = Number(completeCoursePricing.originalPrice) || 14999;
+                    const sell = Number(completeCoursePricing.sellingPrice) || 4999;
+                    const savings = Math.max(0, orig - sell);
+                    const discount =
+                      orig > 0 ? Math.round((savings / orig) * 100) : 0;
+                    return (
+                      <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 flex items-center justify-between text-xs">
+                        <div>
+                          <span className="font-bold text-[#92400E] block">
+                            Calculated Savings
+                          </span>
+                          <span className="text-[#B45309]">
+                            Students save {completeCoursePricing.currency || "₹"}
+                            {savings.toLocaleString("en-IN")} per enrollment
+                          </span>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full bg-amber-200 text-[#78350F] font-extrabold text-xs">
+                          {discount}% OFF
+                        </span>
+                      </div>
+                    );
+                  })()}
 
-            {/* LIVE PREVIEW OF CARD */}
-            <div className="lg:col-span-5 space-y-4">
-              <div className="flex items-center justify-between px-1">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#78716C]">
-                  Live Student View Preview
-                </span>
-                <span className="text-[11px] font-semibold text-[#15803D] bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
-                  Matches Course Page
-                </span>
+                  {/* Submit button */}
+                  <div className="pt-2 flex items-center justify-end">
+                    <button
+                      type="submit"
+                      disabled={isSavingCompletePricing}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-[#C25E38] hover:bg-[#A94E2C] text-white shadow-sm transition-all hover:shadow disabled:opacity-50"
+                    >
+                      {isSavingCompletePricing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Saving Complete Course Fee...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span>Save Complete Course Pricing</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
               </div>
-              <PriceBreakdownCard pricing={pricing} showEnrollButton={false} />
-              <div className="p-4 rounded-xl bg-white border border-[#E7E2D6] text-xs text-[#78716C] space-y-1">
-                <div className="font-bold text-[#1C1917] flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
-                  <span>Instant Public Sync</span>
+
+              {/* LIVE PREVIEW OF COMPLETE COURSE PRICING CARD */}
+              <div className="lg:col-span-5 space-y-4">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#78716C]">
+                    Live Student View Preview
+                  </span>
+                  <span className="text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                    Matches Home Page
+                  </span>
                 </div>
-                <p>
-                  Saving here updates the fee cards immediately on the course page and pre-fills WhatsApp enrollment messages with <strong>{pricing.currency}{pricing.sellingPrice}</strong>.
-                </p>
+                <CompleteCoursePriceCard
+                  settings={completeCoursePricing}
+                  showEnrollButton={false}
+                />
+                <div className="p-4 rounded-xl bg-white border border-[#E7E2D6] text-xs text-[#78716C] space-y-1">
+                  <div className="font-bold text-[#1C1917] flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-[#15803D]" />
+                    <span>Instant Public Sync</span>
+                  </div>
+                  <p>
+                    Saving here updates the Complete Spoken English Course cards immediately on the home page and pre-fills WhatsApp enrollment messages with <strong>{completeCoursePricing.currency || "₹"}{completeCoursePricing.sellingPrice || 4999}</strong>.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 

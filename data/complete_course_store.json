@@ -1,10 +1,16 @@
 {
   "settings": {
     "id": "default",
-    "title": "Complete Course",
-    "description": "Get access to the complete English learning course, including all learning materials and additional resources provided by Learn and Grow.",
+    "title": "Complete Spoken English Course",
+    "description": "Get access to the complete English learning course, including all learning materials, complete grammar handbooks, Word study documents, and additional resources provided by Learn and Grow.",
     "coverImageUrl": "/complete-course-cover.png",
     "isPublished": true,
+    "originalPrice": 14999,
+    "sellingPrice": 4999,
+    "currency": "₹",
+    "discountPercent": 67,
+    "offerTag": "COMPLETE MASTERY PACK",
+    "isOfferActive": true,
     "updatedAt": "2026-11-01T10:00:00.000Z"
   },
   "resources": [
