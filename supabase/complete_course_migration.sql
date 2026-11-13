@@ -236,3 +236,4 @@ ON CONFLICT (id) DO UPDATE SET
   resource_type = EXCLUDED.resource_type,
   order_index = EXCLUDED.order_index,
   is_published = EXCLUDED.is_published;
+
