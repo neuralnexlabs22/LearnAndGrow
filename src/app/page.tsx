@@ -255,10 +255,20 @@ export default async function HomePage() {
           {/* Hero Content Container */}
           <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-20">
             <div className="max-w-xl lg:max-w-[32rem] space-y-6 text-left">
-              {/* Eyebrow text */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-sm border border-[#DCD4C4] text-xs sm:text-sm font-semibold tracking-wide text-[#15803D] shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-[#15803D] animate-pulse" />
-                <span>LEARN AND GROW | 8-WEEK SPOKEN ENGLISH COURSE</span>
+              {/* Eyebrow text & Quick Track Jump */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-sm border border-[#DCD4C4] text-xs sm:text-sm font-semibold tracking-wide text-[#15803D] shadow-xs">
+                  <span className="w-2 h-2 rounded-full bg-[#15803D] animate-pulse" />
+                  <span>8-WEEK SPOKEN ENGLISH COURSE</span>
+                </div>
+                <a
+                  href="#complete-course-modules"
+                  className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-xs sm:text-sm font-bold text-amber-900 transition-all hover:scale-[1.02]"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Complete Course Track</span>
+                  <span className="text-[#C25E38] font-bold group-hover:translate-y-0.5 transition-transform">&darr;</span>
+                </a>
               </div>
 
               {/* Main Heading */}
@@ -271,21 +281,58 @@ export default async function HomePage() {
 
               {/* Description */}
               <p className="text-sm sm:text-base lg:text-lg text-[#44403C] leading-relaxed font-normal">
-                Improve your English communication skills with our practical 8-week Spoken English Course.
-                Build confidence in everyday conversations, grammar, vocabulary, pronunciation, interviews,
-                and professional communication.
+                Improve your English communication skills with our practical 8-week Spoken English Course or our all-in-one Complete Course. Build confidence in everyday conversations, grammar, vocabulary, pronunciation, interviews, and professional communication.
               </p>
 
+              {/* FRONT SECTION SPOTLIGHT: Complete Spoken English Course (Direct Jump to Modules Section) */}
+              <div className="pt-1">
+                <a
+                  href="#complete-course-modules"
+                  className="group block p-3.5 sm:p-4 rounded-2xl bg-white/95 backdrop-blur-md border-2 border-amber-400 hover:border-amber-500 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 text-left"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-amber-500 to-[#C25E38] text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <Sparkles className="w-5 h-5 text-amber-100" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                            {completeSettings.offerTag || "COMPLETE MASTERY PACK"}
+                          </span>
+                          <span className="text-xs font-black text-[#15803D]">
+                            {completeSettings.currency || "₹"}{completeSettings.sellingPrice?.toLocaleString("en-IN") || "4,999"}
+                          </span>
+                          <span className="text-[11px] text-[#78716C] line-through">
+                            {completeSettings.currency || "₹"}{completeSettings.originalPrice?.toLocaleString("en-IN") || "14,999"}
+                          </span>
+                        </div>
+                        <h3 className="text-sm sm:text-base font-extrabold text-[#1C1917] group-hover:text-[#C25E38] transition-colors leading-tight mt-1 flex items-center gap-1.5">
+                          <span>{completeSettings.title || "Complete Spoken English Course"}</span>
+                        </h3>
+                        <p className="text-[11px] sm:text-xs text-[#57534E] line-clamp-1 mt-0.5">
+                          Click here to jump directly to this course in the modules section &darr;
+                        </p>
+                      </div>
+                    </div>
+                    <div className="shrink-0 flex items-center gap-1 px-3 py-2 rounded-xl bg-amber-100/70 group-hover:bg-amber-200 text-[#C25E38] text-xs font-bold transition-colors">
+                      <span className="hidden sm:inline">Go to Section</span>
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </a>
+              </div>
+
               {/* Call to Actions */}
-              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
+              <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 {/* Primary CTA */}
                 <Link
                   href="/course"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm sm:text-base font-bold bg-[#15803D] hover:bg-[#166534] text-white shadow-md hover:shadow-lg transition-all active:scale-[0.98] text-center"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold bg-[#15803D] hover:bg-[#166534] text-white shadow-md hover:shadow-lg transition-all active:scale-[0.98] text-center"
                 >
-                  <BookOpen className="w-5 h-5" />
-                  <span>Explore the Course</span>
-                  <ArrowRight className="w-4 h-4 ml-0.5" />
+                  <BookOpen className="w-4 h-4" />
+                  <span>Explore 8-Week Course</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
                 </Link>
 
                 {/* Secondary CTA */}
@@ -293,9 +340,9 @@ export default async function HomePage() {
                   href={whatsAppUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl text-sm sm:text-base font-bold bg-white hover:bg-[#F5F2EB] text-[#0F2D59] border border-[#DCD4C4] shadow-sm transition-all active:scale-[0.98] text-center"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold bg-white hover:bg-[#F5F2EB] text-[#0F2D59] border border-[#DCD4C4] shadow-sm transition-all active:scale-[0.98] text-center"
                 >
-                  <MessageCircle className="w-5 h-5 fill-[#15803D] text-[#15803D]" />
+                  <MessageCircle className="w-4 h-4 fill-[#15803D] text-[#15803D]" />
                   <span>Join via WhatsApp</span>
                 </a>
               </div>
@@ -435,18 +482,18 @@ export default async function HomePage() {
         </section>
 
         {/* ================================================================= */}
-        {/* 5. OUR 8-WEEK LEARNING PROGRAM                                   */}
+        {/* 5. OUR 8-WEEK LEARNING PROGRAM & MODULES                          */}
         {/* ================================================================= */}
-        <section className="py-16 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="modules" className="py-16 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-20">
           <div className="text-center max-w-2xl mx-auto mb-14 space-y-3">
             <span className="text-xs font-bold uppercase tracking-wider text-[#15803D]">
-              Complete Course Curriculum
+              Complete Course Curriculum & Modules
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1C1917] tracking-tight">
               Your Journey to Better English Starts Here
             </h2>
             <p className="text-base text-[#57534E]">
-              An eight-week learning path designed to strengthen your grammar and communication skills.
+              An eight-week learning path designed to strengthen your grammar and communication skills, alongside our standalone Complete Course.
             </p>
           </div>
 
@@ -508,13 +555,23 @@ export default async function HomePage() {
             })}
           </div>
 
-          {/* COMPLETE SPOKEN ENGLISH COURSE CARD (Prominently near 8-Week Course) */}
-          <div className="mt-8 bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3ECE0] border-2 border-[#D4CDBC] rounded-3xl p-6 sm:p-8 shadow-sm">
+          {/* COMPLETE SPOKEN ENGLISH COURSE CARD (Destination anchor from Front Section) */}
+          <div
+            id="complete-course-modules"
+            className="mt-8 scroll-mt-24 bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3ECE0] border-2 border-amber-300/80 rounded-3xl p-6 sm:p-8 shadow-md transition-all target:ring-4 target:ring-amber-400 target:border-amber-500"
+          >
+            <span id="complete-course" className="block -mt-28 pt-28 invisible" />
+            <span id="complete-spoken-english-course" className="block -mt-28 pt-28 invisible" />
+
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
               <div className="lg:col-span-8 space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#C25E38] bg-[#C25E38]/10 px-2.5 py-0.5 rounded-full border border-[#C25E38]/20">
-                    Separate Comprehensive Track
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#C25E38] bg-[#C25E38]/10 px-2.5 py-0.5 rounded-full border border-[#C25E38]/20 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-[#C25E38]" />
+                    Featured Program
+                  </span>
+                  <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                    {completeSettings.offerTag || "COMPLETE MASTERY PACK"}
                   </span>
                   <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white text-[#44403C] border border-[#D4CDBC]">
                     Independent Access
@@ -532,6 +589,26 @@ export default async function HomePage() {
                   {completeSettings.description ||
                     "Get access to the complete English learning course, including all learning materials, complete grammar handbooks, Word study documents, and additional resources provided by Learn and Grow."}
                 </p>
+
+                {/* Pricing & Savings pill on this module card */}
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl sm:text-2xl font-black text-[#15803D]">
+                      {completeSettings.currency || "₹"}
+                      {Number(completeSettings.sellingPrice || 4999).toLocaleString("en-IN")}
+                    </span>
+                    <span className="text-sm text-[#78716C] line-through">
+                      {completeSettings.currency || "₹"}
+                      {Number(completeSettings.originalPrice || 14999).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                  <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-amber-200 text-[#78350F]">
+                    {completeSettings.discountPercent || 67}% OFF
+                  </span>
+                  <span className="text-xs text-[#78716C]">
+                    • One-Time Lifetime Access
+                  </span>
+                </div>
 
                 <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-[#44403C]">
                   <span className="flex items-center gap-1.5 font-semibold">
@@ -554,13 +631,13 @@ export default async function HomePage() {
                   href={getCompleteCourseWhatsAppUrl(user?.email)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold bg-[#15803D] hover:bg-[#166534] text-white shadow-sm transition-all hover:shadow text-center"
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold bg-[#15803D] hover:bg-[#166534] text-white shadow-md hover:shadow-lg transition-all active:scale-[0.98] text-center"
                 >
                   <MessageCircle className="w-4 h-4 fill-white" />
                   <span>Enquire Complete Course via WhatsApp</span>
                 </a>
                 <Link
-                  href="/course"
+                  href="/course#complete-course"
                   className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs font-semibold bg-white hover:bg-[#F5F2EB] text-[#1C1917] border border-[#D4CDBC] shadow-2xs transition-colors text-center"
                 >
                   <BookOpen className="w-3.5 h-3.5 text-[#0F2D59]" />

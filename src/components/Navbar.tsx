@@ -123,6 +123,14 @@ export function Navbar({ currentUser, subscriptionStatus }: NavbarProps) {
             </Link>
 
             <Link
+              href={pathname === "/" ? "#complete-course-modules" : "/course#complete-course"}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-amber-900 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 flex items-center gap-1.5 shadow-2xs hover:scale-[1.02]"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <span>Complete Course</span>
+            </Link>
+
+            <Link
               href="/assessment"
               className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
                 pathname === "/assessment"
@@ -267,6 +275,14 @@ export function Navbar({ currentUser, subscriptionStatus }: NavbarProps) {
               }`}
             >
               Course Modules (8 Weeks)
+            </Link>
+            <Link
+              href={pathname === "/" ? "#complete-course-modules" : "/course#complete-course"}
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-3 py-2 rounded-lg text-base font-bold text-amber-900 bg-amber-500/10 border border-amber-500/30 flex items-center gap-2"
+            >
+              <Sparkles className="w-4 h-4 text-amber-600" />
+              <span>Complete Spoken English Course</span>
             </Link>
             <Link
               href="/assessment"

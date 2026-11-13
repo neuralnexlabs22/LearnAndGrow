@@ -379,7 +379,8 @@ export default async function CoursePage() {
         </div>
 
         {/* SEPARATE COMPLETE COURSE SECTION */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div id="complete-course-modules" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24">
+          <span id="complete-course" className="block -mt-28 pt-28 invisible" />
           <CompleteCourseSection
             settings={completeSettings}
             resources={completeResources}
